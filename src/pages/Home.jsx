@@ -1,13 +1,8 @@
 // Clean rebuilt Home.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import SEO from '@/components/SEO';
-import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/customSupabaseClient';
-import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { MessageSquare, Brain, Trophy, Clapperboard } from 'lucide-react';
-import StreakModal from '@/components/StreakModal';
 // Modal removed; navigate to a dedicated page instead
 
 // Use same count and names as existing app (styled like the screenshot)
@@ -120,28 +115,12 @@ const HOME_JSON_LD = [
 // Gradients removed for minimal solid theme
 
 // Removed unused accentFor and vividFor helpers
-const Tile = ({ tile, quizzes, index, navigateTo }) => {
-  // pick active or upcoming by TIME (ignore possibly stale status)
-  const now = Date.now();
-  // Filter & sort only for existence side-effects (result not stored)
-  quizzes
-    .filter(q => (q.category || '').toLowerCase() === tile.slug.toLowerCase())
-    .filter(q => {
-      const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-      const et = q.end_time ? new Date(q.end_time).getTime() : 0;
-      const isActive = st && et && now >= st && now < et;
-      const isUpcoming = st && now < st;
-      return isActive || isUpcoming;
-    })
-    .sort((a,b) => new Date(a.start_time || a.end_time || 0) - new Date(b.start_time || b.end_time || 0));
-  // removed quiz/totalCount/isLoading (simplified tile)
+const Tile = React.memo(({ tile, index, navigateTo }) => {
   const Icon = tile.icon;
   const variants = ['neon-orange', 'neon-purple', 'neon-teal', 'neon-pink'];
-  // Palette for badge per tile
-  // removed palettes array
-  // Always show PLAY instead of SOON/other states (as requested)
   const label = 'PLAY';
   const animationDelay = `${index * 80}ms`;
+
   return (
     <button
       type="button"
@@ -151,7 +130,6 @@ const Tile = ({ tile, quizzes, index, navigateTo }) => {
       style={{ borderRadius: '0.75rem', '--fade-scale-delay': animationDelay }}
       aria-label={`${tile.title} - Play`}
     >
-      {/* Removed count badge per request */}
       <div className="neon-card-content select-none flex items-center justify-center">
         <div className="w-full flex flex-col items-center justify-center gap-2">
           <Icon className="w-8 h-8 text-white drop-shadow" />
@@ -163,122 +141,51 @@ const Tile = ({ tile, quizzes, index, navigateTo }) => {
       </div>
     </button>
   );
-};
+});
+
+Tile.displayName = 'HomeTile';
 
 const Home = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [quizzes, setQuizzes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [streakModal, setStreakModal] = useState({ open: false, day: 0, coins: 0 });
-  // removed claimingRef (unused)
-  const [joiningId, setJoiningId] = useState(null);
-  // Removed list modal state
-
-  const fetchQuizzesAndCounts = useCallback(async () => {
-    try {
-      const { data: quizzesData, error } = await supabase
-        .from('quizzes')
-        .select('id,title,category,start_time,end_time,status,prize_pool,prizes,prize_type')
-        .order('start_time', { ascending: true });
-      if (error) throw error;
-      setQuizzes(quizzesData || []);
-    }
-    catch (e) { console.error(e); toast({ title: 'Error', description: 'Could not fetch quizzes.', variant: 'destructive' }); setQuizzes([]); }
-    finally { setLoading(false); }
-  }, [toast]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let idleId = null;
-    let timeoutId = null;
-    let intervalId = null;
-
-    const kickoff = async () => {
-      if (cancelled) return;
-      await fetchQuizzesAndCounts();
-      if (cancelled) return;
-      intervalId = window.setInterval(fetchQuizzesAndCounts, 60000);
-    };
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(kickoff, { timeout: 1200 });
-    } else {
-      timeoutId = window.setTimeout(kickoff, 120);
-    }
-
-    return () => {
-      cancelled = true;
-      if (intervalId) clearInterval(intervalId);
-      if (timeoutId) clearTimeout(timeoutId);
-      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
-    };
-  }, [fetchQuizzesAndCounts]);
-
-  // Daily login claim handled in Header; avoid duplicate RPC here
-
-  const handleJoinQuiz = async (quiz) => {
-    if (!quiz || joiningId === quiz.id) return;
-    if (!user) {
-      toast({ title: 'Login required', description: 'Please sign in to join the quiz.', variant: 'destructive' });
-      navigate('/login');
-      return;
-    }
-    setJoiningId(quiz.id);
-    try {
-      const result = await smartJoinQuiz({ supabase, quiz, user });
-      if (result.status === 'error') throw result.error;
-      if (result.status === 'already') {
-        toast({ title: 'Already Joined', description: 'You are in this quiz.' });
-        navigate(`/quiz/${quiz.id}`);
-      } else if (result.status === 'joined') {
-        toast({ title: 'Joined!', description: 'Redirecting you to the quiz.' });
-        navigate(`/quiz/${quiz.id}`);
-      } else if (result.status === 'pre_joined') {
-        toast({ title: 'Pre-joined!', description: 'We will remind you 1 minute before start.' });
-      } else if (result.status === 'scheduled_retry') {
-        toast({ title: 'Pre-joined!', description: 'Auto joining at start boundary.' });
-      }
-    } catch (err) {
-      toast({ title: 'Error', description: err?.message || 'Could not join quiz.', variant: 'destructive' });
-    } finally {
-      setJoiningId(null);
-    }
-  };
+  const navigateToCategory = useCallback((slug) => {
+    navigate(`/category/${slug}/`);
+  }, [navigate]);
 
   return (
-  <div className="relative pt-1 sm:pt-12 md:pt-14">
-            <SEO
+    <div className="relative pt-1 sm:pt-12 md:pt-14">
+      <SEO
         title="Quiz Dangal – Play Quiz & Win Rewards | Opinion, GK, Sports, Movies"
         description="Quiz Dangal is India’s play-and-win quiz arena. Take opinion and GK quizzes daily, grow streaks, invite friends, and redeem coins for rewards."
         canonical="https://quizdangal.com/"
         keywords={[
-          'Quiz Dangal','quizdangal','quiz app','play quiz and win','opinion quiz','daily quiz india','refer and earn quiz','win rewards','leaderboards','online quiz contest'
+          'Quiz Dangal',
+          'quizdangal',
+          'quiz app',
+          'play quiz and win',
+          'opinion quiz',
+          'daily quiz india',
+          'refer and earn quiz',
+          'win rewards',
+          'leaderboards',
+          'online quiz contest',
         ]}
         alternateLocales={['hi_IN', 'en_US']}
         jsonLd={HOME_JSON_LD}
       />
+
       <div className="relative z-10 min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-2">
         <div className="w-full max-w-[420px]">
-          {/* Intro header above categories */}
-          <div
-            className="text-center mb-2 animate-fade-up"
-            style={{ '--fade-delay': '60ms' }}
-          >
-            {/* Hide original content per request */}
+          <div className="text-center mb-2 animate-fade-up" style={{ '--fade-delay': '60ms' }}>
             <div className="hidden">
               <span className="inline-flex items-center justify-center px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-200/80 bg-indigo-500/15 border border-indigo-400/30 rounded-full">
                 Quiz Dangal Official
               </span>
-                <h1 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  <span className="italic">Brain Games. Real Gains.</span>
-                </h1>
-                <p className="text-sm text-slate-200 mt-1">
-                  <span className="italic">Compete, earn, repeat — shine every round.</span>
-                </p>
+              <h1 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <span className="italic">Brain Games. Real Gains.</span>
+              </h1>
+              <p className="text-sm text-slate-200 mt-1">
+                <span className="italic">Compete, earn, repeat — shine every round.</span>
+              </p>
               <ul className="mt-3 text-[12px] text-slate-300/90 space-y-1 text-left">
                 <li>• Transparent scoring with instant leaderboards</li>
                 <li>• Refer &amp; earn bonuses when friends join your squad</li>
@@ -286,7 +193,7 @@ const Home = () => {
               </ul>
               <div className="mx-auto mt-2 h-[2px] w-24 rounded-full bg-gradient-to-r from-indigo-400/60 via-fuchsia-400/60 to-pink-400/60" />
             </div>
-            {/* Replacement hero copy */}
+
             <div>
               <h1 className="text-xl sm:text-2xl font-bold leading-snug text-white">
                 <span className="italic">Brain Games. Real Gains.</span>
@@ -296,24 +203,13 @@ const Home = () => {
               </p>
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-square w-full rounded-xl bg-slate-800/60 border border-slate-700/60 animate-pulse" />
-              ))
-              : HOME_TILES.map((t, i) => (
-                <Tile
-                  key={t.slug}
-                  tile={t}
-                  quizzes={quizzes}
-                  onJoin={handleJoinQuiz}
-                  index={i}
-                  joiningId={joiningId}
-                  navigateTo={(slug) => navigate(`/category/${slug}/`)}
-                />
-              ))}
+            {HOME_TILES.map((t, i) => (
+              <Tile key={t.slug} tile={t} index={i} navigateTo={navigateToCategory} />
+            ))}
           </div>
-          {/* Hidden FAQs per request (kept in DOM for future use) */}
+
           <div className="hidden mt-6 text-left bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 space-y-3">
             <h2 className="text-sm font-semibold text-white tracking-wide uppercase">Quiz Dangal FAQs</h2>
             {HOME_FAQ_ENTRIES.map((item) => (
@@ -325,7 +221,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-  <StreakModal open={streakModal.open} day={streakModal.day} coins={streakModal.coins} onClose={() => setStreakModal(s => ({ ...s, open: false }))} />
+
       {/* Category modal removed in favor of page navigation */}
     </div>
   );

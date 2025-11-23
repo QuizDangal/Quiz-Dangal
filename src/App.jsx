@@ -4,15 +4,11 @@ import { Helmet } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import Footer from '@/components/Footer';
 import Header from '@/components/Header';
-import ProfileUpdateModal from '@/components/ProfileUpdateModal';
 // OnboardingFlow removed (unused)
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { prefetch } from '@/lib/prefetch';
-import PWAInstallButton from '@/components/PWAInstallButton';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt';
 const Home = lazy(() => import('@/pages/Home'));
 const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
@@ -35,6 +31,10 @@ const PlayWinQuiz = lazy(() => import('@/pages/PlayWinQuiz'));
 const OpinionQuiz = lazy(() => import('@/pages/OpinionQuiz'));
 const ReferEarnInfo = lazy(() => import('@/pages/ReferEarnInfo'));
 const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
+const Footer = lazy(() => import('@/components/Footer'));
+const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
+const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
+const NotificationPermissionPrompt = lazy(() => import('@/components/NotificationPermissionPrompt'));
 
 // Reusable group of static public informational routes (as a fragment – not a component – so <Routes> accepts it)
 const policyRoutes = (
@@ -251,7 +251,9 @@ const PublicLayout = () => {
           </Routes>
         </Suspense>
       </main>
-      <PWAInstallButton />
+      <Suspense fallback={null}>
+        <PWAInstallButton />
+      </Suspense>
     </>
   );
 };
@@ -259,6 +261,7 @@ const PublicLayout = () => {
 const MainLayout = () => {
   const { userProfile, loading: authLoading, hasSupabaseConfig } = useAuth();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const warmedRoutesRef = useRef(false);
 
   const requiresProfileCompletion = useMemo(() => {
     // If profile hasn't loaded yet, don't show the modal to avoid flicker
@@ -291,6 +294,7 @@ const MainLayout = () => {
   // Detect if current path is home to tailor layout spacing/overflow (BrowserRouter)
   const isHome = typeof window !== 'undefined' && window.location && window.location.pathname === '/';
   useEffect(() => {
+    if (warmedRoutesRef.current) return;
     // Skip warming on slow networks, data saver, low-memory devices, or when tab is hidden
     const shouldWarm = () => {
       try {
@@ -309,6 +313,7 @@ const MainLayout = () => {
     };
     if (!shouldWarm()) return;
 
+    warmedRoutesRef.current = true;
     prefetch(() => import('@/pages/Leaderboards'));
     prefetch(() => import('@/pages/Wallet'));
   }, []);
@@ -344,16 +349,24 @@ const MainLayout = () => {
           </Routes>
         </Suspense>
       </main>
-  <Footer />
-  <PWAInstallButton />
-  <NotificationPermissionPrompt />
-  {hasSupabaseConfig && (
-    <ProfileUpdateModal
-      isOpen={profileModalOpen}
-      onClose={() => setProfileModalOpen(false)}
-      isFirstTime={requiresProfileCompletion}
-    />
-  )}
+  <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
+      <Suspense fallback={null}>
+        <PWAInstallButton />
+      </Suspense>
+      <Suspense fallback={null}>
+        <NotificationPermissionPrompt />
+      </Suspense>
+      {hasSupabaseConfig && profileModalOpen && (
+        <Suspense fallback={null}>
+          <ProfileUpdateModal
+            isOpen={profileModalOpen}
+            onClose={() => setProfileModalOpen(false)}
+            isFirstTime={requiresProfileCompletion}
+          />
+        </Suspense>
+      )}
   {/* OnboardingFlow removed */}
     </>
   );

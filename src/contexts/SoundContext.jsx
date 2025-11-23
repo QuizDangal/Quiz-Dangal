@@ -311,8 +311,9 @@ export function SoundProvider({ children }) {
         }
   } catch (e) { /* pointer handler fail */ }
     };
-    document.addEventListener('pointerdown', handler, { capture: true });
-    return () => document.removeEventListener('pointerdown', handler, { capture: true });
+    const listenerOptions = { capture: true, passive: true };
+    document.addEventListener('pointerdown', handler, listenerOptions);
+    return () => document.removeEventListener('pointerdown', handler, listenerOptions);
   }, [enabled, engine, volume]);
 
   return (
