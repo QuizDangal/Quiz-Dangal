@@ -21,7 +21,7 @@ jobs:
           node-version: 20
           cache: npm
       - name: Install deps
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Test
