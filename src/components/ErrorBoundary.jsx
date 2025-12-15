@@ -15,9 +15,9 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({
       error: error,
-      errorInfo: errorInfo
+      errorInfo: errorInfo,
     });
-    
+
     // Log error to console in development
     if (import.meta.env.DEV) {
       console.error('Error caught by boundary:', error, errorInfo);
@@ -39,7 +39,7 @@ class ErrorBoundary extends React.Component {
             <p className="text-slate-300 mb-6">
               We&apos;re sorry, but something unexpected happened. Please try refreshing the page.
             </p>
-            
+
             {import.meta.env.DEV && this.state.error && (
               <details className="mb-4 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 mb-2">
@@ -52,17 +52,16 @@ class ErrorBoundary extends React.Component {
                   {this.state.errorInfo && (
                     <div>
                       <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>
+                      <pre className="whitespace-pre-wrap">
+                        {this.state.errorInfo.componentStack}
+                      </pre>
                     </div>
                   )}
                 </div>
               </details>
             )}
-            
-            <Button
-              onClick={this.handleReset}
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
-            >
+
+            <Button onClick={this.handleReset} className="w-full bg-indigo-600 hover:bg-indigo-700">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh Page
             </Button>
@@ -75,4 +74,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

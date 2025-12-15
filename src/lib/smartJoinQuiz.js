@@ -14,7 +14,8 @@ import { logger } from '@/lib/logger';
 const scheduledMap = new Map(); // quizId -> timeout id
 
 export async function smartJoinQuiz({ supabase, quiz, user }) {
-  if (!supabase || !quiz || !quiz.id) return { status: 'error', error: new Error('Missing quiz or supabase client') };
+  if (!supabase || !quiz || !quiz.id)
+    return { status: 'error', error: new Error('Missing quiz or supabase client') };
   if (!user || !user.id) return { status: 'error', error: new Error('Not authenticated') };
 
   try {
@@ -29,7 +30,7 @@ export async function smartJoinQuiz({ supabase, quiz, user }) {
     }
 
     const graceMs = 5000; // server grace before start
-    const active = now >= (startMs - graceMs) && now < endMs;
+    const active = now >= startMs - graceMs && now < endMs;
     const veryEarlyThreshold = startMs - (graceMs + 1500); // far before grace
 
     // Far before start: just pre-join once
@@ -40,12 +41,12 @@ export async function smartJoinQuiz({ supabase, quiz, user }) {
     }
 
     // Borderline window: close to start but not yet within active detection
-    if (!active && now >= veryEarlyThreshold && now < (startMs - 300)) {
+    if (!active && now >= veryEarlyThreshold && now < startMs - 300) {
       // Pre-join then schedule precise join attempt just inside grace
       const { error: pjErr } = await supabase.rpc('pre_join_quiz', { p_quiz_id: quiz.id });
       if (pjErr) return { status: 'error', error: pjErr };
       if (!scheduledMap.has(quiz.id)) {
-        const delay = Math.max(50, (startMs - (graceMs - 100)) - Date.now()); // aim slightly before grace start
+        const delay = Math.max(50, startMs - (graceMs - 100) - Date.now()); // aim slightly before grace start
         const tid = setTimeout(async () => {
           scheduledMap.delete(quiz.id);
           try {
@@ -88,10 +89,17 @@ export async function smartJoinQuiz({ supabase, quiz, user }) {
             scheduledMap.delete(quiz.id);
             try {
               const { error: err2 } = await supabase.rpc('join_quiz', { p_quiz_id: quiz.id });
-              if (err2 && !String(err2.message || '').toLowerCase().includes('already')) {
+              if (
+                err2 &&
+                !String(err2.message || '')
+                  .toLowerCase()
+                  .includes('already')
+              ) {
                 logger.error('Final join retry failed', err2.message || err2);
               }
-            } catch (e) { logger.error('Final join retry throw', e?.message || e); }
+            } catch (e) {
+              logger.error('Final join retry throw', e?.message || e);
+            }
           }, delay);
           scheduledMap.set(quiz.id, tid);
           return { status: 'scheduled_retry', scheduledAt: Date.now() + delay };

@@ -50,7 +50,9 @@ describe('utils: client compute flags and RPC', () => {
 
   it('safeComputeResultsIfDue suppresses 404-like errors and returns false', async () => {
     import.meta.env.VITE_ENABLE_CLIENT_COMPUTE = 'true';
-    const rpc = vi.fn().mockResolvedValue({ error: { message: 'function compute_results_if_due does not exist' } });
+    const rpc = vi
+      .fn()
+      .mockResolvedValue({ error: { message: 'function compute_results_if_due does not exist' } });
     const mockSb = { rpc };
     const ok = await safeComputeResultsIfDue(mockSb, 'quiz-3');
     expect(ok).toBe(false);

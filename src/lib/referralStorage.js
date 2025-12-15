@@ -32,11 +32,19 @@ export function saveReferralCode(code) {
   if (!normalized) return normalized;
   const session = getSession();
   if (session) {
-    try { session.setItem(STORAGE_KEY, normalized); } catch { /* ignore */ }
+    try {
+      session.setItem(STORAGE_KEY, normalized);
+    } catch {
+      /* ignore */
+    }
   }
   const local = getLocal();
   if (local) {
-    try { local.setItem(STORAGE_KEY, normalized); } catch { /* ignore */ }
+    try {
+      local.setItem(STORAGE_KEY, normalized);
+    } catch {
+      /* ignore */
+    }
   }
   return normalized;
 }
@@ -47,14 +55,18 @@ export function loadReferralCode() {
     try {
       const value = session.getItem(STORAGE_KEY);
       if (value) return normalizeReferralCode(value);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   const local = getLocal();
   if (local) {
     try {
       const value = local.getItem(STORAGE_KEY);
       if (value) return normalizeReferralCode(value);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   return '';
 }
@@ -62,10 +74,18 @@ export function loadReferralCode() {
 export function clearReferralCode() {
   const session = getSession();
   if (session) {
-    try { session.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      session.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
   const local = getLocal();
   if (local) {
-    try { local.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      local.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 }

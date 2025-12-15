@@ -4,18 +4,17 @@ import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
 
 // Read VAPID key from env; prefer build-time but fall back to runtime window config
-const runtimeEnv = (typeof window !== 'undefined' && window.__QUIZ_DANGAL_ENV__)
-  ? window.__QUIZ_DANGAL_ENV__
-  : {};
+const runtimeEnv =
+  typeof window !== 'undefined' && window.__QUIZ_DANGAL_ENV__ ? window.__QUIZ_DANGAL_ENV__ : {};
 const VAPID_PUBLIC_KEY = (
-  (import.meta?.env?.VITE_VAPID_PUBLIC_KEY) ||
+  import.meta?.env?.VITE_VAPID_PUBLIC_KEY ||
   runtimeEnv.VITE_VAPID_PUBLIC_KEY ||
   runtimeEnv.VAPID_PUBLIC_KEY ||
   ''
 ).trim();
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -33,8 +32,8 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.pushManager.getSubscription().then(sub => {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.pushManager.getSubscription().then((sub) => {
           if (sub) {
             setIsSubscribed(true);
             setSubscription(sub);
@@ -125,10 +124,16 @@ export function usePushNotifications() {
       if (endpoint && hasSupabaseConfig && supabase) {
         try {
           await supabase.rpc('delete_push_subscription', { p_endpoint: endpoint });
-  } catch (e) { /* server delete fail */ }
+        } catch (e) {
+          /* server delete fail */
+        }
       }
       // Unsubscribe in browser
-  try { await sub.unsubscribe(); } catch (e) { /* browser unsubscribe fail */ }
+      try {
+        await sub.unsubscribe();
+      } catch (e) {
+        /* browser unsubscribe fail */
+      }
       setIsSubscribed(false);
       setSubscription(null);
       setError(null);

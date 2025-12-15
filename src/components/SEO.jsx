@@ -26,17 +26,17 @@ export default function SEO({
   twitterHandle = '@quizdangal',
   jsonLd = [],
 }) {
-  const keywordsContent = Array.isArray(keywords) && keywords.length
-    ? keywords.join(', ')
-    : undefined;
+  const keywordsContent =
+    Array.isArray(keywords) && keywords.length ? keywords.join(', ') : undefined;
 
   const normalizedLang = typeof lang === 'string' && lang ? lang : 'en-IN';
   const ogLocale = normalizedLang.replace('-', '_');
   const alternateHrefLang = normalizedLang.toLowerCase();
   const jsonLdBlocks = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
-  const toHrefLang = (loc) => String(loc || '')
-    .replace(/_/g, '-')
-    .toLowerCase();
+  const toHrefLang = (loc) =>
+    String(loc || '')
+      .replace(/_/g, '-')
+      .toLowerCase();
 
   return (
     <Helmet>
@@ -53,23 +53,28 @@ export default function SEO({
           <link rel="alternate" hrefLang={toHrefLang(alternateHrefLang)} href={canonical} />
         </>
       )}
-      {canonical && alternateLocales.map((locale) => (
-        <link key={locale} rel="alternate" hrefLang={toHrefLang(locale)} href={canonical} />
-      ))}
+      {canonical &&
+        alternateLocales.map((locale) => (
+          <link key={locale} rel="alternate" hrefLang={toHrefLang(locale)} href={canonical} />
+        ))}
 
       {/* Open Graph */}
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content="Quiz Dangal" />
       <meta property="og:locale" content={ogLocale} />
       {alternateLocales.map((locale) => (
-        <meta key={locale} property="og:locale:alternate" content={String(locale).replace('-', '_')} />
+        <meta
+          key={locale}
+          property="og:locale:alternate"
+          content={String(locale).replace('-', '_')}
+        />
       ))}
       <meta property="og:title" content={title} />
       {description && <meta property="og:description" content={description} />}
-      {canonical && <meta property="og:url" content={canonical} />} 
-  {image && <meta property="og:image" content={image} />} 
-  {image && <meta property="og:image:secure_url" content={image} />} 
-  {image && imageAlt && <meta property="og:image:alt" content={imageAlt} />}
+      {canonical && <meta property="og:url" content={canonical} />}
+      {image && <meta property="og:image" content={image} />}
+      {image && <meta property="og:image:secure_url" content={image} />}
+      {image && imageAlt && <meta property="og:image:alt" content={imageAlt} />}
       <meta property="og:image:type" content="image/png" />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
@@ -79,7 +84,7 @@ export default function SEO({
       <meta name="twitter:title" content={title} />
       {description && <meta name="twitter:description" content={description} />}
       {image && <meta name="twitter:image" content={image} />}
-  {image && imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
+      {image && imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
       {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
 
       {jsonLdBlocks.map((block, index) => (

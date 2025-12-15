@@ -24,20 +24,28 @@ const NotificationPermissionPrompt = () => {
       if (typeof Notification !== 'undefined' && Notification.permission !== 'default') {
         localStorage.setItem(storageKey, 'true');
       }
-  } catch (e) { /* storage set failed */ }
+    } catch (e) {
+      /* storage set failed */
+    }
   }, [storageKey]);
 
   useEffect(() => {
     // Only schedule when: user is logged in, notifications supported, permission is default, and we haven't recorded a decision for this device.
     try {
-      const supported = (typeof window !== 'undefined' && 'Notification' in window);
-      const alreadyDecided = (() => { try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; } })();
+      const supported = typeof window !== 'undefined' && 'Notification' in window;
+      const alreadyDecided = (() => {
+        try {
+          return localStorage.getItem(storageKey) === 'true';
+        } catch {
+          return false;
+        }
+      })();
       if (!user || !supported) return;
       if (Notification.permission !== 'default') return; // granted or denied -> never show
       if (alreadyDecided) return;
 
       // Show after 10 seconds from login/mount
-  timerRef.current = setTimeout(() => setOpen(true), NOTIFICATION_PROMPT_DELAY_MS);
+      timerRef.current = setTimeout(() => setOpen(true), NOTIFICATION_PROMPT_DELAY_MS);
       return () => {
         if (timerRef.current) clearTimeout(timerRef.current);
       };
@@ -50,13 +58,17 @@ const NotificationPermissionPrompt = () => {
     try {
       // Trigger native prompt (via subscribeToPush which asks permission first, then subscribes)
       await subscribeToPush();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     // After click, if a decision is made, persist flag and close
     try {
       if (typeof Notification !== 'undefined' && Notification.permission !== 'default') {
         localStorage.setItem(storageKey, 'true');
       }
-  } catch (e) { /* ignore permission check error */ }
+    } catch (e) {
+      /* ignore permission check error */
+    }
     setOpen(false);
   };
 
@@ -67,8 +79,16 @@ const NotificationPermissionPrompt = () => {
 
   // Render minimal dialog only when open
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleDismiss(); }}>
-      <DialogContent className="bg-slate-900/95 border border-slate-800 text-slate-100 sm:rounded-2xl p-4 sm:p-6 max-w-sm w-[92vw]" style={{paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'}}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleDismiss();
+      }}
+    >
+      <DialogContent
+        className="bg-slate-900/95 border border-slate-800 text-slate-100 sm:rounded-2xl p-4 sm:p-6 max-w-sm w-[92vw]"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      >
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">Get quiz reminders</DialogTitle>
         </DialogHeader>
@@ -76,7 +96,9 @@ const NotificationPermissionPrompt = () => {
           Turn on notifications to get alerts before a quiz starts and when results are announced.
         </div>
         <div className="mt-4 flex justify-center">
-          <Button onClick={handleAllow} className="font-semibold px-6">Allow</Button>
+          <Button onClick={handleAllow} className="font-semibold px-6">
+            Allow
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

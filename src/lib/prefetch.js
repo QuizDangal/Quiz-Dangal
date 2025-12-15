@@ -8,11 +8,18 @@ export function prefetch(loader) {
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (conn) {
       if (conn.saveData) return;
-      if (typeof conn.effectiveType === 'string' && /(^|\b)2g(\b|$)/i.test(conn.effectiveType)) return;
+      if (typeof conn.effectiveType === 'string' && /(^|\b)2g(\b|$)/i.test(conn.effectiveType))
+        return;
     }
     const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200));
     idle(() => {
-      try { loader(); } catch { /* ignore */ }
+      try {
+        loader();
+      } catch {
+        /* ignore */
+      }
     });
-  } catch { /* swallow */ }
+  } catch {
+    /* swallow */
+  }
 }

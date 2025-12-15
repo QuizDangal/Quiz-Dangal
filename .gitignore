@@ -29,6 +29,10 @@ supabase/sql/*.sql
 /supabase/.branches/
 /supabase/.temp/
 
+# Generated schema inventory (auto-generated, large files)
+supabase/remote-schema-inventory.txt
+supabase/remote-schema-inventory.json
+
 # Temporary/diff artifacts (keep repo clean)
 diff_*.txt
 *.diff

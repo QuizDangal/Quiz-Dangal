@@ -3,8 +3,9 @@ import { escapeHTML } from '@/lib/security';
 
 describe('security.escapeHTML', () => {
   it('escapes special characters', () => {
-    expect(escapeHTML('<script>alert("x")</script> & "\'\''))
-      .toBe('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &quot;&#39;&#39;');
+    expect(escapeHTML('<script>alert("x")</script> & "\'\'')).toBe(
+      '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &quot;&#39;&#39;',
+    );
   });
 
   it('is idempotent for already-escaped input', () => {

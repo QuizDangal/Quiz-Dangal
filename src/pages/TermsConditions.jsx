@@ -59,9 +59,7 @@ const sections = [
   {
     icon: AlertTriangle,
     title: '6. Responsible Usage',
-    content: [
-      'For fun and learning—this is not gambling. Play responsibly.',
-    ],
+    content: ['For fun and learning—this is not gambling. Play responsibly.'],
   },
   {
     icon: EyeOff,
@@ -73,9 +71,7 @@ const sections = [
   {
     icon: Copyright,
     title: '8. Intellectual Property',
-    content: [
-      'All content belongs to Quiz Dangal. Do not copy or resell without permission.',
-    ],
+    content: ['All content belongs to Quiz Dangal. Do not copy or resell without permission.'],
   },
   {
     icon: Info,
@@ -87,9 +83,7 @@ const sections = [
   {
     icon: Repeat,
     title: '10. Changes & Updates',
-    content: [
-      'We may update features, rewards, or terms. Continued use means acceptance.',
-    ],
+    content: ['We may update features, rewards, or terms. Continued use means acceptance.'],
   },
   {
     icon: Shield,
@@ -128,7 +122,7 @@ const TermsConditions = () => {
           title="Terms & Conditions – Quiz Dangal"
           description="Terms & Conditions for using Quiz Dangal – eligibility, gameplay rules, rewards, and fair play policies."
           canonical="https://quizdangal.com/terms-conditions/"
-          alternateLocales={['hi_IN','en_US']}
+          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'quiz dangal terms',
             'quiz app terms and conditions',
@@ -194,7 +188,9 @@ const TermsConditions = () => {
                 style={{ '--fade-delay': `${baseDelay}ms` }}
               >
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className={`bg-gradient-to-r ${getBrandGradient(index)} p-3 rounded-full flex-shrink-0`}>
+                  <div
+                    className={`bg-gradient-to-r ${getBrandGradient(index)} p-3 rounded-full flex-shrink-0`}
+                  >
                     <section.icon className="w-6 h-6 text-white" />
                   </div>
                   <h2 className="text-xl font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent">

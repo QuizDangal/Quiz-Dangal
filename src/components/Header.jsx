@@ -10,14 +10,20 @@ import { prefetchRoute } from '@/lib/utils';
 
 const Header = () => {
   const { user, userProfile, refreshUserProfile } = useAuth();
-  const wallet = useMemo(() => Number(userProfile?.wallet_balance || 0), [userProfile?.wallet_balance]);
+  const wallet = useMemo(
+    () => Number(userProfile?.wallet_balance || 0),
+    [userProfile?.wallet_balance],
+  );
   const walletLabel = useMemo(() => wallet.toLocaleString(), [wallet]);
 
   // Download logic removed
 
   const [streakModal, setStreakModal] = useState({ open: false, day: 0, coins: 0 });
   const claimingRef = useRef(false);
-  const streak = useMemo(() => Number(userProfile?.current_streak || 0), [userProfile?.current_streak]);
+  const streak = useMemo(
+    () => Number(userProfile?.current_streak || 0),
+    [userProfile?.current_streak],
+  );
 
   // Removed getInitials helper (unused)
 
@@ -32,13 +38,15 @@ const Header = () => {
         // Prevent duplicate claims within the same day per session (handles accidental reloads)
         const key = `qd_streak_claim_${user.id}`;
         const today = new Date();
-        const stamp = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+        const stamp = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
         try {
           const last = sessionStorage.getItem(key);
           if (last === stamp) return; // already claimed today in this session
-        } catch (e) { /* sessionStorage read fail */ }
+        } catch (e) {
+          /* sessionStorage read fail */
+        }
 
-  const { data, error } = await supabase.rpc('handle_daily_login', { user_uuid: user.id });
+        const { data, error } = await supabase.rpc('handle_daily_login', { user_uuid: user.id });
 
         if (error) {
           console.error('Error handling daily login:', error);
@@ -58,7 +66,11 @@ const Header = () => {
         }
 
         // Mark as claimed for today in this session
-  try { sessionStorage.setItem(key, stamp); } catch (e) { /* sessionStorage write fail */ }
+        try {
+          sessionStorage.setItem(key, stamp);
+        } catch (e) {
+          /* sessionStorage write fail */
+        }
       } catch (e) {
         console.error('Exception handling daily login:', e);
       } finally {
@@ -67,9 +79,8 @@ const Header = () => {
     };
 
     // Use a small timeout to ensure the app has settled after login before claiming
-  const timer = setTimeout(claimStreak, STREAK_CLAIM_DELAY_MS);
+    const timer = setTimeout(claimStreak, STREAK_CLAIM_DELAY_MS);
     return () => clearTimeout(timer);
-
   }, [user, refreshUserProfile]);
 
   // Removed handleDownload (unused)
@@ -84,91 +95,115 @@ const Header = () => {
         aria-label="Quiz Dangal site header"
       >
         <div className="qd-card rounded-3xl overflow-hidden">
-
-  <div className="container mx-auto px-2 sm:px-5 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
-            {/* Brand */}
-            <Link to="/" className="flex items-center gap-2 group" onMouseEnter={() => prefetchRoute('/')} onFocus={() => prefetchRoute('/')} aria-label="Go to home page">
-              <img
-                src="/android-chrome-192x192.png"
-                alt="Quiz Dangal Logo"
-                width="48"
-                height="48"
-                decoding="async"
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none"
-                draggable="false"
-                style={{ imageRendering: 'auto' }}
-              />
-              <div className="leading-tight whitespace-nowrap select-none">
-                <div className="text-xl sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight" aria-hidden="true">
-                  Quiz Dangal
+          <div className="container mx-auto px-2 sm:px-5 py-3 sm:py-4">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              {/* Brand */}
+              <Link
+                to="/"
+                className="flex items-center gap-2 group"
+                onMouseEnter={() => prefetchRoute('/')}
+                onFocus={() => prefetchRoute('/')}
+                aria-label="Go to home page"
+              >
+                <img
+                  src="/android-chrome-192x192.png"
+                  alt="Quiz Dangal Logo"
+                  width="48"
+                  height="48"
+                  decoding="async"
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none"
+                  draggable="false"
+                  style={{ imageRendering: 'auto' }}
+                />
+                <div className="leading-tight whitespace-nowrap select-none">
+                  <div
+                    className="text-lg sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight"
+                    aria-hidden="true"
+                  >
+                    Quiz Dangal
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-white/70 -mt-0.5 font-medium">
+                    Where Minds Clash
+                  </div>
                 </div>
-                <div className="text-[11px] sm:text-xs text-white/70 -mt-0.5 font-medium">Where Minds Clash</div>
-              </div>
-            </Link>
+              </Link>
 
-            {/* Actions */}
-            <div className="ml-auto flex items-center gap-2 sm:gap-3 translate-x-1 sm:translate-x-0">
-              {/* When not logged in: show Login button */}
-              {!user && (
-                <Link
-                  to="/login"
-                  onMouseEnter={() => prefetchRoute('/login')}
-                  onFocus={() => prefetchRoute('/login')}
-                  aria-label="Log in to your account"
-                  title="Sign in to Quiz Dangal"
-                  className="group inline-flex items-center justify-center gap-2 rounded-2xl px-2 h-11 text-base font-semibold bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 text-white shadow-[0_8px_30px_-12px_rgba(99,102,241,0.36)] ring-1 ring-indigo-400/20 hover:scale-105 transform transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/40 active:scale-95 mr-3"
-                >
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/10 p-1">
-                    <User className="w-5 h-5 text-white" aria-hidden="true" />
-                  </span>
-                  <span className="leading-none mx-auto text-center">Sign in</span>
-                </Link>
-              )}
-              {/* When logged in: show coins and streak */}
-              {user && (
-                <>
-                  <div className="hidden sm:inline-flex hd-badge hd-badge-gold" title="Coins" aria-label={`Coins balance: ${walletLabel}`}
-                    role="status">
-                    <div className="hd-badge-icon" aria-hidden="true">
-                      <div className="hd-badge-coin">
-                        <div className="hd-badge-coin-front">
-                          <Coins className="hd-badge-coin-icon" />
-                          <span className="hd-badge-coin-shine" />
+              {/* Actions */}
+              <div className="ml-auto flex items-center gap-2 sm:gap-3 translate-x-1 sm:translate-x-0">
+                {/* When not logged in: show Login button */}
+                {!user && (
+                  <Link
+                    to="/login"
+                    onMouseEnter={() => prefetchRoute('/login')}
+                    onFocus={() => prefetchRoute('/login')}
+                    aria-label="Log in to your account"
+                    title="Sign in to Quiz Dangal"
+                    className="group inline-flex items-center justify-center gap-2 rounded-2xl px-2 h-11 text-base font-semibold bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 text-white shadow-[0_8px_30px_-12px_rgba(99,102,241,0.36)] ring-1 ring-indigo-400/20 hover:scale-105 transform transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/40 active:scale-95 mr-3"
+                  >
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/10 p-1">
+                      <User className="w-5 h-5 text-white" aria-hidden="true" />
+                    </span>
+                    <span className="leading-none mx-auto text-center">Sign in</span>
+                  </Link>
+                )}
+                {/* When logged in: show coins and streak */}
+                {user && (
+                  <>
+                    <div
+                      className="hidden sm:inline-flex hd-badge hd-badge-gold"
+                      title="Coins"
+                      aria-label={`Coins balance: ${walletLabel}`}
+                      role="status"
+                    >
+                      <div className="hd-badge-icon" aria-hidden="true">
+                        <div className="hd-badge-coin">
+                          <div className="hd-badge-coin-front">
+                            <Coins className="hd-badge-coin-icon" />
+                            <span className="hd-badge-coin-shine" />
+                          </div>
                         </div>
                       </div>
+                      <div className="hd-badge-info select-none">
+                        <span className="hd-badge-value tabular-nums">{walletLabel}</span>
+                        <span className="hd-badge-label">COINS</span>
+                      </div>
                     </div>
-                    <div className="hd-badge-info select-none">
-                      <span className="hd-badge-value tabular-nums">{walletLabel}</span>
-                      <span className="hd-badge-label">COINS</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const day = streak;
-                      const coins = Math.min(50, 10 + Math.max(0, day - 1) * 5);
-                      setStreakModal({ open: true, day, coins });
-                    }}
-                    className="hd-badge hd-badge-streak -ml-1 sm:-ml-2"
-                    title="Daily Streak"
-                    aria-label={`Daily streak ${streak} days. Open details.`}
-                    aria-haspopup="dialog"
-                  >
-                    <div className="hd-badge-icon hd-badge-icon-streak-full" aria-hidden="true">
-                      <div className="streak-orb" />
-                      <span className="streak-emoji" style={{fontSize:'20px',lineHeight:1,filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 4px rgba(255,150,40,0.5))'}}>🔥</span>
-                    </div>
-                    <div className="hd-badge-info select-none">
-                      <span className="hd-badge-value tabular-nums">{streak}</span>
-                      <span className="hd-badge-label">STREAK</span>
-                    </div>
-                  </button>
-                </>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const day = streak;
+                        const coins = Math.min(50, 10 + Math.max(0, day - 1) * 5);
+                        setStreakModal({ open: true, day, coins });
+                      }}
+                      className="hd-badge hd-badge-streak -ml-1 sm:-ml-2"
+                      title="Daily Streak"
+                      aria-label={`Daily streak ${streak} days. Open details.`}
+                      aria-haspopup="dialog"
+                    >
+                      <div className="hd-badge-icon hd-badge-icon-streak-full" aria-hidden="true">
+                        <div className="streak-orb" />
+                        <span
+                          className="streak-emoji"
+                          style={{
+                            fontSize: '20px',
+                            lineHeight: 1,
+                            filter:
+                              'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 4px rgba(255,150,40,0.5))',
+                          }}
+                        >
+                          🔥
+                        </span>
+                      </div>
+                      <div className="hd-badge-info select-none">
+                        <span className="hd-badge-value tabular-nums">{streak}</span>
+                        <span className="hd-badge-label">STREAK</span>
+                      </div>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </header>
 

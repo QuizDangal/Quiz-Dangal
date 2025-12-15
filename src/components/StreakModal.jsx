@@ -3,14 +3,26 @@ import { Flame, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-export default function StreakModal({ open, onClose, streakDay, coinsEarned, day, coins: coinsProp }) {
+export default function StreakModal({
+  open,
+  onClose,
+  streakDay,
+  coinsEarned,
+  day,
+  coins: coinsProp,
+}) {
   // Backward compatibility: accept both (streakDay, coinsEarned) and (day, coins)
   const dayValRaw = streakDay ?? day;
   const coinsRaw = coinsEarned ?? coinsProp;
   const coins = Number.isFinite(Number(coinsRaw)) ? Number(coinsRaw) : 0;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose?.(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose?.();
+      }}
+    >
       <DialogContent
         overlayClassName="bg-black/90 backdrop-blur-sm"
         className="w-[calc(100vw-2rem)] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-2xl p-5 sm:p-6 bg-slate-900 border border-white/10 shadow-2xl overflow-hidden"

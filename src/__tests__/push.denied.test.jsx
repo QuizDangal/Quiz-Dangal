@@ -32,11 +32,15 @@ describe('usePushNotifications: denied permission', () => {
     });
     Object.defineProperty(global, 'navigator', {
       value: {
-        serviceWorker: { ready: Promise.resolve({ pushManager: { getSubscription: vi.fn(() => Promise.resolve(null)) } }) },
+        serviceWorker: {
+          ready: Promise.resolve({
+            pushManager: { getSubscription: vi.fn(() => Promise.resolve(null)) },
+          }),
+        },
       },
       configurable: true,
     });
-    Object.defineProperty(window, 'PushManager', { value: function() {}, configurable: true });
+    Object.defineProperty(window, 'PushManager', { value: function () {}, configurable: true });
 
     render(<TestComp />);
 
@@ -46,6 +50,8 @@ describe('usePushNotifications: denied permission', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('button', { name: 'trigger' }).textContent).toMatch(/permission was denied/i);
+    expect(screen.getByRole('button', { name: 'trigger' }).textContent).toMatch(
+      /permission was denied/i,
+    );
   });
 });

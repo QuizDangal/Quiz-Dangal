@@ -1,11 +1,23 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { normalizeReferralCode, saveReferralCode, loadReferralCode, clearReferralCode, REFERRAL_STORAGE_KEY } from '@/lib/referralStorage';
+import {
+  normalizeReferralCode,
+  saveReferralCode,
+  loadReferralCode,
+  clearReferralCode,
+  REFERRAL_STORAGE_KEY,
+} from '@/lib/referralStorage';
 
 const createStorage = (backingMap) => ({
   getItem: (key) => (backingMap.has(key) ? backingMap.get(key) : null),
-  setItem: (key, value) => { backingMap.set(key, String(value)); },
-  removeItem: (key) => { backingMap.delete(key); },
-  clear: () => { backingMap.clear(); },
+  setItem: (key, value) => {
+    backingMap.set(key, String(value));
+  },
+  removeItem: (key) => {
+    backingMap.delete(key);
+  },
+  clear: () => {
+    backingMap.clear();
+  },
 });
 
 describe('referralStorage helpers', () => {

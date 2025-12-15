@@ -16,16 +16,19 @@ const HOME_TILES = [
 const HOME_FAQ_ENTRIES = [
   {
     question: 'What is Quiz Dangal?',
-    answer: 'Quiz Dangal is India\'s daily quiz arena where you play opinion and knowledge rounds, earn coins, and climb leaderboards with friends.'
+    answer:
+      "Quiz Dangal is India's daily quiz arena where you play opinion and knowledge rounds, earn coins, and climb leaderboards with friends.",
   },
   {
     question: 'How can new pages get indexed quickly?',
-    answer: 'Submit https://quizdangal.com/sitemap.xml in Google Search Console, request indexing for key URLs, and keep internal links pointing to every new landing page.'
+    answer:
+      'Submit https://quizdangal.com/sitemap.xml in Google Search Console, request indexing for key URLs, and keep internal links pointing to every new landing page.',
   },
   {
     question: 'Does Quiz Dangal support the Google Play-style “Play & Win” format?',
-    answer: 'Yes. Our Play & Win quizzes run daily with live leaderboards, transparent scoring, and instant rewards for top performers.'
-  }
+    answer:
+      'Yes. Our Play & Win quizzes run daily with live leaderboards, transparent scoring, and instant rewards for top performers.',
+  },
 ];
 
 const HOME_FAQ_SCHEMA = {
@@ -68,11 +71,6 @@ const HOME_JSON_LD = [
     '@type': 'WebSite',
     name: 'Quiz Dangal',
     url: 'https://quizdangal.com/',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: 'https://quizdangal.com/search?q={search_term_string}',
-      'query-input': 'required name=search_term_string',
-    },
   },
   {
     '@context': 'https://schema.org',
@@ -136,7 +134,9 @@ const Tile = React.memo(({ tile, index, navigateTo }) => {
           <h3 className="text-base font-extrabold leading-tight text-white text-shadow-sm text-center">
             {tile.title}
           </h3>
-          <span className="play-pill group-hover:shadow-lg group-hover:brightness-110">{label}</span>
+          <span className="play-pill group-hover:shadow-lg group-hover:brightness-110">
+            {label}
+          </span>
         </div>
       </div>
     </button>
@@ -147,9 +147,12 @@ Tile.displayName = 'HomeTile';
 
 const Home = () => {
   const navigate = useNavigate();
-  const navigateToCategory = useCallback((slug) => {
-    navigate(`/category/${slug}/`);
-  }, [navigate]);
+  const navigateToCategory = useCallback(
+    (slug) => {
+      navigate(`/category/${slug}/`);
+    },
+    [navigate],
+  );
 
   return (
     <div className="relative pt-1 sm:pt-12 md:pt-14">
@@ -211,7 +214,9 @@ const Home = () => {
           </div>
 
           <div className="hidden mt-6 text-left bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 space-y-3">
-            <h2 className="text-sm font-semibold text-white tracking-wide uppercase">Quiz Dangal FAQs</h2>
+            <h2 className="text-sm font-semibold text-white tracking-wide uppercase">
+              Quiz Dangal FAQs
+            </h2>
             {HOME_FAQ_ENTRIES.map((item) => (
               <div key={item.question}>
                 <p className="text-[13px] font-semibold text-indigo-200/90">{item.question}</p>

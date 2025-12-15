@@ -21,18 +21,24 @@ const Footer = () => {
   const stripSlash = (p = '') => (p === '/' ? '/' : p.replace(/\/+$/, ''));
   const activeColor = (path) => {
     switch (stripSlash(path)) {
-      case '/': return 'text-accent-d';        // blue
-      case '/leaderboards': return 'text-accent-a'; // pink/fuchsia
-      case '/my-quizzes': return 'text-accent-c';   // purple
-      case '/wallet': return 'text-accent-e';       // gold
-      case '/profile': return 'text-accent-b';      // indigo
-      default: return 'text-accent-d';
+      case '/':
+        return 'text-accent-d'; // blue
+      case '/leaderboards':
+        return 'text-accent-a'; // pink/fuchsia
+      case '/my-quizzes':
+        return 'text-accent-c'; // purple
+      case '/wallet':
+        return 'text-accent-e'; // gold
+      case '/profile':
+        return 'text-accent-b'; // indigo
+      default:
+        return 'text-accent-d';
     }
   };
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-  <div className="qd-card rounded-3xl mx-1 sm:mx-2 shadow-[0_8px_28px_-8px_rgba(0,0,0,0.45)] overflow-hidden">
+      <div className="qd-card rounded-3xl mx-1 sm:mx-2 shadow-[0_8px_28px_-8px_rgba(0,0,0,0.45)] overflow-hidden">
         <nav className="flex items-center justify-around py-2 px-2 sm:px-4" aria-label="Primary">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -57,13 +63,15 @@ const Footer = () => {
                     aria-hidden="true"
                   />
                 </span>
-                <span className={`text-[10px] font-semibold tracking-wide ${isActive ? activeColor(item.path) : 'text-white/85'}`}>
+                <span
+                  className={`text-[10px] font-semibold tracking-wide ${isActive ? activeColor(item.path) : 'text-white/85'}`}
+                >
                   {item.label}
                 </span>
               </button>
             );
           })}
-  </nav>
+        </nav>
       </div>
     </footer>
   );

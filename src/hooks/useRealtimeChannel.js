@@ -36,12 +36,22 @@ export function useRealtimeChannel({
     if (!channelName || !table) return;
     if (typeof window === 'undefined') return;
 
-    const runtimeEnv = (typeof window !== 'undefined' && window.__QUIZ_DANGAL_ENV__) ? window.__QUIZ_DANGAL_ENV__ : {};
-    const envDebugRaw = import.meta.env?.VITE_REALTIME_DEBUG ?? runtimeEnv?.VITE_REALTIME_DEBUG ?? '0';
-    const envDebug = ['1','true','yes','on'].includes(String(envDebugRaw).toLowerCase());
+    const runtimeEnv =
+      typeof window !== 'undefined' && window.__QUIZ_DANGAL_ENV__ ? window.__QUIZ_DANGAL_ENV__ : {};
+    const envDebugRaw =
+      import.meta.env?.VITE_REALTIME_DEBUG ?? runtimeEnv?.VITE_REALTIME_DEBUG ?? '0';
+    const envDebug = ['1', 'true', 'yes', 'on'].includes(String(envDebugRaw).toLowerCase());
     const logEnabled = Boolean(debug ?? envDebug);
 
-    function log(...args) { if (logEnabled) { try { logger.debug('[realtime]', ...args); } catch { /* ignore */ } } }
+    function log(...args) {
+      if (logEnabled) {
+        try {
+          logger.debug('[realtime]', ...args);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
 
     let cancelled = false;
 
@@ -52,15 +62,20 @@ export function useRealtimeChannel({
           log('remove', channelName, 'attempt', attemptRef.current);
           supabase.removeChannel(channelRef.current);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
 
     const scheduleRetry = (reason) => {
       if (cancelled) return;
       if (removedRef.current) return;
-      if (attemptRef.current >= maxRetries) { log('max retries reached', channelName); return; }
+      if (attemptRef.current >= maxRetries) {
+        log('max retries reached', channelName);
+        return;
+      }
       const attempt = attemptRef.current + 1; // next attempt number
-      const rawDelay = Math.min(maxDelayMs, baseDelayMs * (2 ** (attempt - 1)));
+      const rawDelay = Math.min(maxDelayMs, baseDelayMs * 2 ** (attempt - 1));
       const jitter = rawDelay * 0.2 * (Math.random() - 0.5); // +/-10%
       const delay = Math.max(150, Math.round(rawDelay + jitter));
       log('schedule retry', channelName, 'in', delay, 'ms reason=', reason, 'attempt', attempt);
@@ -75,7 +90,11 @@ export function useRealtimeChannel({
       attemptRef.current = attempt;
       removedRef.current = false; // reset removal for new channel instance
       if (channelRef.current) {
-        try { supabase.removeChannel(channelRef.current); } catch { /* ignore */ }
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch {
+          /* ignore */
+        }
         channelRef.current = null;
       }
       let ch;
@@ -84,13 +103,20 @@ export function useRealtimeChannel({
         ch = supabase
           .channel(channelName, { config: { broadcast: { ack: false } } })
           .on('postgres_changes', { event, schema, table, filter }, () => {
-            try { onChange && onChange(); } catch { /* ignore */ }
+            try {
+              onChange && onChange();
+            } catch {
+              /* ignore */
+            }
           })
           .subscribe((status) => {
             log('status', channelName, status, 'attempt', attemptRef.current);
             if (status === 'SUBSCRIBED') {
               // Channel joined; clear join timeout
-              if (cleanupTimerRef.current) { clearTimeout(cleanupTimerRef.current); cleanupTimerRef.current = null; }
+              if (cleanupTimerRef.current) {
+                clearTimeout(cleanupTimerRef.current);
+                cleanupTimerRef.current = null;
+              }
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
               removeChannel();
               scheduleRetry(status);
@@ -107,12 +133,19 @@ export function useRealtimeChannel({
         if (cleanupTimerRef.current) clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = setTimeout(() => {
           try {
-            if (!cancelled && channelRef.current && channelRef.current.state !== 'joined' && !removedRef.current) {
+            if (
+              !cancelled &&
+              channelRef.current &&
+              channelRef.current.state !== 'joined' &&
+              !removedRef.current
+            ) {
               log('join timeout remove', channelName);
               removeChannel();
               scheduleRetry('JOIN_TIMEOUT');
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }, joinTimeoutMs);
       } catch (e) {
         log('subscribe error immediate', channelName, e?.message || e);
@@ -129,9 +162,24 @@ export function useRealtimeChannel({
         if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
         if (cleanupTimerRef.current) clearTimeout(cleanupTimerRef.current);
         removeChannel();
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
-  }, [enabled, channelName, event, schema, table, filter, onChange, joinTimeoutMs, maxRetries, baseDelayMs, maxDelayMs, debug]);
+  }, [
+    enabled,
+    channelName,
+    event,
+    schema,
+    table,
+    filter,
+    onChange,
+    joinTimeoutMs,
+    maxRetries,
+    baseDelayMs,
+    maxDelayMs,
+    debug,
+  ]);
 }
 
 export default useRealtimeChannel;

@@ -28,6 +28,8 @@ if (!rootEl) {
 
 // Defer vitals collection until after initial paint.
 if (typeof window !== 'undefined') {
-  requestIdleCallback ? requestIdleCallback(() => initWebVitals()) : setTimeout(() => initWebVitals(), 1500);
+  requestIdleCallback
+    ? requestIdleCallback(() => initWebVitals())
+    : setTimeout(() => initWebVitals(), 1500);
   warmMotion();
 }

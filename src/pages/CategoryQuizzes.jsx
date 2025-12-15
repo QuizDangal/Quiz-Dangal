@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
 import { supabase } from '@/lib/customSupabaseClient';
+import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
 import { formatDateOnly, formatTimeOnly, getPrizeDisplay, prefetchRoute } from '@/lib/utils';
@@ -12,22 +13,77 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SEO from '@/components/SEO';
 
-function statusBadge(s) {
+function _statusBadge(s) {
   const base = 'px-2 py-0.5 rounded-full text-xs font-semibold';
   if (s === 'active') return base + ' bg-green-600/15 text-green-400 border border-green-700/40';
   if (s === 'upcoming') return base + ' bg-blue-600/15 text-blue-300 border border-blue-700/40';
-  if (s === 'finished' || s === 'completed') return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
+  if (s === 'finished' || s === 'completed')
+    return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
   return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
 }
 
 function categoryMeta(slug = '') {
   const s = String(slug || '').toLowerCase();
-  if (s.includes('opinion')) return { title: 'Opinion Quizzes', emoji: '💬', Icon: MessageSquare, from: 'from-indigo-600/30', to: 'to-fuchsia-600/30', ring: 'ring-fuchsia-500/30' };
-  if (s.includes('gk')) return { title: 'GK Quizzes', emoji: '🧠', Icon: Brain, from: 'from-emerald-600/30', to: 'to-teal-600/30', ring: 'ring-emerald-500/30' };
-  if (s.includes('sport')) return { title: 'Sports Quizzes', emoji: '🏆', Icon: Trophy, from: 'from-orange-600/30', to: 'to-red-600/30', ring: 'ring-orange-500/30' };
-  if (s.includes('movie')) return { title: 'Movie Quizzes', emoji: '🎬', Icon: Clapperboard, from: 'from-violet-600/30', to: 'to-indigo-600/30', ring: 'ring-violet-500/30' };
-  return { title: `${slug} Quizzes`, emoji: '⭐', Icon: MessageSquare, from: 'from-sky-600/30', to: 'to-indigo-600/30', ring: 'ring-sky-500/30' };
+  if (s.includes('opinion'))
+    return {
+      title: 'Opinion Quizzes',
+      emoji: '💬',
+      Icon: MessageSquare,
+      from: 'from-indigo-600/30',
+      to: 'to-fuchsia-600/30',
+      ring: 'ring-fuchsia-500/30',
+    };
+  if (s.includes('gk'))
+    return {
+      title: 'GK Quizzes',
+      emoji: '🧠',
+      Icon: Brain,
+      from: 'from-emerald-600/30',
+      to: 'to-teal-600/30',
+      ring: 'ring-emerald-500/30',
+    };
+  if (s.includes('sport'))
+    return {
+      title: 'Sports Quizzes',
+      emoji: '🏆',
+      Icon: Trophy,
+      from: 'from-orange-600/30',
+      to: 'to-red-600/30',
+      ring: 'ring-orange-500/30',
+    };
+  if (s.includes('movie'))
+    return {
+      title: 'Movie Quizzes',
+      emoji: '🎬',
+      Icon: Clapperboard,
+      from: 'from-violet-600/30',
+      to: 'to-indigo-600/30',
+      ring: 'ring-violet-500/30',
+    };
+  return {
+    title: `${slug} Quizzes`,
+    emoji: '⭐',
+    Icon: MessageSquare,
+    from: 'from-sky-600/30',
+    to: 'to-indigo-600/30',
+    ring: 'ring-sky-500/30',
+  };
 }
+
+const slotStartMs = (slot) => (slot?.start_time ? new Date(slot.start_time).getTime() : null);
+const slotEndMs = (slot) => (slot?.end_time ? new Date(slot.end_time).getTime() : null);
+const isSlotLiveWindow = (slot) => {
+  const start = slotStartMs(slot);
+  const end = slotEndMs(slot);
+  if (!start || !end) return false;
+  const now = Date.now();
+  return now >= start && now < end;
+};
+const isSlotUpcomingWindow = (slot) => {
+  const start = slotStartMs(slot);
+  if (!start) return false;
+  return Date.now() < start;
+};
 
 const CategoryQuizzes = () => {
   const { slug } = useParams();
@@ -35,18 +91,44 @@ const CategoryQuizzes = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isSubscribed, subscribeToPush } = usePushNotifications();
-  const [quizzes, setQuizzes] = useState([]);
+  const [quizzes, setQuizzes] = useState([]); // legacy quizzes list fallback
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [counts, setCounts] = useState({}); // { [quizId]: joined (pre+joined+completed as joined) }
   const [joinedMap, setJoinedMap] = useState({}); // quiz_id -> 'joined' | 'pre'
   const [tick, setTick] = useState(0); // reintroduced for live countdown display recalculation
 
+  // Slot mode state
+  const [slots, setSlots] = useState([]);
+  const [slotMode, setSlotMode] = useState('detect'); // detect | slots | legacy
+  const [categoryAutoEnabled, setCategoryAutoEnabled] = useState(true);
+
+  const pollIntervalMs = 20000; // 20s for slot refresh
+
+  const loadSlots = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { slots: s, mode, auto } = await fetchSlotsForCategory(supabase, slug);
+      if (mode === 'slots') {
+        setSlots(s);
+        setSlotMode('slots');
+        setCategoryAutoEnabled(auto);
+      } else if (mode === 'legacy') {
+        // fallback legacy path – we still populate quizzes via existing fetch
+        setSlotMode('legacy');
+      } else if (mode === 'error') {
+        setSlotMode('legacy');
+      }
+    } catch {
+      setSlotMode('legacy');
+    }
+  }, [slug]);
+
   const fetchQuizzes = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('quizzes')
-  .select('id,title,category,start_time,end_time,status,prize_pool,prizes,prize_type')
+        .select('id,title,category,start_time,end_time,status,prize_pool,prizes,prize_type')
         .eq('category', slug)
         .order('start_time', { ascending: true });
       if (error) throw error;
@@ -58,28 +140,64 @@ const CategoryQuizzes = () => {
     }
   }, [slug, toast]);
 
-  useEffect(() => { setLoading(true); fetchQuizzes(); }, [fetchQuizzes]);
+  useEffect(() => {
+    setLoading(true);
+    // Attempt slots first
+    loadSlots().finally(() => {
+      // If not in slots mode after attempt, load legacy quizzes
+      if (slotMode !== 'slots') fetchQuizzes();
+      else setLoading(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchQuizzes, loadSlots, slug]);
+
+  // Poll slots if slot mode active
+  useEffect(() => {
+    if (slotMode !== 'slots') return;
+    const id = setInterval(() => {
+      loadSlots();
+    }, pollIntervalMs);
+    return () => clearInterval(id);
+  }, [slotMode, loadSlots]);
 
   // Live countdown tick (only when there are active/upcoming quizzes)
   useEffect(() => {
     const now = Date.now();
-    const hasLive = (quizzes || []).some(q => {
+    const hasLive = (quizzes || []).some((q) => {
       const st = q.start_time ? new Date(q.start_time).getTime() : 0;
       const et = q.end_time ? new Date(q.end_time).getTime() : 0;
       return (st && now < st) || (st && et && now >= st && now < et);
     });
     if (!hasLive) return;
-    const id = setInterval(() => setTick(t => (t + 1) % 1_000_000), 1000);
+    const id = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
     return () => clearInterval(id);
   }, [quizzes]);
+
+  useEffect(() => {
+    if (slotMode !== 'slots') return;
+    const now = Date.now();
+    const hasSlotActivity = (slots || []).some((s) => {
+      const st = s.start_time ? new Date(s.start_time).getTime() : 0;
+      const et = s.end_time ? new Date(s.end_time).getTime() : 0;
+      return (st && now < st) || (st && et && now >= st && now < et);
+    });
+    if (!hasSlotActivity) return;
+    const id = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
+    return () => clearInterval(id);
+  }, [slots, slotMode]);
 
   // Fetch participant counts using bulk RPC; joined = pre_joined + joined(completed included)
   useEffect(() => {
     const run = async () => {
       try {
-        const ids = (quizzes || []).map(q => q.id);
-        if (!ids.length) { setCounts({}); return; }
-        const { data, error } = await supabase.rpc('get_engagement_counts_many', { p_quiz_ids: ids });
+        const ids = (quizzes || []).map((q) => q.id);
+        if (!ids.length) {
+          setCounts({});
+          return;
+        }
+        const { data, error } = await supabase.rpc('get_engagement_counts_many', {
+          p_quiz_ids: ids,
+        });
         if (error) throw error;
         const map = {};
         for (const row of data || []) {
@@ -88,7 +206,9 @@ const CategoryQuizzes = () => {
           map[row.quiz_id] = pre + joined;
         }
         setCounts(map);
-  } catch (e) { /* fetch categories fail */ }
+      } catch (e) {
+        /* fetch categories fail */
+      }
     };
     if (quizzes && quizzes.length) run();
   }, [quizzes]);
@@ -96,9 +216,12 @@ const CategoryQuizzes = () => {
   // Fetch whether current user has joined or pre-joined each quiz
   useEffect(() => {
     const run = async () => {
-      if (!user || !quizzes?.length) { setJoinedMap({}); return; }
+      if (!user || !quizzes?.length) {
+        setJoinedMap({});
+        return;
+      }
       try {
-        const ids = quizzes.map(q => q.id);
+        const ids = quizzes.map((q) => q.id);
         const { data, error } = await supabase
           .from('quiz_participants')
           .select('quiz_id,status')
@@ -119,7 +242,11 @@ const CategoryQuizzes = () => {
 
   const handleJoin = async (q) => {
     if (!user) {
-      toast({ title: 'Login required', description: 'Please sign in to join the quiz.', variant: 'destructive' });
+      toast({
+        title: 'Login required',
+        description: 'Please sign in to join the quiz.',
+        variant: 'destructive',
+      });
       navigate('/login');
       return;
     }
@@ -127,42 +254,59 @@ const CategoryQuizzes = () => {
     setJoiningId(q.id);
     // Try to enable push notifications on first join/pre-join (fire-and-forget; don't block join)
     try {
-      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !isSubscribed) {
+      if (
+        typeof Notification !== 'undefined' &&
+        Notification.permission !== 'granted' &&
+        !isSubscribed
+      ) {
         // Do not await to avoid stalling join on desktop
-        Promise.resolve().then(() => subscribeToPush()).catch(() => {});
+        Promise.resolve()
+          .then(() => subscribeToPush())
+          .catch(() => {});
       }
-    } catch { /* ignore push errors */ }
+    } catch {
+      /* ignore push errors */
+    }
     try {
       const result = await smartJoinQuiz({ supabase, quiz: q, user });
       if (result.status === 'error') throw result.error;
       if (result.status === 'already') {
-        setJoinedMap(prev => ({ ...prev, [q.id]: 'joined' }));
+        setJoinedMap((prev) => ({ ...prev, [q.id]: 'joined' }));
         toast({ title: 'Already Joined', description: 'You are in this quiz.' });
       } else if (result.status === 'joined') {
-        setJoinedMap(prev => ({ ...prev, [q.id]: 'joined' }));
+        setJoinedMap((prev) => ({ ...prev, [q.id]: 'joined' }));
         const rl = rateLimit(`join_${user?.id || 'anon'}`, { max: 4, windowMs: 8000 });
         if (!rl.allowed) {
-          toast({ title: 'Slow down', description: 'Please wait a moment before trying again.', variant: 'destructive' });
+          toast({
+            title: 'Slow down',
+            description: 'Please wait a moment before trying again.',
+            variant: 'destructive',
+          });
         } else {
           toast({ title: 'Joined!', description: 'Taking you to the quiz.' });
           navigate(`/quiz/${q.id}`);
         }
       } else if (result.status === 'pre_joined') {
-        setJoinedMap(prev => ({ ...prev, [q.id]: 'pre' }));
+        setJoinedMap((prev) => ({ ...prev, [q.id]: 'pre' }));
         toast({ title: 'Pre-joined!', description: 'We will remind you before start.' });
       } else if (result.status === 'scheduled_retry') {
-        setJoinedMap(prev => ({ ...prev, [q.id]: 'pre' }));
+        setJoinedMap((prev) => ({ ...prev, [q.id]: 'pre' }));
         toast({ title: 'Pre-joined!', description: 'Auto joining at start time.' });
       }
     } catch (err) {
-      toast({ title: 'Error', description: err?.message || 'Could not join quiz.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Could not join quiz.',
+        variant: 'destructive',
+      });
     } finally {
       setJoiningId(null);
     }
   };
 
   // Show ONLY Active + Upcoming quizzes (exclude recently finished)
-  const filtered = quizzes.filter(q => {
+  const filtered = quizzes.filter((q) => {
+    if (slotMode === 'slots') return false; // hide legacy list when in slot mode
     const now = Date.now();
     const st = q.start_time ? new Date(q.start_time).getTime() : 0;
     const et = q.end_time ? new Date(q.end_time).getTime() : 0;
@@ -172,79 +316,237 @@ const CategoryQuizzes = () => {
   });
 
   const meta = categoryMeta(slug);
-  
+
   // Header stats: active/upcoming counts and next start
   const nowHeader = Date.now();
-  const activeCount = (quizzes || []).reduce((acc, q) => {
-    const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-    const et = q.end_time ? new Date(q.end_time).getTime() : 0;
-    return acc + (st && et && nowHeader >= st && nowHeader < et ? 1 : 0);
-  }, 0);
-  const upcomingCount = (quizzes || []).reduce((acc, q) => {
-    const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-    return acc + (st && nowHeader < st ? 1 : 0);
-  }, 0);
-  const nextStartTs = (quizzes || [])
-    .map(q => q.start_time ? new Date(q.start_time).getTime() : null)
-    .filter(ts => ts && ts > nowHeader)
-    .sort((a,b) => a - b)[0] || null;
+  const slotSource = slotMode === 'slots';
+  const liveItems = slotSource ? slots : quizzes || [];
+  const activeCount = slotSource
+    ? liveItems.filter((slot) => isSlotLiveWindow(slot)).length
+    : liveItems.reduce((acc, q) => {
+        const st = q.start_time ? new Date(q.start_time).getTime() : 0;
+        const et = q.end_time ? new Date(q.end_time).getTime() : 0;
+        return acc + (st && et && nowHeader >= st && nowHeader < et ? 1 : 0);
+      }, 0);
+  const upcomingCount = slotSource
+    ? liveItems.filter((slot) => isSlotUpcomingWindow(slot)).length
+    : liveItems.reduce((acc, q) => {
+        const st = q.start_time ? new Date(q.start_time).getTime() : 0;
+        return acc + (st && nowHeader < st ? 1 : 0);
+      }, 0);
+  const nextStartTs = slotSource
+    ? liveItems
+        .map((slot) => slotStartMs(slot))
+        .filter((ts) => ts && ts > nowHeader)
+        .sort((a, b) => a - b)[0] || null
+    : liveItems
+        .map((q) => (q.start_time ? new Date(q.start_time).getTime() : null))
+        .filter((ts) => ts && ts > nowHeader)
+        .sort((a, b) => a - b)[0] || null;
+  // Slot classification (only in slot mode)
+  const { live: liveSlot, next: nextSlot } = classifyThreeSlots(slots);
+
+  const renderSlotCard = (slot, label) => {
+    if (!slot) return null;
+    const now = Date.now();
+    const st = slotStartMs(slot);
+    const et = slotEndMs(slot);
+    const isActive = isSlotLiveWindow(slot);
+    const isPaused = slot.status === 'paused';
+    const isFinished = slot.status === 'finished' || (et && now >= et);
+    const upcoming = isSlotUpcomingWindow(slot);
+    const secs =
+      upcoming && st
+        ? Math.max(0, Math.floor((st - now) / 1000))
+        : isActive && et
+          ? Math.max(0, Math.floor((et - now) / 1000))
+          : null;
+    const prizes = Array.isArray(slot.prizes) ? slot.prizes : [];
+    const p1 = prizes[0] ?? 0;
+    const p2 = prizes[1] ?? 0;
+    const p3 = prizes[2] ?? 0;
+    const participantsJoined = slot.participants_total || slot.participants_joined || 0;
+    const qCount = slot.questions_count || 10;
+    const stopped = !categoryAutoEnabled && !isActive && !upcoming;
+    const badge = (() => {
+      if (isActive && !isFinished) return 'LIVE';
+      if (isPaused) return 'PAUSED';
+      if (stopped) return 'STOPPED';
+      if (upcoming) return 'UPCOMING';
+      if (isFinished) return 'FINISHED';
+      return (slot.status || '').toUpperCase();
+    })();
+    const cta = isFinished ? 'Results' : isActive ? 'Join' : upcoming ? 'Preview' : 'View';
+    return (
+      <div
+        key={slot.slotId}
+        className={`p-[1px] rounded-xl sm:rounded-2xl ${isActive ? 'bg-gradient-to-r from-emerald-500/60 to-green-500/60' : 'bg-gradient-to-r from-indigo-500/40 via-violet-500/30 to-fuchsia-500/40'}`}
+      >
+        <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4 lg:p-5">
+          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-[10px] sm:text-xs font-semibold">
+              {label}
+            </span>
+            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[11px] font-bold ${
+              badge === 'LIVE' ? 'bg-rose-600 text-white' :
+              badge === 'UPCOMING' ? 'bg-sky-600 text-white' :
+              badge === 'PAUSED' ? 'bg-amber-600 text-white' :
+              'bg-slate-700 text-slate-300'
+            }`}>
+              {badge}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-400 mb-2 sm:mb-3">
+            <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
+              <span className="text-[9px] sm:text-[10px] text-slate-500">Start</span> {slot.start_time ? formatTimeOnly(slot.start_time) : '—'}
+            </div>
+            <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
+              <span className="text-[9px] sm:text-[10px] text-slate-500">End</span> {slot.end_time ? formatTimeOnly(slot.end_time) : '—'}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs mb-2 sm:mb-3">
+            <span className="px-1.5 sm:px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-600/30">🥇 {p1}</span>
+            <span className="px-1.5 sm:px-2 py-1 rounded bg-sky-500/15 text-sky-300 border border-sky-600/30">🥈 {p2}</span>
+            <span className="px-1.5 sm:px-2 py-1 rounded bg-violet-500/15 text-violet-300 border border-violet-600/30">🥉 {p3}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+            <div className="text-[10px] sm:text-xs text-slate-500">
+              {qCount} Qs • {participantsJoined} joined
+            </div>
+            {secs !== null && (
+              <div className="text-xs sm:text-sm font-semibold text-indigo-300">
+                {upcoming ? 'In' : 'Ends'} {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/quiz/slot/${slot.slotId}`)}
+            onMouseEnter={() => prefetchRoute(`/quiz/slot/${slot.slotId}`)}
+            className={`w-full h-9 sm:h-10 lg:h-11 rounded-lg text-xs sm:text-sm font-bold text-white transition ${
+              isActive
+                ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90'
+                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90'
+            }`}
+          >
+            {cta}
+          </button>
+        </div>
+      </div>
+    );
+  };
+  // Push reminder scheduling for next slot (simple local toast) – front-end only placeholder
+  useEffect(() => {
+    if (!nextSlot) return;
+    const st = nextSlot.start_time ? new Date(nextSlot.start_time).getTime() : null;
+    if (!st) return;
+    const now = Date.now();
+    const delta = st - now - 60000; // 1 min before start
+    if (delta <= 0 || delta > 30 * 60 * 1000) return; // ignore if too near or too far (>30m)
+    const id = setTimeout(() => {
+      try {
+        toast({
+          title: 'Upcoming Slot',
+          description: '1 minute to start – be ready!',
+          duration: 4000,
+        });
+      } catch (e) {
+        /* ignore toast errors */
+      }
+    }, delta);
+    return () => clearTimeout(id);
+  }, [nextSlot, toast]);
 
   // Removed recent finished inclusion from display; do not mention in description
 
-  const canonical = typeof window !== 'undefined'
-    ? `${window.location.origin}/category/${slug}/`
-    : `https://quizdangal.com/category/${slug}/`;
+  const canonical =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/category/${slug}/`
+      : `https://quizdangal.com/category/${slug}/`;
   // Ensures legacy SEO template referencing hasRecent does not break lint; we deliberately exclude recent finished quizzes now.
   const hasRecent = false;
 
   return (
-    <div className="container mx-auto px-4 py-3 text-foreground">
+    <div className="px-3 sm:px-4 pt-16 sm:pt-20 pb-6">
       <SEO
         title={`${meta.title} – Quiz Dangal`}
         description={`Active and upcoming quizzes${hasRecent ? ' + recent results' : ''} in ${meta.title}.`}
         canonical={canonical}
         robots="index, follow"
       />
-      <span className="hidden" aria-hidden>{tick}</span>
-      {/* Hero Header */}
-      <div className={`relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r ${meta.from} ${meta.to} shadow-xl mb-4`}>
-        <div className="absolute inset-0 pointer-events-none" style={{background:'radial-gradient(700px 180px at -10% -20%, rgba(255,255,255,0.07), transparent), radial-gradient(420px 100px at 110% 10%, rgba(255,255,255,0.05), transparent)'}} />
-        <div className="px-4 py-4 sm:px-5 sm:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Left: Title and meta */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="shrink-0 grid place-items-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl ring-2 ring-white/20 bg-white/10 text-white text-xl sm:text-2xl shadow" aria-hidden>
+      <span className="hidden" aria-hidden>
+        {tick}
+      </span>
+      <div className="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto space-y-4">
+        {/* Category Header - Responsive */}
+        <div className="p-[1px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
+          <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4 lg:p-5">
+            <div className="flex items-center gap-3 sm:gap-4 mb-2">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-lg sm:text-2xl lg:text-3xl">
                 {meta.emoji}
               </div>
-              <div className="min-w-0">
-                <h1 className="truncate text-base sm:text-xl font-extrabold text-white tracking-tight drop-shadow-sm">{meta.title}</h1>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/85">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-200 border border-emerald-500/30">{activeCount} live</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-600/20 text-sky-200 border border-sky-500/30">{upcomingCount} upcoming</span>
-                  {nextStartTs && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-white/90 border border-white/20">
-                      <Clock className="w-3.5 h-3.5" /> Next: {formatDateOnly(nextStartTs)} • {formatTimeOnly(nextStartTs)}
-                    </span>
-                  )}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">{meta.title}</h1>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-1">
+                  <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-emerald-600/20 text-emerald-300 border border-emerald-600/30">
+                    {activeCount} live
+                  </span>
+                  <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-sky-600/20 text-sky-300 border border-sky-600/30">
+                    {upcomingCount} upcoming
+                  </span>
                 </div>
               </div>
             </div>
-
-            {/* Right: removed filter pills per request */}
+            {nextStartTs && (
+              <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-400">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                Next: {formatDateOnly(nextStartTs)} • {formatTimeOnly(nextStartTs)}
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="grid gap-3">
+      {slotMode === 'slots' ? (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-40 sm:h-48 lg:h-52 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <>
+              {liveSlot || nextSlot ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {renderSlotCard(liveSlot, 'Live now')}
+                  {renderSlotCard(nextSlot, 'Upcoming')}
+                </div>
+              ) : (
+                <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6 text-center text-sm sm:text-base text-slate-400">
+                  Schedule will appear once today’s slots go live.
+                </div>
+              )}
+            </>
+          )}
+        </>
+      ) : loading ? (
+        <div className="grid gap-3 sm:gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl bg-slate-800/60 border border-slate-700/60 animate-pulse" />
+            <div
+              key={i}
+              className="h-24 sm:h-28 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
+            />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-muted-foreground py-16">No quizzes in this category yet.</div>
+        <div className="text-center text-muted-foreground py-16">
+          No quizzes in this category yet.
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filtered.map((q, idx) => {
             // use tick to trigger re-render every second
             const now = Date.now();
@@ -252,108 +554,91 @@ const CategoryQuizzes = () => {
             const et = q.end_time ? new Date(q.end_time).getTime() : null;
             const isActive = st && et && now >= st && now < et;
             const isUpcoming = st && now < st;
-            const isRecentCompleted = et && now >= et && (now - et) <= (RECENT_COMPLETED_GRACE_MIN * 60 * 1000);
+            const _isRecentCompleted =
+              et && now >= et && now - et <= RECENT_COMPLETED_GRACE_MIN * 60 * 1000;
             const canJoin = isActive || isUpcoming;
-            const secs = isUpcoming && st ? Math.max(0, Math.floor((st - now)/1000)) : (isActive && et ? Math.max(0, Math.floor((et - now)/1000)) : null);
-                  const prizes = Array.isArray(q.prizes) ? q.prizes : [];
-                  const prizeType = q.prize_type || 'coins';
-                  const p1 = prizes[0] ?? 0;
-                  const p2 = prizes[1] ?? 0;
-                  const p3 = prizes[2] ?? 0;
-                  const formatPrize = (value) => {
-                    const display = getPrizeDisplay(prizeType, value, { fallback: 0 });
-                    // Plain text only, no coin icon
-                    return display.formatted;
-                  };
+            const secs =
+              isUpcoming && st
+                ? Math.max(0, Math.floor((st - now) / 1000))
+                : isActive && et
+                  ? Math.max(0, Math.floor((et - now) / 1000))
+                  : null;
+            const prizes = Array.isArray(q.prizes) ? q.prizes : [];
+            const prizeType = q.prize_type || 'coins';
+            const p1 = prizes[0] ?? 0;
+            const p2 = prizes[1] ?? 0;
+            const p3 = prizes[2] ?? 0;
+            const formatPrize = (value) => {
+              const display = getPrizeDisplay(prizeType, value, { fallback: 0 });
+              // Plain text only, no coin icon
+              return display.formatted;
+            };
             const joined = counts[q.id] || 0;
             const myStatus = joinedMap[q.id];
             // unified UX: show only JOIN/JOINED; treat pre-joined as Joined in UI
             const already = !!myStatus; // 'pre' or 'joined' both count as joined for display
-            const totalWindow = (st && et) ? Math.max(1, et - st) : null;
-            const progressed = isActive && totalWindow ? Math.min(100, Math.max(0, Math.round(((now - st) / totalWindow) * 100))) : null;
+            const totalWindow = st && et ? Math.max(1, et - st) : null;
+            const progressed =
+              isActive && totalWindow
+                ? Math.min(100, Math.max(0, Math.round(((now - st) / totalWindow) * 100)))
+                : null;
             return (
               <m.div
                 key={q.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.03 }}
+                transition={{ delay: idx * 0.02 }}
                 onClick={() => navigate(`/quiz/${q.id}`)}
-                className={`relative overflow-hidden rounded-2xl border ${isActive ? 'border-emerald-700/50' : 'border-slate-800'} bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-900/60 shadow-xl cursor-pointer group hover:-translate-y-0.5 transition-transform`}
+                className="cursor-pointer"
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quiz/${q.id}`); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') navigate(`/quiz/${q.id}`);
+                }}
               >
-                {/* Background accents */}
-                <div className="absolute inset-0 pointer-events-none" style={{background:'radial-gradient(1200px 300px at -10% -10%, rgba(99,102,241,0.06), transparent), radial-gradient(900px 200px at 110% 20%, rgba(16,185,129,0.05), transparent)'}} />
-
-                {/* Status chip (top-right, avoids title overlap) */}
-                <div className="absolute top-3 right-3 z-10 flex gap-2">
-                  {isActive && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-widest bg-rose-600 text-white ring-1 ring-rose-300/50 shadow">LIVE</span>
-                  )}
-                  {isUpcoming && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-widest bg-sky-600 text-white ring-1 ring-sky-300/50 shadow">SOON</span>
-                  )}
-                  {!isActive && !isUpcoming && isRecentCompleted && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-widest bg-slate-700 text-white ring-1 ring-slate-400/40 shadow">RECENT</span>
-                  )}
-                </div>
-                <div className="p-4 sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      {/* Title Row */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-full font-semibold text-slate-100 text-base sm:text-lg whitespace-normal break-words leading-snug pr-12 sm:pr-16">{q.title}</div>
-                        <span className={statusBadge(isActive ? 'active' : (isUpcoming ? 'upcoming' : 'finished'))}>{isActive ? 'active' : (isUpcoming ? 'upcoming' : 'finished')}{(!isActive && !isUpcoming && isRecentCompleted) ? ' (recent)' : ''}</span>
-                        {myStatus && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${isActive ? 'bg-emerald-500/15 text-emerald-300 border-emerald-700/40' : 'bg-indigo-500/15 text-indigo-300 border-indigo-700/40'}`}>
-                            Joined
-                          </span>
-                        )}
+                <div className={`p-[1px] rounded-xl sm:rounded-2xl ${isActive ? 'bg-gradient-to-r from-emerald-500/60 to-green-500/60' : 'bg-gradient-to-r from-indigo-500/40 via-violet-500/30 to-fuchsia-500/40'}`}>
+                  <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-sm sm:text-base font-bold text-white flex-1 min-w-0 line-clamp-2">{q.title}</h3>
+                      <div className="shrink-0 flex items-center gap-1">
+                        {isActive && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold bg-rose-600 text-white">LIVE</span>}
+                        {isUpcoming && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold bg-sky-600 text-white">SOON</span>}
+                        {myStatus && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/40">Joined</span>}
                       </div>
-
-                      {/* Prize Chips (more attractive) */}
-                      <div className="mt-2 flex items-center gap-2 text-xs">
-                        <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-400/10 text-amber-200 border border-amber-500/30 shadow-sm">🥇 {formatPrize(p1)}</span>
-                        <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500/20 to-sky-400/10 text-sky-200 border border-sky-500/30 shadow-sm">🥈 {formatPrize(p2)}</span>
-                        <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-violet-400/10 text-violet-200 border border-violet-500/30 shadow-sm">🥉 {formatPrize(p3)}</span>
+                    </div>
+                    {/* Prize chips */}
+                    <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs mb-2">
+                      <span className="px-1.5 sm:px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-600/30">🥇 {formatPrize(p1)}</span>
+                      <span className="px-1.5 sm:px-2 py-1 rounded bg-sky-500/15 text-sky-300 border border-sky-600/30">🥈 {formatPrize(p2)}</span>
+                      <span className="px-1.5 sm:px-2 py-1 rounded bg-violet-500/15 text-violet-300 border border-violet-600/30">🥉 {formatPrize(p3)}</span>
+                    </div>
+                    {/* Time info */}
+                    <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-400 mb-2">
+                      <span>{q.start_time ? formatDateOnly(q.start_time) : '—'}</span>
+                      <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
+                        {q.start_time ? formatTimeOnly(q.start_time) : '—'} - {q.end_time ? formatTimeOnly(q.end_time) : '—'}
+                      </span>
+                    </div>
+                    {/* Stats row */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500">
+                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                        {joined} joined
                       </div>
-
-                      {/* Date once + Time-only chips */}
-                      <div className="mt-2">
-                        <div className="text-[11px] text-slate-400">{q.start_time ? formatDateOnly(q.start_time) : '—'}</div>
-                        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-300">
-                          <div className="bg-slate-800/50 border border-slate-700 rounded-md px-2 py-1">
-                            <span className="uppercase text-[9px] text-slate-400">Start</span>
-                            <div>{q.start_time ? formatTimeOnly(q.start_time) : '—'}</div>
-                          </div>
-                          <div className="bg-slate-800/50 border border-slate-700 rounded-md px-2 py-1">
-                            <span className="uppercase text-[9px] text-slate-400">End</span>
-                            <div>{q.end_time ? formatTimeOnly(q.end_time) : '—'}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Countdown */}
                       {secs !== null && (
-                        <div className="mt-2 text-sm font-semibold text-indigo-300">
-                          {isUpcoming ? 'Starts in' : 'Ends in'} {Math.floor(secs/60).toString().padStart(2,'0')}:{(secs%60).toString().padStart(2,'0')}
-                        </div>
-                      )}
-
-                      {/* Engagement summary: single joined shows both joined + pre-joined */}
-                      <div className="mt-1 flex items-center gap-4 text-xs text-slate-400">
-                        <span className="inline-flex items-center"><Users className="w-3.5 h-3.5 mr-1" />{joined} joined</span>
-                      </div>
-                      {progressed !== null && (
-                        <div className="mt-2 w-full bg-slate-800/50 border border-slate-700/70 rounded-full h-1 overflow-hidden">
-                          <div className="h-1 bg-emerald-500/80" style={{ width: `${progressed}%` }} />
+                        <div className="text-xs sm:text-sm font-semibold text-indigo-300">
+                          {isUpcoming ? 'In' : 'Ends'} {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
                         </div>
                       )}
                     </div>
-                  </div>
-                  {/* Bottom action: JOIN/JOINED button; card itself opens lobby */}
-                  <div className="mt-3 flex">
+                    {/* Progress bar */}
+                    {progressed !== null && (
+                      <div className="mb-2 w-full bg-slate-800 rounded-full h-1 sm:h-1.5 overflow-hidden">
+                        <div className="h-full bg-emerald-500" style={{ width: `${progressed}%` }} />
+                      </div>
+                    )}
+                    {/* CTA Button */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -362,14 +647,14 @@ const CategoryQuizzes = () => {
                         else handleJoin(q);
                       }}
                       onMouseEnter={() => prefetchRoute('/quiz')}
-                      onFocus={() => prefetchRoute('/quiz')}
                       disabled={joiningId === q.id}
-                      aria-disabled={joiningId === q.id}
-                      className={`relative z-20 pointer-events-auto w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-extrabold border text-white transition focus:outline-none focus:ring-2 focus:ring-fuchsia-300 overflow-hidden ${joiningId === q.id ? 'opacity-80 cursor-wait' : 'hover:scale-[1.015] active:scale-[0.99] hover:shadow-[0_12px_24px_rgba(139,92,246,0.55)]'} shadow-[0_8px_18px_rgba(139,92,246,0.4)] border-violet-500/40 bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#9333ea,#c026d3)]`}
+                      className={`w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm font-bold text-white transition ${
+                        isActive
+                          ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90'
+                          : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90'
+                      } ${joiningId === q.id ? 'opacity-80' : ''}`}
                     >
-                      <span className="inline-flex items-center justify-center gap-2">
-                        {already ? 'JOINED' : (!canJoin ? 'VIEW' : (joiningId === q.id ? 'JOINING…' : 'JOIN'))}
-                      </span>
+                      {already ? 'JOINED' : !canJoin ? 'VIEW' : joiningId === q.id ? 'JOINING…' : 'JOIN'}
                     </button>
                   </div>
                 </div>
@@ -378,6 +663,7 @@ const CategoryQuizzes = () => {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 };

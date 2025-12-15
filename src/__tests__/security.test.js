@@ -3,7 +3,9 @@ import { escapeHTML, rateLimit, debounce } from '@/lib/security';
 
 describe('escapeHTML', () => {
   it('escapes basic characters', () => {
-    expect(escapeHTML('<script>"test" & more</script>')).toBe('&lt;script&gt;&quot;test&quot; &amp; more&lt;/script&gt;');
+    expect(escapeHTML('<script>"test" & more</script>')).toBe(
+      '&lt;script&gt;&quot;test&quot; &amp; more&lt;/script&gt;',
+    );
   });
   it('returns empty string for undefined', () => {
     expect(escapeHTML()).toBe('');
@@ -26,9 +28,14 @@ describe('debounce', () => {
   it('debounces calls (executes last)', async () => {
     return new Promise((resolve) => {
       let count = 0;
-      const fn = () => { count += 1; resolve(expect(count).toBe(1)); };
+      const fn = () => {
+        count += 1;
+        resolve(expect(count).toBe(1));
+      };
       const d = debounce(fn, 50);
-      d(); d(); d();
+      d();
+      d();
+      d();
     });
   });
 });

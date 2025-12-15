@@ -1,27 +1,40 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
-// removed Button import; using Link for consistency across actions
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
-import { Coins, Share2, Gift, Trophy, ArrowDownRight, ArrowUpRight, UserPlus, RefreshCcw, ShoppingBag, LogOut, Wallet as WalletIcon, Gamepad2 } from 'lucide-react';
+import {
+  Coins,
+  Share2,
+  Gift,
+  Trophy,
+  ArrowDownRight,
+  ArrowUpRight,
+  UserPlus,
+  RefreshCcw,
+  ShoppingBag,
+  LogOut,
+  Wallet as WalletIcon,
+  Gamepad2,
+  Clock,
+} from 'lucide-react';
 import SEO from '@/components/SEO';
-// useNavigate not needed; using Link for navigation
 
 const Wallet = () => {
-  // removed toast (unused)
   const { user, userProfile } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bouncing, setBouncing] = useState(false);
-  // burstKey animation removed (unused)
-  const [rippleKey, setRippleKey] = useState(0);
-  // Refer & Earn now opens as a full page (/refer). Modal toggle removed.
 
-  // Align with DB check constraint on transactions.type
-  const allowedTypes = useMemo(() => ['credit','reward','bonus','referral','daily_login','quiz_reward','purchase','debit','refund','join_fee','prize'], []);
-  const positiveTypes = useMemo(() => ['reward','bonus','credit','referral','refund','daily_login','quiz_reward','prize'], []);
+  const allowedTypes = useMemo(
+    () => ['credit', 'reward', 'bonus', 'referral', 'daily_login', 'quiz_reward', 'purchase', 'debit', 'refund', 'join_fee', 'prize'],
+    [],
+  );
+  const positiveTypes = useMemo(
+    () => ['reward', 'bonus', 'credit', 'referral', 'refund', 'daily_login', 'quiz_reward', 'prize'],
+    [],
+  );
 
   const fetchTransactions = useCallback(async () => {
     if (!user || !hasSupabaseConfig || !supabase) {
@@ -49,19 +62,21 @@ const Wallet = () => {
     }
   }, [user, allowedTypes]);
 
-  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
-  // Realtime updates via shared hook (insert only)
   const txRealtimeEnabled = (() => {
     try {
       if (typeof window === 'undefined') return false;
       if (!('WebSocket' in window)) return false;
       if (navigator && navigator.onLine === false) return false;
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return false;
-      if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
       return true;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   })();
+
   useRealtimeChannel({
     enabled: !!user?.id && txRealtimeEnabled && hasSupabaseConfig && !!supabase,
     channelName: user?.id ? `tx-updates-${user.id}` : undefined,
@@ -74,6 +89,7 @@ const Wallet = () => {
 
   const walletBalance = Number(userProfile?.wallet_balance || 0);
   const prevBalanceRef = useRef(walletBalance);
+  
   useEffect(() => {
     const prev = prevBalanceRef.current;
     if (walletBalance > prev) {
@@ -87,195 +103,169 @@ const Wallet = () => {
 
   const formatCoins = (n) => Number(n || 0).toLocaleString();
 
-  // Quick stats from the last 10 transactions (visible list)
-  // removed unused earnedLast10 / spentLast10 aggregates
-
   const txMeta = (type) => {
     const t = String(type || '').toLowerCase();
-    if (t.includes('ref')) return { icon: UserPlus, tint: 'bg-sky-500/15', ring: 'ring-sky-400/40', text: 'text-sky-200' };
-    if (t.includes('quiz') || t.includes('prize') || t.includes('reward')) return { icon: Trophy, tint: 'bg-emerald-500/10', ring: 'ring-emerald-400/40', text: 'text-emerald-200' };
-    if (t.includes('credit') || t.includes('daily')) return { icon: Coins, tint: 'bg-amber-500/15', ring: 'ring-amber-300/50', text: 'text-amber-200' };
-    if (t.includes('refund')) return { icon: RefreshCcw, tint: 'bg-indigo-500/15', ring: 'ring-indigo-400/40', text: 'text-indigo-200' };
-    if (t.includes('purchase')) return { icon: ShoppingBag, tint: 'bg-fuchsia-500/10', ring: 'ring-fuchsia-400/40', text: 'text-fuchsia-200' };
-    if (t.includes('debit') || t.includes('join') || t.includes('redeem') || t.includes('spend')) return { icon: LogOut, tint: 'bg-rose-500/10', ring: 'ring-rose-400/40', text: 'text-rose-200' };
-    return { icon: WalletIcon, tint: 'bg-slate-500/10', ring: 'ring-slate-400/40', text: 'text-slate-200' };
+    if (t.includes('ref')) return { icon: UserPlus, color: 'sky' };
+    if (t.includes('quiz') || t.includes('prize') || t.includes('reward')) return { icon: Trophy, color: 'emerald' };
+    if (t.includes('credit') || t.includes('daily')) return { icon: Coins, color: 'amber' };
+    if (t.includes('refund')) return { icon: RefreshCcw, color: 'indigo' };
+    if (t.includes('purchase')) return { icon: ShoppingBag, color: 'fuchsia' };
+    if (t.includes('debit') || t.includes('join')) return { icon: LogOut, color: 'rose' };
+    return { icon: WalletIcon, color: 'slate' };
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
   };
 
   return (
-  <div className="relative pt-20 mx-auto max-w-5xl px-4 py-6">
+    <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
       <SEO
         title="Wallet – Quiz Dangal"
         description="View your Quiz Dangal wallet balance, recent transactions, and referral earnings."
-  canonical="https://quizdangal.com/wallet/"
+        canonical="https://quizdangal.com/wallet/"
         robots="noindex, nofollow"
       />
       {/* Soft gradient mesh backdrop */}
       <div className="absolute inset-0 -z-10 opacity-70 mix-blend-screen [background-image:radial-gradient(circle_at_18%_28%,rgba(56,189,248,0.25),rgba(0,0,0,0)60%),radial-gradient(circle_at_82%_72%,rgba(192,132,252,0.22),rgba(0,0,0,0)65%),radial-gradient(circle_at_50%_50%,rgba(244,114,182,0.15),rgba(0,0,0,0)55%)]" />
-  <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-5 bg-gradient-to-r from-cyan-300 via-emerald-300 to-amber-300 bg-clip-text text-transparent tracking-tight">Wallet</h1>
+      
+      <m.div
+        className="container mx-auto px-4 py-6 max-w-lg"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header */}
+        <m.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <WalletIcon className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-white">My Wallet</h1>
+        </m.div>
 
-        {/* Balance + quick actions */}
-  <m.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="relative overflow-hidden rounded-3xl p-6 md:p-7 mb-6 bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-2xl"
+        {/* Balance Card - Premium */}
+        <m.div 
+          variants={itemVariants}
+          className="relative mb-5 rounded-2xl overflow-hidden border border-amber-500/20"
         >
-          {/* sheen */}
-          <m.div
-            aria-hidden
-            className="pointer-events-none absolute -inset-10 bg-[conic-gradient(from_210deg_at_50%_50%,rgba(99,102,241,0.15),rgba(139,92,246,0.1),rgba(56,189,248,0.12),transparent_60%)]"
-            initial={{ rotate: 0 }}
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 24, ease: 'linear' }}
-          />
-
-          <div className="relative flex flex-col md:flex-row md:items-center gap-6">
-            {/* balance */}
-            <div className="flex-1 flex items-start gap-4">
-              <m.div
-                animate={bouncing ? { scale: [1, 1.12, 1] } : {}}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="relative w-14 h-14 md:w-16 md:h-16 shrink-0 aspect-square rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.35)] ring-2 ring-amber-300/50 bg-[linear-gradient(140deg,#ffe9b0,#f9cf55,#f6b530,#f9cf55,#ffe9b0)]"
-                aria-hidden
-              >
-                <Coins size={28} className="text-white drop-shadow" />
-                <m.span className="pointer-events-none absolute inset-0 rounded-full" initial={{ opacity: 0.25 }} animate={{ opacity: [0.2, 0.45, 0.2] }} transition={{ duration: 2.2, repeat: Infinity }} />
-              </m.div>
-              <div className="min-w-0">
-                <div className="text-xs uppercase tracking-widest text-slate-300/70 font-semibold">Coins Balance</div>
-                <div className="text-[2.2rem] md:text-[2.6rem] font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-300 leading-tight drop-shadow-sm">
-                  {formatCoins(walletBalance)} <span className="text-base align-middle font-bold text-amber-200/90">coins</span>
-                </div>
-                <div className="mt-1 text-sm md:text-base text-slate-300/85">Win quizzes, refer friends, and redeem awesome prizes.</div>
-                {/* quick stats removed as requested */}
-                <div className="mt-2" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-900/40 via-slate-900 to-orange-900/30" />
+          
+          <div className="relative p-5 flex items-center gap-4">
+            {/* Coin Icon */}
+            <m.div
+              animate={bouncing ? { scale: [1, 1.2, 1] } : {}}
+              className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30"
+            >
+              <Coins className="w-7 h-7 text-white" />
+            </m.div>
+            
+            {/* Balance Info */}
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Your Balance</p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-black text-white">{formatCoins(walletBalance)}</span>
+                <span className="text-sm font-semibold text-amber-400">coins</span>
               </div>
             </div>
+          </div>
+        </m.div>
 
-            {/* quick actions - responsive for phone & pc; left: Refer & earn, right: Redeem */}
-            <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
-              <Link
-                to="/refer"
-                className="relative inline-flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-white shadow-[0_8px_22px_rgba(16,185,129,0.35)] hover:shadow-[0_12px_28px_rgba(16,185,129,0.45)] hover:scale-[1.02] active:scale-[0.98] transition border border-emerald-300/40"
-              >
-                <Share2 className="w-4 h-4" />
-                Refer & Earn
-              </Link>
-              <Link
-                to="/redemptions"
-                className="relative inline-flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_8px_22px_rgba(139,92,246,0.45)] hover:shadow-[0_12px_28px_rgba(139,92,246,0.55)] hover:scale-[1.02] active:scale-[0.98] transition border border-fuchsia-300/40"
-                onClick={() => setRippleKey((k) => k + 1)}
-              >
-                <m.span
-                  key={rippleKey}
-                  className="pointer-events-none absolute inset-0 m-auto rounded-full"
-                  initial={{ width: 0, height: 0, opacity: 0.35, background: 'radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 70%)' }}
-                  animate={{ width: 220, height: 220, opacity: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-                <Gift className="w-4 h-4" />
-                Redeem
-              </Link>
-              {/* Leaderboard/stats removed */}
-            </div>
-          </div>
-          {/* How to earn chips moved to their own section below */}
-  </m.div>
-        {/* Separated actions: Play Quizzes & Refer Friends */}
-  <m.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.08 }}
-          className="qd-card rounded-3xl p-5 md:p-6 mb-6 shadow-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base md:text-lg font-semibold bg-gradient-to-r from-cyan-200 via-emerald-200 to-amber-200 bg-clip-text text-transparent">Start earning</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Link to="/" className="group flex items-center gap-2 rounded-2xl px-4 py-2.5 bg-cyan-500/10 border border-cyan-400/30 hover:bg-cyan-500/15 transition">
-              <Gamepad2 className="w-4 h-4 text-cyan-300" />
-              <div>
-                <div className="text-cyan-200/90 text-xs font-semibold">Play Quizzes</div>
-                <div className="text-[11px] text-cyan-200/70">Win coins every game</div>
-              </div>
-            </Link>
-            <Link to="/refer" className="group flex items-center gap-2 rounded-2xl px-4 py-2.5 bg-emerald-500/10 border border-emerald-400/30 hover:bg-emerald-500/15 transition">
-              <UserPlus className="w-4 h-4 text-emerald-300" />
-              <div>
-                <div className="text-emerald-200/90 text-xs font-semibold">Refer Friends</div>
-                <div className="text-[11px] text-emerald-200/70">Get bonus coins</div>
-              </div>
-            </Link>
-            {/* spacer to balance grid on sm+ */}
-            <div className="hidden sm:block" />
-          </div>
-  </m.div>
-        {/* Featured rewards banner removed as requested */}
+        {/* Quick Actions - Compact Attractive Buttons */}
+        <m.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
+          <Link
+            to="/refer"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Share2 className="w-4 h-4 text-white" />
+            <span className="text-sm font-bold text-white">Refer & Earn</span>
+          </Link>
+          
+          <Link
+            to="/redemptions"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Gift className="w-4 h-4 text-white" />
+            <span className="text-sm font-bold text-white">Redeem</span>
+          </Link>
+        </m.div>
 
-        {/* Recent Activity */}
-  <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="qd-card rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        {/* Earn More Section */}
+        <m.div variants={itemVariants} className="mb-6">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+            <Gamepad2 className="w-5 h-5 text-cyan-400" />
+            <Link to="/" className="flex-1">
+              <p className="text-sm font-medium text-cyan-200">Play Quizzes to Earn More!</p>
+            </Link>
+          </div>
+        </m.div>
+
+        {/* Recent Transactions */}
+        <m.div variants={itemVariants}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold bg-gradient-to-r from-indigo-200 via-fuchsia-200 to-violet-200 bg-clip-text text-transparent drop-shadow">Recent Activity</h3>
+            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Recent Activity
+            </h3>
           </div>
 
           {loading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-3 rounded-lg bg-indigo-900/40 border border-indigo-800/60 shadow-sm">
-                  <div className="animate-pulse flex items-center justify-between">
-                    <div className="flex items-center space-x-3 w-2/3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-800/60" />
-                      <div className="flex-1">
-                        <div className="h-3 bg-indigo-800/60 rounded w-2/3 mb-2" />
-                        <div className="h-2.5 bg-indigo-800/60 rounded w-1/3" />
-                      </div>
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-3 rounded-xl bg-slate-800/40 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-slate-700" />
+                    <div className="flex-1">
+                      <div className="h-3 w-20 bg-slate-700 rounded mb-2" />
+                      <div className="h-2 w-14 bg-slate-700 rounded" />
                     </div>
-                    <div className="h-3 w-16 bg-indigo-800/60 rounded" />
+                    <div className="h-4 w-16 bg-slate-700 rounded" />
                   </div>
                 </div>
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="text-4xl mb-2">🪙</div>
-              <p className="text-slate-200 font-semibold">Wallet khali hai — quizzes jeeto aur coins banao!</p>
-              <div className="mt-4">
-                <Link to="/refer" className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
-                  <Share2 className="w-4 h-4" /> Refer & Earn
-                </Link>
-              </div>
+            <div className="text-center py-10 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700/50">
+              <div className="text-3xl mb-2">🪙</div>
+              <p className="text-slate-400 font-medium mb-1">No transactions yet</p>
+              <p className="text-xs text-slate-600">Play quizzes and start earning!</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {transactions.map((t, index) => {
+            <div className="space-y-2">
+              {transactions.map((t, idx) => {
                 const type = (t.type || '').toLowerCase();
                 const isPositive = positiveTypes.includes(type);
                 const meta = txMeta(type);
                 const Icon = meta.icon;
+                
                 return (
                   <m.div
                     key={t.id}
                     initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0, scale: [0.99, 1] }}
-                    transition={{ duration: 0.25, delay: index * 0.06 }}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-900/40 via-slate-900/20 to-indigo-900/30 rounded-xl border border-indigo-700/60 hover:border-indigo-400/60 shadow-sm hover:shadow-lg transition"
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                    className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`relative w-10 h-10 rounded-full flex items-center justify-center ring-2 ${meta.ring} ${meta.tint}`}>
-                        <Icon className="w-5 h-5 text-white/90" />
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full bg-${meta.color}-500/20 flex items-center justify-center`}>
+                        <Icon className={`w-4 h-4 text-${meta.color}-400`} />
                       </div>
-                      <div className="min-w-0">
-                        <p className={`font-semibold tracking-wide text-sm leading-tight ${meta.text} truncate`}>
-                          {t.type ? t.type.charAt(0).toUpperCase() + t.type.slice(1) : 'Transaction'}
+                      <div>
+                        <p className="text-sm font-medium text-slate-200 capitalize">{t.type || 'Transaction'}</p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(t.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </p>
-                        <p className="text-slate-400/80 text-[11px] font-mono">{new Date(t.created_at).toLocaleString()}</p>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 font-extrabold text-sm tabular-nums tracking-wide ${isPositive ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    
+                    <div className={`flex items-center gap-1 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                      {isPositive ? '+' : '-'}{formatCoins(Math.abs(Number(t.amount) || 0))}
-                      <span className="text-[10px] uppercase tracking-wider text-slate-400/70 font-semibold">coins</span>
+                      <span className="font-bold text-sm">{isPositive ? '+' : '-'}{formatCoins(Math.abs(Number(t.amount) || 0))}</span>
                     </div>
                   </m.div>
                 );

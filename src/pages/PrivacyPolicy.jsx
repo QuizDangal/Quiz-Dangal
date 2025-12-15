@@ -66,9 +66,7 @@ const sections = [
   {
     icon: Repeat,
     title: '8. Changes to Privacy Policy',
-    content: [
-      'We may update this policy and will post changes in the app.',
-    ],
+    content: ['We may update this policy and will post changes in the app.'],
   },
   {
     icon: Database,
@@ -101,7 +99,7 @@ const PrivacyPolicy = () => {
           title="Privacy Policy – Quiz Dangal"
           description="How Quiz Dangal collects, uses, stores, and protects your personal data and quiz activity."
           canonical="https://quizdangal.com/privacy-policy/"
-          alternateLocales={['hi_IN','en_US']}
+          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'quiz dangal privacy',
             'quiz app privacy policy',
@@ -118,7 +116,8 @@ const PrivacyPolicy = () => {
             <span className="text-sm">Last Updated: November 1, 2025</span>
           </div>
           <p className="text-lg text-slate-300 leading-relaxed max-w-3xl mx-auto">
-            At Quiz Dangal, we value your privacy and are committed to protecting your personal data. By using the app, you agree to this Privacy Policy.
+            At Quiz Dangal, we value your privacy and are committed to protecting your personal
+            data. By using the app, you agree to this Privacy Policy.
           </p>
         </section>
         <div className="space-y-6">
@@ -131,7 +130,9 @@ const PrivacyPolicy = () => {
                 style={{ '--fade-delay': `${baseDelay}ms` }}
               >
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className={`bg-gradient-to-r ${getBrandGradient(index)} p-3 rounded-full flex-shrink-0`}>
+                  <div
+                    className={`bg-gradient-to-r ${getBrandGradient(index)} p-3 rounded-full flex-shrink-0`}
+                  >
                     <section.icon className="w-6 h-6 text-white" />
                   </div>
                   <h2 className="text-xl font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent">

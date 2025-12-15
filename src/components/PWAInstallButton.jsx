@@ -12,7 +12,10 @@ const PWAInstallButton = () => {
       return undefined;
     }
 
-    const mm = typeof window.matchMedia === 'function' ? window.matchMedia('(display-mode: standalone)') : null;
+    const mm =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(display-mode: standalone)')
+        : null;
     const isStandaloneView = () => {
       try {
         return Boolean(mm?.matches || window.navigator?.standalone === true);
@@ -24,7 +27,7 @@ const PWAInstallButton = () => {
     setIsStandalone(isStandaloneView());
 
     const onModeChange = (event) => {
-      setIsStandalone(Boolean(event?.matches) || (window.navigator?.standalone === true));
+      setIsStandalone(Boolean(event?.matches) || window.navigator?.standalone === true);
     };
 
     if (mm) {
@@ -95,12 +98,29 @@ const PWAInstallButton = () => {
       title={'Install App'}
     >
       {/* decorative small flame at top for vibe */}
-      <svg className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-6 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-        <path d="M12 2c1.5 2 2 3.5 2 5 0 1.5-.5 3-2 4-1.5-1-2-2.5-2-4 0-1.5.5-3 2-5Z" fill="url(#flameGrad)" />
+      <svg
+        className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-6 opacity-70"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M12 2c1.5 2 2 3.5 2 5 0 1.5-.5 3-2 4-1.5-1-2-2.5-2-4 0-1.5.5-3 2-5Z"
+          fill="url(#flameGrad)"
+        />
         <defs>
-          <linearGradient id="flameGrad" x1="12" y1="2" x2="12" y2="11" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#fde047"/>
-            <stop offset="1" stopColor="#f97316"/>
+          <linearGradient
+            id="flameGrad"
+            x1="12"
+            y1="2"
+            x2="12"
+            y2="11"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#fde047" />
+            <stop offset="1" stopColor="#f97316" />
           </linearGradient>
         </defs>
       </svg>

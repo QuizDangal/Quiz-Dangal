@@ -11,9 +11,20 @@ const Quiz = () => {
   const { id: quizId } = useParams();
   const navigate = useNavigate();
   const {
-  quiz, questions, currentQuestionIndex, answers, quizState, timeLeft, submitting,
-  joined, participantStatus, totalJoined, displayJoined,
-    handleJoinOrPrejoin, handleAnswerSelect, handleSubmit,
+    quiz,
+    questions,
+    currentQuestionIndex,
+    answers,
+    quizState,
+    timeLeft,
+    submitting,
+    joined,
+    participantStatus,
+    totalJoined,
+    displayJoined,
+    handleJoinOrPrejoin,
+    handleAnswerSelect,
+    handleSubmit,
     formatTime,
   } = useQuizEngine(quizId, navigate);
 
@@ -51,7 +62,9 @@ const Quiz = () => {
 
     const Part = ({ value, label }) => (
       <div className="px-3 py-2 rounded-md bg-slate-800/70 border border-slate-700 min-w-[64px]">
-        <div className="text-xl font-bold text-white tabular-nums">{value.toString().padStart(2, '0')}</div>
+        <div className="text-xl font-bold text-white tabular-nums">
+          {value.toString().padStart(2, '0')}
+        </div>
         <div className="text-xs text-slate-400">{label}</div>
       </div>
     );
@@ -80,7 +93,11 @@ const Quiz = () => {
         <SEO
           title="Quiz – Loading | Quiz Dangal"
           description="Loading quiz details."
-          canonical={typeof window !== 'undefined' ? `${window.location.origin}/quiz/${quizId}` : 'https://quizdangal.com/quiz'}
+          canonical={
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/quiz/${quizId}`
+              : 'https://quizdangal.com/quiz'
+          }
           robots="noindex, nofollow"
         />
         <div className="text-center">
@@ -92,16 +109,16 @@ const Quiz = () => {
   }
 
   const InfoChips = () => (
-    <div className="mt-3 text-xs text-slate-300">
-      <div className="text-[11px] text-slate-400">{quiz.start_time ? formatDateOnly(quiz.start_time) : '—'}</div>
-      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">
-          <div className="uppercase tracking-wide text-[10px] text-slate-400">Start</div>
-          <div>{quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'}</div>
+    <div className="mt-2 text-[10px] text-slate-400">
+      <div className="mb-1">{quiz.start_time ? formatDateOnly(quiz.start_time) : '—'}</div>
+      <div className="flex items-center justify-center gap-2">
+        <div className="bg-slate-800/60 border border-slate-700 rounded-md px-2 py-1">
+          <span className="uppercase text-[9px] text-slate-500">Start</span>
+          <div className="text-slate-300">{quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'}</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">
-          <div className="uppercase tracking-wide text-[10px] text-slate-400">End</div>
-          <div>{quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}</div>
+        <div className="bg-slate-800/60 border border-slate-700 rounded-md px-2 py-1">
+          <span className="uppercase text-[9px] text-slate-500">End</span>
+          <div className="text-slate-300">{quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}</div>
         </div>
       </div>
     </div>
@@ -109,146 +126,174 @@ const Quiz = () => {
 
   const PrizeChips = () => {
     const prizes = Array.isArray(quiz.prizes) ? quiz.prizes : [];
-  const prizeType = quiz.prize_type || 'coins';
+    const prizeType = quiz.prize_type || 'coins';
     const p1 = prizes[0] ?? 0;
     const p2 = prizes[1] ?? 0;
     const p3 = prizes[2] ?? 0;
     const formatPrize = (value) => {
-  const display = getPrizeDisplay(prizeType, value, { fallback: 0 });
-  // Plain text only, no coin icon before amount
-  return display.formatted;
+      const display = getPrizeDisplay(prizeType, value, { fallback: 0 });
+      return display.formatted;
     };
     return (
-      <div className="mt-2 flex items-center gap-2 text-xs">
-        <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-700/30">1st {formatPrize(p1)}</span>
-        <span className="px-2 py-1 rounded-md bg-sky-500/15 text-sky-300 border border-sky-700/30">2nd {formatPrize(p2)}</span>
-        <span className="px-2 py-1 rounded-md bg-violet-500/15 text-violet-300 border border-violet-700/30">3rd {formatPrize(p3)}</span>
+      <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px]">
+        <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-600/30">
+          🥇 {formatPrize(p1)}
+        </span>
+        <span className="px-2 py-1 rounded-md bg-sky-500/15 text-sky-300 border border-sky-600/30">
+          🥈 {formatPrize(p2)}
+        </span>
+        <span className="px-2 py-1 rounded-md bg-violet-500/15 text-violet-300 border border-violet-600/30">
+          🥉 {formatPrize(p3)}
+        </span>
       </div>
     );
   };
 
   // Show pre-lobby if not joined yet
-    // TODO: Extract LobbyView component (pre-join & join) to components/quiz/LobbyView.jsx
+  // TODO: Extract LobbyView component (pre-join & join) to components/quiz/LobbyView.jsx
   if (!joined && quizState !== 'completed') {
     const now = new Date();
     const st = quiz.start_time ? new Date(quiz.start_time) : null;
     const et = quiz.end_time ? new Date(quiz.end_time) : null;
     const isActive = quiz.status === 'active' && st && et && now >= st && now < et;
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center px-3 pt-16">
         <SEO
           title={`${quiz.title || 'Quiz'} – Lobby | Quiz Dangal`}
           description="Join the quiz lobby."
-          canonical={typeof window !== 'undefined' ? `${window.location.origin}/quiz/${quizId}` : 'https://quizdangal.com/quiz'}
+          canonical={
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/quiz/${quizId}`
+              : 'https://quizdangal.com/quiz'
+          }
           robots="noindex, nofollow"
         />
-  <m.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="qd-card relative rounded-2xl p-8 shadow-xl text-center max-w-md text-slate-100 w-full"
-        >
-          {/* Close (X) */}
-          <button
-            aria-label="Close"
-            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
-            className="absolute top-3 right-3 text-slate-400 hover:text-slate-200 transition"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <Clock className="h-16 w-16 text-accent-b mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white text-shadow-sm mb-2">{quiz.title}</h2>
-          <p className="text-slate-300 mb-1">{isActive ? 'Quiz is live!' : 'Quiz starts in:'}</p>
-          <div className="text-4xl font-bold text-indigo-300 mb-4">{formatTime(timeLeft)}</div>
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-300">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-1" />
-              {displayJoined} joined
+        <div className="w-full max-w-sm">
+          <div className="p-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
+            <div className="relative rounded-xl bg-slate-900/95 p-4 text-center">
+              {/* Close (X) */}
+              <button
+                aria-label="Close"
+                onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
+                className="absolute top-3 right-3 text-slate-500 hover:text-white transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-base font-bold text-white mb-1">{quiz.title}</h2>
+              <p className="text-[11px] text-slate-400 mb-2">
+                {isActive ? 'Quiz is live!' : 'Quiz starts in'}
+              </p>
+              <div className="text-2xl font-bold text-indigo-300 mb-2">{formatTime(timeLeft)}</div>
+              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mb-2">
+                <Users className="h-3 w-3" />
+                {displayJoined} joined
+              </div>
+              <PrizeChips />
+              <InfoChips />
+              <div className="mt-4">
+                <Button
+                  onClick={handleJoinOrPrejoin}
+                  className={`w-full h-10 text-sm font-bold ${
+                    isActive
+                      ? 'bg-gradient-to-r from-emerald-600 to-green-500'
+                      : 'bg-gradient-to-r from-indigo-600 to-violet-600'
+                  } hover:opacity-90`}
+                >
+                  {isActive ? 'Join & Start' : 'Pre-Join'}
+                </Button>
+              </div>
             </div>
           </div>
-          <PrizeChips />
-          <InfoChips />
-          <div className="mt-6">
-            <Button onClick={handleJoinOrPrejoin} className={isActive ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}>
-              {isActive ? 'Join & Start' : 'Pre-Join'}
-            </Button>
-          </div>
-  </m.div>
+        </div>
       </div>
     );
   }
   if (quizState === 'waiting') {
-    // TODO: Extract WaitingView component
+    // Waiting for quiz to start
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
         <SEO
           title={`${quiz.title || 'Quiz'} – Waiting | Quiz Dangal`}
           description="Waiting for the quiz to start."
-          canonical={typeof window !== 'undefined' ? `${window.location.origin}/quiz/${quizId}` : 'https://quizdangal.com/quiz'}
+          canonical={
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/quiz/${quizId}`
+              : 'https://quizdangal.com/quiz'
+          }
           robots="noindex, nofollow"
         />
-  <m.div
-          initial={{ opacity: 0, y: 20 }}
+        <m.div
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="qd-card relative rounded-2xl p-8 shadow-xl text-center max-w-md text-slate-100"
+          className="w-full max-w-sm"
         >
-          {/* Close (X) */}
-          <button
+          <div className="p-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
+            <div className="relative rounded-xl bg-slate-900/95 backdrop-blur-sm p-4 text-center">
+              {/* Close */}
+              <button
             aria-label="Close"
             onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
-            className="absolute top-3 right-3 text-slate-400 hover:text-slate-200 transition"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <Clock className="h-16 w-16 text-accent-b mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white text-shadow-sm mb-2">{quiz.title}</h2>
-          <p className="text-slate-300 mb-1">Quiz starts in:</p>
-          <div className="text-4xl font-bold text-indigo-300 mb-4">
-            {formatTime(timeLeft)}
-          </div>
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-300">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-1" />
-              {totalJoined} joined
+            className="absolute top-2 right-2 text-slate-400 hover:text-slate-200 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+          <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-2">
+                <Clock className="h-6 w-6 text-indigo-300" />
+              </div>
+              <h2 className="text-base font-bold text-white mb-1 line-clamp-2">{quiz.title}</h2>
+          <p className="text-xs text-slate-400 mb-1">Quiz starts in:</p>
+              <div className="text-2xl font-bold text-indigo-300 mb-2">{formatTime(timeLeft)}</div>
+              <div className="flex items-center justify-center gap-1 text-xs text-slate-400 mb-2">
+                <Users className="h-3 w-3" />
+                {totalJoined} joined
+              </div>
+              <PrizeChips />
+              <InfoChips />
+              <p className="mt-2 text-[10px] text-slate-500">Auto-starts when timer hits zero</p>
             </div>
           </div>
-          <PrizeChips />
-          <InfoChips />
-          <div className="mt-4 text-xs text-slate-400">We’ll auto-start when the timer hits zero.</div>
-  </m.div>
+        </m.div>
       </div>
     );
   }
 
-  // Show completed/finished state with countdown - NO LOADING, DIRECT TIMER
+  // Show completed/finished state with countdown
   if (quizState === 'completed' || quizState === 'finished') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
         <SEO
           title={`${quiz.title || 'Quiz'} – Completed | Quiz Dangal`}
           description="Quiz completed. Results will be published soon."
-          canonical={typeof window !== 'undefined' ? `${window.location.origin}/quiz/${quizId}` : 'https://quizdangal.com/quiz'}
+          canonical={
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/quiz/${quizId}`
+              : 'https://quizdangal.com/quiz'
+          }
           robots="noindex, nofollow"
         />
         <m.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="qd-card rounded-2xl p-8 shadow-xl text-center max-w-md text-slate-100"
+          className="w-full max-w-sm"
         >
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-3">
-            Quiz Submitted Successfully!
-          </h2>
-          <p className="text-slate-300 mb-4">
-            Thank you for participating!
-          </p>
-          {renderResultCountdown()}
-          <div className="mt-6">
-            <Button 
-              onClick={() => navigate('/')} 
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              Back to Home
-            </Button>
+          <div className="p-[1px] rounded-xl bg-gradient-to-r from-emerald-500/50 via-green-500/40 to-teal-500/50">
+            <div className="rounded-xl bg-slate-900/95 backdrop-blur-sm p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-2">
+                <CheckCircle className="h-6 w-6 text-emerald-300" />
+              </div>
+              <h2 className="text-base font-bold text-white mb-1">Quiz Submitted!</h2>
+              <p className="text-xs text-slate-400 mb-2">Thank you for participating!</p>
+              {renderResultCountdown()}
+              <button
+                onClick={() => navigate('/')}
+                className="mt-3 w-full h-9 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90 transition"
+              >
+                Back to Home
+              </button>
+            </div>
           </div>
         </m.div>
       </div>
@@ -271,110 +316,112 @@ const Quiz = () => {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen p-4 bg-[radial-gradient(1000px_600px_at_50%_-100px,rgba(59,130,246,0.25),transparent),radial-gradient(800px_500px_at_120%_0,rgba(168,85,247,0.18),transparent)]">
+    <div className="min-h-screen px-3 pt-16 pb-6">
       <SEO
         title={`${quiz.title || 'Quiz'} – Play | Quiz Dangal`}
         description="Answer questions and compete to win."
-        canonical={typeof window !== 'undefined' ? `${window.location.origin}/quiz/${quizId}` : 'https://quizdangal.com/quiz'}
+        canonical={
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/quiz/${quizId}`
+            : 'https://quizdangal.com/quiz'
+        }
         robots="noindex, nofollow"
       />
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-  <m.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 mb-6 text-slate-100 border border-slate-800/60 bg-slate-900/60 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-lg font-extrabold text-white tracking-tight">{quiz.title}</h1>
-              <p className="text-xs text-slate-400">Question {currentQuestionIndex + 1} of {questions.length}</p>
+      <div className="max-w-md mx-auto space-y-3">
+        {/* Compact Header */}
+        <div className="p-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
+          <div className="rounded-xl bg-slate-900/95 p-3">
+            <div className="flex justify-between items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm font-bold text-white truncate">{quiz.title}</h1>
+                <p className="text-[10px] text-slate-400">
+                  Q{currentQuestionIndex + 1} of {questions.length}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <div className="text-lg font-bold text-rose-400 tabular-nums">{formatTime(timeLeft)}</div>
+                <div className="text-[9px] text-slate-500 uppercase">Time Left</div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-black text-rose-300 tabular-nums">{formatTime(timeLeft)}</div>
-              <div className="text-[10px] text-slate-400 uppercase tracking-wide">Time Left</div>
+            {/* Progress Bar */}
+            <div className="mt-2 w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <m.div
+                className="h-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500"
+                style={{ width: `${progress}%` }}
+                transition={{ duration: 0.4 }}
+              />
             </div>
           </div>
+        </div>
 
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-800/60 rounded-full h-2 mt-4 overflow-hidden">
-            <m.div
-              className="h-2 rounded-full bg-[linear-gradient(90deg,#22d3ee,#818cf8,#a78bfa,#f472b6)]"
-              style={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-  </m.div>
-
-        {/* Question */}
+        {/* Question Card */}
         <AnimatePresence mode="wait">
           <m.div
             key={currentQuestion.id}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.25 }}
-            className="rounded-2xl p-6 text-slate-100 border border-slate-800/60 bg-slate-900/60 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-xl border border-slate-700/60 bg-slate-900/90 p-4"
           >
-            <h2 className="text-xl font-bold text-center text-white mb-6 leading-relaxed">
+            <h2 className="text-sm font-bold text-center text-white mb-4 leading-relaxed">
               {currentQuestion.question_text}
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {currentQuestion.options?.map((option, index) => {
                 const selected = answers[currentQuestion.id] === option.id;
                 return (
                   <m.button
                     key={option.id}
                     onClick={() => handleAnswerSelect(currentQuestion.id, option.id)}
-                    disabled={submitting || quizState !== 'active' || participantStatus === 'completed'}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    className={`w-full p-4 rounded-xl text-left font-medium transition-all duration-200 border group relative overflow-hidden ${
+                    disabled={
+                      submitting || quizState !== 'active' || participantStatus === 'completed'
+                    }
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full p-3 rounded-lg text-left text-sm font-medium transition-all border ${
                       selected
-                        ? 'bg-emerald-600/90 text-white border-emerald-400 shadow-[0_10px_24px_rgba(16,185,129,0.25)]'
-                        : 'bg-slate-800/70 hover:bg-slate-800 text-slate-100 border-slate-700/80'
+                        ? 'bg-emerald-600/90 text-white border-emerald-500 shadow-lg'
+                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-200 border-slate-700/60'
                     }`}
                   >
-                    <span className={`font-bold mr-3 ${selected ? 'text-white' : 'text-indigo-300'}`}>
+                    <span className={`font-bold mr-2 ${selected ? 'text-white' : 'text-indigo-400'}`}>
                       {String.fromCharCode(65 + index)}.
                     </span>
                     {option.option_text}
-                    {!selected && (
-                      <span className="absolute inset-y-0 right-0 w-0 group-hover:w-1/6 transition-[width] duration-200 bg-gradient-to-l from-indigo-500/20 to-transparent" />
-                    )}
-                    </m.button>
+                  </m.button>
                 );
               })}
             </div>
 
             {/* Submit Button (only on last question) */}
-            {currentQuestionIndex === questions.length - 1 && Object.keys(answers).length === questions.length && (
-              <m.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="mt-7"
-              >
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full text-white font-extrabold py-4 text-lg border border-violet-500/40 shadow-[0_8px_18px_rgba(139,92,246,0.35)] hover:shadow-[0_12px_24px_rgba(139,92,246,0.55)] bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#9333ea,#c026d3)]"
+            {currentQuestionIndex === questions.length - 1 &&
+              Object.keys(answers).length === questions.length && (
+                <m.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-4"
                 >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-6 w-6" />
-                      Submit Quiz
-                    </>
-                  )}
-                </Button>
-              </m.div>
-            )}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Submit Quiz
+                      </>
+                    )}
+                  </Button>
+                </m.div>
+              )}
           </m.div>
         </AnimatePresence>
       </div>

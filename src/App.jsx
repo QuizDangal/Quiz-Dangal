@@ -20,6 +20,7 @@ const ContactUs = lazy(() => import('@/pages/ContactUs'));
 const TermsConditions = lazy(() => import('@/pages/TermsConditions'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const Quiz = lazy(() => import('@/pages/Quiz'));
+const SlotQuiz = lazy(() => import('@/pages/SlotQuiz'));
 const CategoryQuizzes = lazy(() => import('@/pages/CategoryQuizzes'));
 // Unified Admin panel now lives in Admin.jsx
 const Admin = lazy(() => import('@/pages/Admin'));
@@ -34,35 +35,50 @@ const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
 const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
-const NotificationPermissionPrompt = lazy(() => import('@/components/NotificationPermissionPrompt'));
+const NotificationPermissionPrompt = lazy(
+  () => import('@/components/NotificationPermissionPrompt'),
+);
 
 // Reusable group of static public informational routes (as a fragment – not a component – so <Routes> accepts it)
 const policyRoutes = (
   <>
-  <Route path="/terms-conditions/" element={<TermsConditions />} />
-  <Route path="/privacy-policy/" element={<PrivacyPolicy />} />
-  <Route path="/about-us/" element={<AboutUs />} />
-  <Route path="/contact-us/" element={<ContactUs />} />
-  <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
-  <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
-  <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
-  <Route path="/leaderboards/" element={<Leaderboards />} />
+    <Route path="/terms-conditions/" element={<TermsConditions />} />
+    <Route path="/privacy-policy/" element={<PrivacyPolicy />} />
+    <Route path="/about-us/" element={<AboutUs />} />
+    <Route path="/contact-us/" element={<ContactUs />} />
+    <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
+    <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
+    <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
+    <Route path="/leaderboards/" element={<Leaderboards />} />
   </>
 );
 
 const UnconfirmedEmail = () => (
   <div className="min-h-screen flex items-center justify-center p-4">
     <div className="bg-white/80 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-md w-full shadow-xl text-center">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">Check your email</h2>
-    <p className="text-gray-600">We&apos;ve sent a confirmation link to your email address. Please click the link to complete your registration.</p>
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        Check your email
+      </h2>
+      <p className="text-gray-600">
+        We&apos;ve sent a confirmation link to your email address. Please click the link to complete
+        your registration.
+      </p>
     </div>
   </div>
 );
 
 const Page = ({ children }) => <div className="page-transition">{children}</div>;
 const Fallback = () => (
-  <div className="min-h-[40vh] flex items-center justify-center" role="status" aria-live="polite" aria-label="Loading content">
-    <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600" aria-hidden="true"></div>
+  <div
+    className="min-h-[40vh] flex items-center justify-center"
+    role="status"
+    aria-live="polite"
+    aria-label="Loading content"
+  >
+    <div
+      className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600"
+      aria-hidden="true"
+    ></div>
   </div>
 );
 
@@ -72,7 +88,9 @@ function RouteChangeTracker() {
     try {
       const page_path = location.pathname + location.search + location.hash;
       if (window.gtag) window.gtag('event', 'page_view', { page_path });
-    } catch (e) { /* analytics page_view failed silently */ }
+    } catch (e) {
+      /* analytics page_view failed silently */
+    }
   }, [location]);
   return null;
 }
@@ -85,7 +103,11 @@ function useRouteFocus() {
     if (main) {
       // Using setTimeout to allow React suspense content to paint first
       setTimeout(() => {
-  try { main.focus({ preventScroll: false }); } catch (e) { /* ignore focus error */ }
+        try {
+          main.focus({ preventScroll: false });
+        } catch (e) {
+          /* ignore focus error */
+        }
       }, 0);
     }
   }, [location.pathname]);
@@ -102,13 +124,19 @@ function App() {
   const { user: authUser, loading, isRecoveryFlow } = useAuth();
   // We only need focus management once layout is rendered; apply inside Router tree via helper component
 
-
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" role="status" aria-live="polite" aria-label="Loading application">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading application"
+      >
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600" aria-hidden="true"></div>
+          <div
+            className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600"
+            aria-hidden="true"
+          ></div>
           <div className="text-indigo-600 font-medium animate-pulse">Loading Quiz Dangal...</div>
         </div>
       </div>
@@ -119,52 +147,78 @@ function App() {
     <ErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouteChangeTracker />
-        <div className="min-h-screen flex flex-col relative text-gray-50 transition-all duration-300 ease-in-out" style={{ margin: 0, padding: 0 }}>
+        <div
+          className="min-h-screen flex flex-col relative text-gray-50 transition-all duration-300 ease-in-out"
+          style={{ margin: 0, padding: 0 }}
+        >
           <Helmet>
             <title>Quiz Dangal – Play Quizzes & Win | Refer & Earn</title>
-            <meta name="description" content="Play opinion-based quizzes, climb leaderboards, win rewards, and refer friends to earn coins on Quiz Dangal." />
-            <meta name="keywords" content="Quiz Dangal, quizdangal, quiz app, opinion quiz, daily quiz, play and win, refer and earn, rewards, leaderboards" />
+            <meta
+              name="description"
+              content="Play opinion-based quizzes, climb leaderboards, win rewards, and refer friends to earn coins on Quiz Dangal."
+            />
+            <meta
+              name="keywords"
+              content="Quiz Dangal, quizdangal, quiz app, opinion quiz, daily quiz, play and win, refer and earn, rewards, leaderboards"
+            />
           </Helmet>
           {/* Initialize notifications for authenticated, confirmed users outside of <Routes> */}
-          {authUser && !isRecoveryFlow && !(authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at) && (
-            <InitNotifications />
-          )}
-          <Suspense fallback={<Fallback />}>
-          <RouteFocusWrapper>
-          <Routes>
-            {/* If recovery flow is active, always route to reset-password */}
-            {isRecoveryFlow ? (
-              <>
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="*" element={<Navigate to="/reset-password" replace />} />
-              </>
-            ) : !authUser ? (
-              <>
-                {/* Public pages accessible without login - with Header */}
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/login" element={<Login />} />
-                {/* All other public routes get Header + Footer */}
-                <Route path="/*" element={<PublicLayout />} />
-              </>
-            ) : authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at ? (
-              <>
-                {/* Public policy pages accessible during unconfirmed email state as well */}
-                {policyRoutes}
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="*" element={<UnconfirmedEmail />} />
-              </>
-            ) : (
-              <>
-                <Route path="/quiz/:id" element={<Quiz />} />
-                {/* Accept both with and without trailing slash for category routes */}
-                <Route path="/category/:slug" element={<Page><CategoryQuizzes /></Page>} />
-                <Route path="/category/:slug/" element={<Page><CategoryQuizzes /></Page>} />
-                <Route path="/results/:id" element={<Results />} />
-                <Route path="/*" element={<MainLayout />} />
-              </>
+          {authUser &&
+            !isRecoveryFlow &&
+            !(authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at) && (
+              <InitNotifications />
             )}
-          </Routes>
-          </RouteFocusWrapper>
+          <Suspense fallback={<Fallback />}>
+            <RouteFocusWrapper>
+              <Routes>
+                {/* If recovery flow is active, always route to reset-password */}
+                {isRecoveryFlow ? (
+                  <>
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="*" element={<Navigate to="/reset-password" replace />} />
+                  </>
+                ) : !authUser ? (
+                  <>
+                    {/* Public pages accessible without login - with Header */}
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/login" element={<Login />} />
+                    {/* All other public routes get Header + Footer */}
+                    <Route path="/*" element={<PublicLayout />} />
+                  </>
+                ) : authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at ? (
+                  <>
+                    {/* Public policy pages accessible during unconfirmed email state as well */}
+                    {policyRoutes}
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="*" element={<UnconfirmedEmail />} />
+                  </>
+                ) : (
+                  <>
+                    <Route path="/quiz/:id" element={<Quiz />} />
+                    <Route path="/quiz/slot/:slotId" element={<SlotQuiz />} />
+                    {/* Accept both with and without trailing slash for category routes */}
+                    <Route
+                      path="/category/:slug"
+                      element={
+                        <Page>
+                          <CategoryQuizzes />
+                        </Page>
+                      }
+                    />
+                    <Route
+                      path="/category/:slug/"
+                      element={
+                        <Page>
+                          <CategoryQuizzes />
+                        </Page>
+                      }
+                    />
+                    <Route path="/results/:id" element={<Results />} />
+                    <Route path="/*" element={<MainLayout />} />
+                  </>
+                )}
+              </Routes>
+            </RouteFocusWrapper>
           </Suspense>
           <Toaster />
         </div>
@@ -179,7 +233,12 @@ function AdminRoute({ children }) {
     try {
       const raw = String(import.meta.env.VITE_ADMIN_EMAILS || '').trim();
       if (!raw) return new Set();
-      return new Set(raw.split(/[,\s]+/).map((email) => email.trim().toLowerCase()).filter(Boolean));
+      return new Set(
+        raw
+          .split(/[,\s]+/)
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+      );
     } catch {
       return new Set();
     }
@@ -192,9 +251,15 @@ function AdminRoute({ children }) {
       </div>
     );
   }
-  const role = String(userProfile?.role || '').trim().toLowerCase();
-  const email = String(user?.email || '').trim().toLowerCase();
-  const metadataRole = String(user?.app_metadata?.role || '').trim().toLowerCase();
+  const role = String(userProfile?.role || '')
+    .trim()
+    .toLowerCase();
+  const email = String(user?.email || '')
+    .trim()
+    .toLowerCase();
+  const metadataRole = String(user?.app_metadata?.role || '')
+    .trim()
+    .toLowerCase();
   const isAdmin = role === 'admin' || metadataRole === 'admin' || (email && adminEmails.has(email));
 
   if (!isAdmin) {
@@ -203,16 +268,21 @@ function AdminRoute({ children }) {
         <div className="qd-card rounded-2xl max-w-md w-full p-6 text-center">
           <h2 className="text-xl font-semibold text-red-400 mb-2">Admin access required</h2>
           <p className="text-sm text-white/70">
-            Admin panel kholne ke liye aapke Supabase <code>profiles</code> record ka <strong>role</strong> field <code>&apos;admin&apos;</code> hona zaroori hai.
+            Admin panel kholne ke liye aapke Supabase <code>profiles</code> record ka{' '}
+            <strong>role</strong> field <code>&apos;admin&apos;</code> hona zaroori hai.
           </p>
           <ul className="text-left text-sm text-white/65 mt-4 space-y-2 list-disc list-inside">
-            <li>Supabase dashboard &rarr; Table editor &rarr; <code>profiles</code> me login user ka <code>role</code> update karein.</li>
+            <li>
+              Supabase dashboard &rarr; Table editor &rarr; <code>profiles</code> me login user ka{' '}
+              <code>role</code> update karein.
+            </li>
             <li>Changes apply hone ke baad dobara login karein ya session refresh karein.</li>
-            <li>Agar dev bypass (<code>VITE_BYPASS_AUTH=1</code>) use kar rahe hain to mock admin profile already enable hai.</li>
+            <li>
+              Agar dev bypass (<code>VITE_BYPASS_AUTH=1</code>) use kar rahe hain to mock admin
+              profile already enable hai.
+            </li>
             {adminEmails.size > 0 && (
-              <li>
-                Whitelisted admin emails: {[...adminEmails].join(', ')}
-              </li>
+              <li>Whitelisted admin emails: {[...adminEmails].join(', ')}</li>
             )}
           </ul>
         </div>
@@ -226,7 +296,11 @@ function AdminRoute({ children }) {
 function RouteFocusWrapper({ children }) {
   useRouteFocus();
   return (
-  <div id="app-focus-wrapper" tabIndex="-1" className="outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60">
+    <div
+      id="app-focus-wrapper"
+      tabIndex="-1"
+      className="outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60"
+    >
       {children}
     </div>
   );
@@ -234,18 +308,46 @@ function RouteFocusWrapper({ children }) {
 
 // Public layout for non-authenticated users (Header only, no Footer)
 const PublicLayout = () => {
-  const isHome = typeof window !== 'undefined' && window.location && window.location.pathname === '/';
+  const isHome =
+    typeof window !== 'undefined' && window.location && window.location.pathname === '/';
   return (
     <>
       <Header />
-      <main className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-4' : 'pb-6 pt-4 sm:pt-6'}`} id="app-main" tabIndex="-1" role="main" aria-label="Application Content">
+      <main
+        className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-4' : 'pb-6 pt-4 sm:pt-6'}`}
+        id="app-main"
+        tabIndex="-1"
+        role="main"
+        aria-label="Application Content"
+      >
         <Suspense fallback={<Fallback />}>
           <Routes>
-            <Route path="/" element={<Page><Home /></Page>} />
+            <Route
+              path="/"
+              element={
+                <Page>
+                  <Home />
+                </Page>
+              }
+            />
             {policyRoutes}
             {/* Publicly accessible category pages for SEO */}
-            <Route path="/category/:slug" element={<Page><CategoryQuizzes /></Page>} />
-            <Route path="/category/:slug/" element={<Page><CategoryQuizzes /></Page>} />
+            <Route
+              path="/category/:slug"
+              element={
+                <Page>
+                  <CategoryQuizzes />
+                </Page>
+              }
+            />
+            <Route
+              path="/category/:slug/"
+              element={
+                <Page>
+                  <CategoryQuizzes />
+                </Page>
+              }
+            />
             {/* For unknown routes when logged out, send users and bots to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -292,17 +394,22 @@ const MainLayout = () => {
   }, [authLoading, hasSupabaseConfig, requiresProfileCompletion, userProfile]);
 
   // Detect if current path is home to tailor layout spacing/overflow (BrowserRouter)
-  const isHome = typeof window !== 'undefined' && window.location && window.location.pathname === '/';
+  const isHome =
+    typeof window !== 'undefined' && window.location && window.location.pathname === '/';
   useEffect(() => {
     if (warmedRoutesRef.current) return;
     // Skip warming on slow networks, data saver, low-memory devices, or when tab is hidden
     const shouldWarm = () => {
       try {
         if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
-        const conn = (navigator && (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) || null;
+        const conn =
+          (navigator &&
+            (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) ||
+          null;
         if (conn) {
           if (conn.saveData) return false;
-          if (typeof conn.effectiveType === 'string' && /(^|\b)2g(\b|$)/i.test(conn.effectiveType)) return false;
+          if (typeof conn.effectiveType === 'string' && /(^|\b)2g(\b|$)/i.test(conn.effectiveType))
+            return false;
         }
         const mem = (navigator && navigator.deviceMemory) || 4;
         if (mem && mem <= 2) return false;
@@ -320,36 +427,162 @@ const MainLayout = () => {
   return (
     <>
       <Header />
-  <main className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-24' : 'pb-24 pt-4 sm:pt-6'}`} id="app-main" tabIndex="-1" role="main" aria-label="Application Content">
+      <main
+        className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-24' : 'pb-24 pt-4 sm:pt-6'}`}
+        id="app-main"
+        tabIndex="-1"
+        role="main"
+        aria-label="Application Content"
+      >
         <Suspense fallback={<Fallback />}>
           <Routes>
-            <Route path="/" element={<Page><Home /></Page>} />
-            <Route path="/my-quizzes/" element={<Page><MyQuizzes /></Page>} />
-            <Route path="/wallet/" element={<Page><Wallet /></Page>} />
-            <Route path="/profile/" element={<Page><Profile /></Page>} />
-            <Route path="/leaderboards/" element={<Page><Leaderboards /></Page>} />
-            <Route path="/refer/" element={<Page><ReferEarn /></Page>} />
+            <Route
+              path="/"
+              element={
+                <Page>
+                  <Home />
+                </Page>
+              }
+            />
+            <Route
+              path="/my-quizzes/"
+              element={
+                <Page>
+                  <MyQuizzes />
+                </Page>
+              }
+            />
+            <Route
+              path="/wallet/"
+              element={
+                <Page>
+                  <Wallet />
+                </Page>
+              }
+            />
+            <Route
+              path="/profile/"
+              element={
+                <Page>
+                  <Profile />
+                </Page>
+              }
+            />
+            <Route
+              path="/leaderboards/"
+              element={
+                <Page>
+                  <Leaderboards />
+                </Page>
+              }
+            />
+            <Route
+              path="/refer/"
+              element={
+                <Page>
+                  <ReferEarn />
+                </Page>
+              }
+            />
             <Route path="/rewards" element={<Navigate to="/wallet/" replace />} />
-            <Route path="/redemptions/" element={<Page><Redemptions /></Page>} />
+            <Route
+              path="/redemptions/"
+              element={
+                <Page>
+                  <Redemptions />
+                </Page>
+              }
+            />
             {/* Reuse informational routes inside authenticated layout as well */}
-            <Route path="/about-us/" element={<Page><AboutUs /></Page>} />
-            <Route path="/contact-us/" element={<Page><ContactUs /></Page>} />
-            <Route path="/play-win-quiz-app/" element={<Page><PlayWinQuiz /></Page>} />
-            <Route path="/opinion-quiz-app/" element={<Page><OpinionQuiz /></Page>} />
-            <Route path="/refer-earn-quiz-app/" element={<Page><ReferEarnInfo /></Page>} />
-            <Route path="/debug/notifications" element={<Page><NotificationsDebug /></Page>} />
-            <Route path="/terms-conditions/" element={<Page><TermsConditions /></Page>} />
-            <Route path="/privacy-policy/" element={<Page><PrivacyPolicy /></Page>} />
-            <Route path="/admin" element={<AdminRoute><Page><Admin /></Page></AdminRoute>} />
+            <Route
+              path="/about-us/"
+              element={
+                <Page>
+                  <AboutUs />
+                </Page>
+              }
+            />
+            <Route
+              path="/contact-us/"
+              element={
+                <Page>
+                  <ContactUs />
+                </Page>
+              }
+            />
+            <Route
+              path="/play-win-quiz-app/"
+              element={
+                <Page>
+                  <PlayWinQuiz />
+                </Page>
+              }
+            />
+            <Route
+              path="/opinion-quiz-app/"
+              element={
+                <Page>
+                  <OpinionQuiz />
+                </Page>
+              }
+            />
+            <Route
+              path="/refer-earn-quiz-app/"
+              element={
+                <Page>
+                  <ReferEarnInfo />
+                </Page>
+              }
+            />
+            <Route
+              path="/debug/notifications"
+              element={
+                <Page>
+                  <NotificationsDebug />
+                </Page>
+              }
+            />
+            <Route
+              path="/terms-conditions/"
+              element={
+                <Page>
+                  <TermsConditions />
+                </Page>
+              }
+            />
+            <Route
+              path="/privacy-policy/"
+              element={
+                <Page>
+                  <PrivacyPolicy />
+                </Page>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <Page>
+                    <Admin />
+                  </Page>
+                </AdminRoute>
+              }
+            />
             <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
-            <Route path="/admin/leaderboards" element={<Navigate to="/admin?tab=leaderboards" replace />} />
-            <Route path="/admin/redemptions" element={<Navigate to="/admin?tab=redemptions" replace />} />
+            <Route
+              path="/admin/leaderboards"
+              element={<Navigate to="/admin?tab=leaderboards" replace />}
+            />
+            <Route
+              path="/admin/redemptions"
+              element={<Navigate to="/admin?tab=redemptions" replace />}
+            />
             <Route path="/admin/reports" element={<Navigate to="/admin?tab=reports" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>
-  <Suspense fallback={null}>
+      <Suspense fallback={null}>
         <Footer />
       </Suspense>
       <Suspense fallback={null}>
@@ -367,7 +600,7 @@ const MainLayout = () => {
           />
         </Suspense>
       )}
-  {/* OnboardingFlow removed */}
+      {/* OnboardingFlow removed */}
     </>
   );
 };

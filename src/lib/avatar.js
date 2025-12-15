@@ -10,7 +10,9 @@ export async function getSignedAvatarUrl(path, expiresIn = 3600, client = supaba
   }
 
   try {
-    const { data, error } = await client.storage.from(AVATAR_BUCKET).createSignedUrl(path, expiresIn);
+    const { data, error } = await client.storage
+      .from(AVATAR_BUCKET)
+      .createSignedUrl(path, expiresIn);
     if (error) {
       console.warn('Signed avatar URL fetch failed:', error);
       return '';
@@ -40,7 +42,9 @@ export async function getSignedAvatarUrls(paths, expiresIn = 3600, client = supa
   }
 
   try {
-    const { data, error } = await client.storage.from(AVATAR_BUCKET).createSignedUrls(uniquePaths, expiresIn);
+    const { data, error } = await client.storage
+      .from(AVATAR_BUCKET)
+      .createSignedUrls(uniquePaths, expiresIn);
     if (error) {
       console.warn('Signed avatar URLs batch fetch failed:', error);
       return urlMap;
