@@ -1,3 +1,4 @@
+/// <reference path="../deno-edge.d.ts" />
 // Tick Slots Edge Function: flips slot statuses based on current time.
 // Scheduled to run every minute via Supabase cron.
 // Transitions:
@@ -35,10 +36,12 @@ export default async function handler(req: Request) {
     .eq('status', 'active');
 
   // We cannot get affected row counts directly via supabase-js update; fetch counts separately.
+  // @ts-ignore - Deno runtime handles this correctly
   const { count: activeCount } = await client
     .from('quiz_slots')
     .select('id', { head: true, count: 'exact' })
     .eq('status', 'active');
+  // @ts-ignore - Deno runtime handles this correctly
   const { count: finishedCount } = await client
     .from('quiz_slots')
     .select('id', { head: true, count: 'exact' })
