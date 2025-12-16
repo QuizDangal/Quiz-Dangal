@@ -3,16 +3,13 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-	<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+	<!-- Minimal preconnects for critical resources only -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="dns-prefetch" href="//fonts.googleapis.com">
-	<link rel="dns-prefetch" href="//fonts.gstatic.com">
-	<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+	<!-- Fonts loaded async to avoid render blocking -->
+	<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 	<noscript>
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 	</noscript>
 	<!-- Speed up critical third-parties (Supabase auth + GA) -->
 	<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
