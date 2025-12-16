@@ -8,22 +8,26 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 export const CATEGORIES = ['opinion', 'gk', 'sports', 'movies'];
 // Fixed prizes (always enforced everywhere) - in coins
 export const PRIZES = [121, 71, 51];
-// Quiz duration in minutes
+// Quiz duration in minutes (each quiz runs for 5 minutes)
 export const QUIZ_DURATION_MINUTES = 5;
-// 8:00 AM to 11:55 PM with 5-min intervals = 192 quizzes per day
-export const TOTAL_QUIZZES_PER_DAY = 192;
+// Interval between quiz starts (10 min = 5 min quiz + 5 min gap)
+export const QUIZ_INTERVAL_MINUTES = 10;
+// 8:00 AM to 11:50 PM with 10-min intervals = 96 quizzes per day per category
+// (8:00-8:05 quiz, 8:05-8:10 gap, 8:10-8:15 quiz, 8:15-8:20 gap... 23:50-23:55 last quiz)
+// 4 categories × 96 = 384 total quizzes per day
+export const TOTAL_QUIZZES_PER_DAY = 96;
 const QUESTIONS_PER_QUIZ = 10;
 
-// Generate time slots from 08:00 to 23:55 (5-min intervals)
+// Generate time slots from 08:00 to 23:50 (10-min intervals)
 function generateDaySchedule() {
   const times = [];
   let h = 8, m = 0;
   while (h < 24) {
     times.push(String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
-    m += QUIZ_DURATION_MINUTES;
+    m += QUIZ_INTERVAL_MINUTES; // 10 min intervals
     if (m >= 60) { h++; m = m - 60; }
   }
-  return times; // 08:00 to 23:55
+  return times; // 08:00, 08:10, 08:20... 23:50
 }
 
 // Category colors
@@ -485,7 +489,7 @@ export default function DailyScheduler() {
             Quiz Scheduler
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {TOTAL_QUIZZES_PER_DAY} quizzes/day • 08:00 - 23:55 IST • {QUIZ_DURATION_MINUTES} min quiz
+            {TOTAL_QUIZZES_PER_DAY} quizzes/day × 4 categories • 08:00 - 23:50 IST • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
           </p>
         </div>
         {loading && (
@@ -652,6 +656,156 @@ export default function DailyScheduler() {
                   <h4 className="text-sm font-semibold text-slate-300">Paste Quiz Data</h4>
                   <div className="flex gap-2">
                     <button
+                      onClick={() => {
+                        const format = bulkCategory === 'opinion' 
+                          ? `Quiz 1
+Title: Quiz Title Here
+Q1. Question text here?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q2. Second question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q3. Third question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q4. Fourth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q5. Fifth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q6. Sixth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q7. Seventh question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q8. Eighth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q9. Ninth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Q10. Tenth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+
+Quiz 2
+Title: Next Quiz Title
+...`
+                          : `Quiz 1
+Title: Quiz Title Here
+Q1. Question text here?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: A
+
+Q2. Second question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: B
+
+Q3. Third question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: C
+
+Q4. Fourth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: D
+
+Q5. Fifth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: A
+
+Q6. Sixth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: B
+
+Q7. Seventh question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: C
+
+Q8. Eighth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: D
+
+Q9. Ninth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: A
+
+Q10. Tenth question?
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: B
+
+Quiz 2
+Title: Next Quiz Title
+...`;
+                        navigator.clipboard.writeText(format);
+                        toast({ title: '📋 Format Copied!', description: 'Paste in Notepad, fill data, then paste here.' });
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    >
+                      📋 Copy Format
+                    </button>
+                    <button
                       onClick={handleFillForm}
                       disabled={!bulkText.trim()}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition"
@@ -670,7 +824,30 @@ export default function DailyScheduler() {
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
                   className="w-full h-28 rounded-lg border border-slate-600 bg-slate-900 text-slate-200 text-xs p-3 font-mono resize-none"
-                  placeholder={`Paste ${TOTAL_QUIZZES_PER_DAY} quiz blocks in format:\n\nTitle: Morning Quiz\nQ1. Question text?\n- A) Option A\n- B) Option B\n- C) Option C\n- D) Option D\nAnswer: A\n...`}
+                  placeholder={bulkCategory === 'opinion' 
+                    ? `Paste ${TOTAL_QUIZZES_PER_DAY} quiz blocks (No Answer needed for Opinion):
+
+Quiz 1
+Title: Aaj Ka Sawaal
+Q1. Aapko kaunsa color pasand hai?
+A) Red  B) Blue  C) Green  D) Yellow
+...10 questions...
+
+Quiz 2
+Title: Evening Poll
+...`
+                    : `Paste ${TOTAL_QUIZZES_PER_DAY} quiz blocks:
+
+Quiz 1
+Title: GK Morning Quiz
+Q1. Bharat ki rajdhani?
+A) Mumbai  B) Delhi  C) Kolkata  D) Chennai
+Answer: B
+...10 questions with answers...
+
+Quiz 2
+Title: Sports Quiz
+...`}
                 />
               </div>
 

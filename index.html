@@ -71,15 +71,30 @@
 		@font-face { font-display: swap; }
 		/* Accessible, visually-hidden utility for SEO/a11y headings */
 		.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+		/* Loading skeleton for faster perceived performance */
+		#root:empty{min-height:100vh;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%)}
+		#root:empty::before{content:'';display:block;width:120px;height:120px;margin:40vh auto 0;border-radius:50%;background:rgba(99,102,241,0.15);animation:pulse 1.5s ease-in-out infinite}
+		@keyframes pulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1)}}
 	</style>
-		<!-- Google tag (gtag.js) -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT"></script>
-		<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);} 
-			gtag('js', new Date());
-			gtag('config', 'G-98624Q56YT');
-		</script>
+	<!-- Google tag (gtag.js) - deferred for better performance -->
+	<script>
+		// Defer GA loading until after page is interactive
+		window.addEventListener('load', function() {
+			setTimeout(function() {
+				var s = document.createElement('script');
+				s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
+				s.async = true;
+				document.head.appendChild(s);
+				s.onload = function() {
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					window.gtag = gtag;
+					gtag('js', new Date());
+					gtag('config', 'G-98624Q56YT');
+				};
+			}, 2000); // Load GA 2 seconds after page load
+		});
+	</script>
 	
 	<!-- Structured Data: WebSite + Organization + WebApplication -->
 	<script type="application/ld+json">
