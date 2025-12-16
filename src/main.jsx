@@ -9,6 +9,13 @@ import { SoundProvider } from './contexts/SoundContext';
 import { warmMotion } from '@/lib/motion-lite';
 
 const rootEl = document.getElementById('root');
+
+// Remove static loader before React renders
+const staticLoader = document.getElementById('static-loader');
+if (staticLoader) {
+  staticLoader.remove();
+}
+
 if (!rootEl) {
   // eslint-disable-next-line no-console
   console.error('Root element #root not found in index.html');
