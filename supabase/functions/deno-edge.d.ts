@@ -7,6 +7,12 @@ declare const Deno: {
   exit(code?: number): never;
 };
 
+// Deno-specific ImportMeta extension
+interface ImportMeta {
+  main: boolean;
+  url: string;
+}
+
 // Remote std server module stub
 declare module "https://deno.land/std@0.224.0/http/server.ts" {
   export function serve(handler: (req: Request) => Response | Promise<Response>): void;

@@ -8,56 +8,61 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const url = Deno.env.get('EDGE_SUPABASE_URL') || Deno.env.get('SUPABASE_URL');
-const key = Deno.env.get('EDGE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const url = Deno.env.get('SUPABASE_URL');
+const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 if (!url || !key) {
-  console.log('Missing SUPABASE_URL or SERVICE_ROLE key');
+  console.error('Missing SUPABASE_URL or SERVICE_ROLE key');
   Deno.exit(1);
 }
-const supabase = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 
-function isoNow() { return new Date().toISOString(); }
+const supabase = createClient(url, key, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
-export default async function handler(req: Request) {
-  const now = isoNow();
-  const client = supabase; // reuse
-  // Use RPC via SQL if needed; direct update with PostgREST filters.
-  // First: scheduled -> active
-  const { error: err1 } = await client
-    .from('quiz_slots')
-    .update({ status: 'active' })
-    .lte('start_timestamp', now)
-    .eq('status', 'scheduled');
-  // Second: active -> finished
-  const { error: err2 } = await client
-    .from('quiz_slots')
-    .update({ status: 'finished' })
-    .lte('end_timestamp', now)
-    .eq('status', 'active');
+export default async function handler(_req: Request) {
+  const start = Date.now();
+  const now = new Date().toISOString();
 
-  // We cannot get affected row counts directly via supabase-js update; fetch counts separately.
-  // @ts-ignore - Deno runtime handles this correctly
-  const { count: activeCount } = await client
-    .from('quiz_slots')
-    .select('id', { head: true, count: 'exact' })
-    .eq('status', 'active');
-  // @ts-ignore - Deno runtime handles this correctly
-  const { count: finishedCount } = await client
-    .from('quiz_slots')
-    .select('id', { head: true, count: 'exact' })
-    .eq('status', 'finished');
+  // Run both updates in parallel for speed
+  const [res1, res2] = await Promise.all([
+    // scheduled -> active
+    supabase
+      .from('quiz_slots')
+      .update({ status: 'active' })
+      .lte('start_timestamp', now)
+      .eq('status', 'scheduled')
+      .select('id'),
+    // active -> finished
+    supabase
+      .from('quiz_slots')
+      .update({ status: 'finished' })
+      .lte('end_timestamp', now)
+      .eq('status', 'active')
+      .select('id'),
+  ]);
+
+  const activated = res1.data?.length ?? 0;
+  const finished = res2.data?.length ?? 0;
+  const errors = [res1.error?.message, res2.error?.message].filter(Boolean);
 
   const body = {
-    ok: true,
+    ok: errors.length === 0,
     time: now,
-    errors: [err1?.message, err2?.message].filter(Boolean),
-    active_now: activeCount,
-    finished_now: finishedCount,
+    activated,
+    finished,
+    errors,
+    durationMs: Date.now() - start,
   };
-  return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
+
+  return new Response(JSON.stringify(body), {
+    status: errors.length ? 500 : 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
-// Enable invoke (GET for simple check)
+// Enable direct invoke for testing
 if (import.meta.main) {
-  handler(new Request('http://local/invoke')).then(r => r.text().then(t => console.log(t)));
+  handler(new Request('http://local/invoke')).then((r) =>
+    r.text().then((t) => console.log(t))
+  );
 }
