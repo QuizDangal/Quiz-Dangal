@@ -20,7 +20,9 @@ import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import SEO from '@/components/SEO';
 
 const Results = () => {
-  const { id: quizId } = useParams();
+  const { id: quizIdParam, slotId: slotIdParam } = useParams();
+  const [effectiveQuizId, setEffectiveQuizId] = useState(quizIdParam);
+  const slotId = slotIdParam || null;
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, userProfile, refreshUserProfile } = useAuth();
@@ -46,8 +48,32 @@ const Results = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
   };
 
+  // Resolve slotId to quizId if needed
+  useEffect(() => {
+    const resolveQuizId = async () => {
+      if (slotId && !quizIdParam) {
+        // Slot route - need to get quiz_id from quiz_slots_view
+        const { data } = await supabase
+          .from('quiz_slots_view')
+          .select('quiz_id')
+          .eq('id', slotId)
+          .maybeSingle();
+        if (data?.quiz_id) {
+          setEffectiveQuizId(data.quiz_id);
+        }
+      } else {
+        setEffectiveQuizId(quizIdParam);
+      }
+    };
+    resolveQuizId();
+  }, [slotId, quizIdParam]);
+
+  // Use effectiveQuizId as quizId throughout
+  const quizId = effectiveQuizId;
+
   const fetchResults = useCallback(async () => {
-    if (!hasSupabaseConfig || !supabase) {
+    if (!hasSupabaseConfig || !supabase || !quizId) {
+      if (!quizId && (slotId || quizIdParam)) return; // Still resolving
       setErrorMessage('Results are unavailable right now.');
       setLoading(false);
       return;
@@ -67,13 +93,26 @@ const Results = () => {
       let amParticipant = false;
       if (user?.id) {
         try {
-          // First check quiz_participants
-          const { data: meRow } = await supabase
-            .from('quiz_participants')
-            .select('id, status')
-            .eq('quiz_id', quizId)
-            .eq('user_id', user.id)
-            .maybeSingle();
+          // First check quiz_participants - by quiz_id or slot_id
+          let meRow = null;
+          if (slotId) {
+            const { data } = await supabase
+              .from('quiz_participants')
+              .select('id, status')
+              .eq('slot_id', slotId)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            meRow = data;
+          }
+          if (!meRow) {
+            const { data } = await supabase
+              .from('quiz_participants')
+              .select('id, status')
+              .eq('quiz_id', quizId)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            meRow = data;
+          }
           
           if (meRow) {
             amParticipant = true;
@@ -234,11 +273,11 @@ const Results = () => {
     } finally {
       setLoading(false);
     }
-  }, [quizId, user?.id, isAdmin]);
+  }, [quizId, quizIdParam, slotId, user?.id, isAdmin]);
 
   useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+    if (quizId) fetchResults();
+  }, [fetchResults, quizId]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -757,15 +796,6 @@ const Results = () => {
     joinTimeoutMs: 5000,
   });
 
-  const formatTimeParts = (ms) => {
-    const total = Math.max(0, Math.floor((ms ?? 0) / 1000));
-    const days = Math.floor(total / 86400);
-    const hours = Math.floor((total % 86400) / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-    return { days, hours, minutes, seconds };
-  };
-
   // Build share text and URL (with referral)
   // buildSharePayload removed (poster-only sharing flow now)
 
@@ -920,56 +950,53 @@ const Results = () => {
     );
   }
 
+  // Results not published yet - show timer with back to home button
   if (!loading && (timeLeftMs ?? 0) > 0 && results.length === 0) {
+    const formatTimeParts = (ms) => {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return { days, hours, minutes, seconds };
+    };
+    const { days, hours, minutes, seconds } = formatTimeParts(timeLeftMs);
+    const part = (val, label) => (
+      <div className="px-3 py-2 rounded-md bg-slate-800/70 border border-slate-700 min-w-[64px]">
+        <div className="text-xl font-bold text-white tabular-nums">
+          {val.toString().padStart(2, '0')}
+        </div>
+        <div className="text-xs text-slate-400">{label}</div>
+      </div>
+    );
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
         <SEO
           title="Results – Not Published | Quiz Dangal"
           description="Results will be available after the quiz ends."
-          canonical={
-            typeof window !== 'undefined'
-              ? `${window.location.origin}/results/${quizId}`
-              : 'https://quizdangal.com/results'
-          }
           robots="noindex, nofollow"
         />
         <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
-          <h2 className="text-2xl font-bold mb-2 text-white">Results not published yet</h2>
-          {quiz?.end_time ? (
-            <div className="mb-4">
-              {timeLeftMs > 0 ? (
-                <div>
-                  <p className="text-slate-300 mb-3">Quiz ends in</p>
-                  {(() => {
-                    const { days, hours, minutes, seconds } = formatTimeParts(timeLeftMs);
-                    const part = (val, label) => (
-                      <div className="px-3 py-2 rounded-md bg-slate-800/70 border border-slate-700 min-w-[64px]">
-                        <div className="text-xl font-bold text-white tabular-nums">
-                          {val.toString().padStart(2, '0')}
-                        </div>
-                        <div className="text-xs text-slate-400">{label}</div>
-                      </div>
-                    );
-                    return (
-                      <div className="flex items-center justify-center gap-2">
-                        {days > 0 && part(days, 'Days')}
-                        {part(hours, 'Hours')}
-                        {part(minutes, 'Minutes')}
-                        {part(seconds, 'Seconds')}
-                      </div>
-                    );
-                  })()}
-                  <p className="text-xs text-slate-400 mt-3">
-                    End time: {new Date(quiz.end_time).toLocaleString()}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-slate-300 mb-4">Finalizing results… please stay on this page.</p>
-              )}
-            </div>
-          ) : (
-            <p className="text-slate-300 mb-4">Please check back after the quiz end time.</p>
+          <h2 className="text-xl font-bold mb-2 text-white">Results will be published soon.</h2>
+          <p className="text-slate-300 mb-4">Quiz ends in</p>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {days > 0 && part(days, 'Days')}
+            {part(hours, 'Hours')}
+            {part(minutes, 'Minutes')}
+            {part(seconds, 'Seconds')}
+          </div>
+          {quiz?.end_time && (
+            <p className="text-xs text-slate-400 mb-4">
+              Expected publish time: {new Date(quiz.end_time).toLocaleString()}
+            </p>
           )}
+          <Button
+            variant="brand"
+            className="w-full"
+            onClick={() => navigate('/')}
+          >
+            Back to Home
+          </Button>
         </div>
       </div>
     );

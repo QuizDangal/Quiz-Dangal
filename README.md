@@ -1,15 +1,113 @@
 # Quiz Dangal
 
 Ek modern quiz web app jo Supabase (Auth + DB + Edge Functions), React (Vite), aur PWA features ka use karta hai. Is README me Hindi-first guidance diya gaya hai taaki setup aur deployment asaan ho.
+
 ## Features
 - User Auth (Supabase)
-- Admin tools (notifications, recompute results)
+- Admin tools (notifications, recompute results, daily scheduler)
+- Slot-based quiz system (96 quizzes/day per category)
 - PWA (offline cache, installable)
 - Push Notifications (Web Push + VAPID)
- - Resilient quiz answer syncing (retry + backoff) ✅
+- Resilient quiz answer syncing (retry + backoff) ✅
 
 ## Tech Stack
 - Frontend: React 18 + Vite 4 + TailwindCSS + Radix UI
+- Backend: Supabase (PostgreSQL + Auth + Edge Functions)
+- PWA: Service Worker + Web Push
+
+## Setup Instructions
+
+### 1. Database Setup
+
+**Option A: Using Supabase Remote**
+```bash
+# Login to Supabase
+supabase login
+
+# Link to your project (get project ref from dashboard)
+supabase link --project-ref your-project-ref
+
+# Push migration
+supabase db push
+
+# Or run migration directly
+supabase migration up
+```
+
+**Option B: Manual SQL Execution**
+1. Go to Supabase Dashboard → SQL Editor
+2. Open `supabase/migrations/20251217000000_complete_schema.sql`
+3. Copy entire content and execute
+
+This migration creates:
+- All tables (profiles, quizzes, quiz_slots, questions, options, etc.)
+- Indexes for performance
+- RLS policies for security
+- All RPC functions (join_quiz, compute_results, etc.)
+- Triggers for automation
+- Views for data aggregation
+
+### 2. Edge Functions Setup
+
+Deploy edge functions:
+```bash
+# Deploy all functions
+supabase functions deploy tick-slots
+supabase functions deploy cleanup_slots
+supabase functions deploy send-notifications
+supabase functions deploy admin-upsert-questions
+```
+
+Set environment variables in Supabase Dashboard:
+- `SUPABASE_URL` - Your project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key
+- `SUPABASE_ANON_KEY` - Anon public key
+
+### 3. Cron Jobs Setup
+
+In Supabase Dashboard → Database → Cron Jobs, add:
+
+```sql
+-- Run tick-slots every minute (activates scheduled slots)
+SELECT cron.schedule(
+    'tick-quiz-slots',
+    '* * * * *',
+    $$
+    SELECT net.http_post(
+        url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/tick-slots',
+        headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
+    ) AS request_id;
+    $$
+);
+
+-- Run cleanup daily at 3 AM (removes old data)
+SELECT cron.schedule(
+    'cleanup-old-slots',
+    '0 3 * * *',
+    $$
+    SELECT net.http_post(
+        url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/cleanup_slots',
+        headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
+    ) AS request_id;
+    $$
+);
+```
+
+### 4. Frontend Environment Variables
+
+Create `.env.local`:
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_ADMIN_EMAILS=admin1@example.com,admin2@example.com
+```
+
+### 5. Install & Run
+
+```bash
+npm install
+npm run dev
+```
 
 ## Folder Structure (short)
 - `src/` – React code
@@ -83,9 +181,11 @@ Error Modes:
   - Optional: `VITE_BYPASS_AUTH=1` (sirf local UI testing ke liye; auth flows disable ho jayenge)
 
 3) Supabase Migrations (Database)
+- **IMPORTANT**: Pehle complete schema migration run karein: `supabase/migrations/20251217000000_complete_schema.sql`
+- Yeh migration sabhi tables, indexes, RLS policies, RPC functions, triggers aur views create karta hai
 - Supabase CLI install ho to: `supabase db push`
-- Ya phir Supabase Dashboard → SQL editor me `supabase/migrations/` ke latest files run karein.
-- Khaskar `supabase/migrations/20251007221500_add_prize_type_column.sql` zaroor apply karein; bina iske admin panel me quiz create karte waqt `prize_type` column missing error aayega.
+- Ya phir Supabase Dashboard → SQL editor me migration file ka content copy-paste karke run karein
+- Migration successfully run hone ke baad sab features work karenge (quiz slots, scheduler, results computation, etc.)
 
 4) Supabase Function Secrets (Backend)
 Supabase dashboard me function secrets set karein:

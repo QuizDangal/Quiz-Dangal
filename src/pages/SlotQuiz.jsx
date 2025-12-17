@@ -1,36 +1,30 @@
-import React, { useEffect, useState, useCallback } from 'react';
+﻿import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuizEngine } from '@/hooks/useQuizEngine';
-import SEO from '@/components/SEO';
-import { formatTimeOnly } from '@/lib/utils';
 import { fetchSlotsForCategory } from '@/lib/slots';
+import {
+  LoadingView,
+  ErrorView,
+  NoQuestionsView,
+  PreLobbyView,
+  WaitingView,
+  CompletedView,
+  TimesUpView,
+  ActiveQuizView,
+} from '@/components/quiz/QuizUI';
 
-// SlotQuiz: lobby wrapper around normal quiz engine using slot metadata.
-// If slot not active yet -> countdown lobby. If paused -> overlay. If finished -> redirect to results.
-// When active we simply render the existing /quiz/:id engine through local invocation of useQuizEngine.
-
-function LobbyCountdown({ seconds }) {
-  return (
-    <div className="text-center mt-6 text-indigo-300 font-semibold text-xl" aria-live="polite">
-      Starts in{' '}
-      {Math.floor(seconds / 60)
-        .toString()
-        .padStart(2, '0')}
-      :{(seconds % 60).toString().padStart(2, '0')}
-    </div>
-  );
-}
-
+/**
+ * SlotQuiz page component for slot-based quizzes.
+ * Uses shared QuizUI components to reduce code duplication.
+ * Slot ID = Quiz ID (same UUID).
+ */
 export default function SlotQuiz() {
   const { slotId } = useParams();
   const navigate = useNavigate();
-  const { user: _user } = useAuth();
   const [slot, setSlot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [phase, setPhase] = useState('loading'); // loading | pre-slot | live | paused | finished | error
 
   const loadSlot = useCallback(async () => {
     if (!supabase) {
@@ -49,7 +43,7 @@ export default function SlotQuiz() {
       setSlot(data);
       setLoading(false);
     } catch (e) {
-      setError(e.message || 'Failed');
+      setError(e.message || 'Failed to load slot');
       setLoading(false);
     }
   }, [slotId]);
@@ -58,130 +52,156 @@ export default function SlotQuiz() {
     loadSlot();
   }, [loadSlot]);
 
-  // derive phase from slot meta directly
-  useEffect(() => {
-    if (!slot) return;
-    if (error) return;
-    const now = Date.now();
-    const st = slot.start_time ? new Date(slot.start_time).getTime() : null;
-    const et = slot.end_time ? new Date(slot.end_time).getTime() : null;
-    if (slot.status === 'paused') {
-      setPhase('paused');
-      return;
-    }
-    if (st && et && now >= st && now < et) {
-      setPhase('live');
-      return;
-    }
-    if (st && now < st) {
-      setPhase('pre-slot');
-      return;
-    }
-    if (et && now >= et) {
-      setPhase('finished');
-      return;
-    }
-    setPhase('error');
-  }, [slot, error]);
+  // Use quiz engine with slot.id as quizId
+  const {
+    quiz,
+    questions,
+    currentQuestionIndex,
+    answers,
+    quizState,
+    timeLeft,
+    submitting,
+    joined,
+    participantStatus,
+    totalJoined,
+    displayJoined,
+    handleJoinOrPrejoin,
+    handleAnswerSelect,
+    handleSubmit,
+    formatTime,
+  } = useQuizEngine(slot?.id, navigate, { slotId });
 
-  // Redirect finished to results
+  // Redirect finished to next slot
   useEffect(() => {
-    if (phase !== 'finished' || !slot?.quiz_id || !slot?.category) return;
+    if (quizState !== 'finished' && quizState !== 'completed') return;
+    if (!slot?.id || !slot?.category) return;
     let cancelled = false;
     (async () => {
       try {
-        // Fetch future slots for same category, pick the earliest after current end
-        const { slots: list, mode: _mode } = await fetchSlotsForCategory(supabase, slot.category);
+        const { slots: list } = await fetchSlotsForCategory(supabase, slot.category);
         const endMs = slot.end_time ? new Date(slot.end_time).getTime() : Date.now();
         const future = (list || [])
           .filter((s) => {
             if (!s.start_time) return false;
             const st = new Date(s.start_time).getTime();
-            return st > endMs; // strictly after current slot end
+            return st > endMs;
           })
           .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
         if (!cancelled && future[0]) {
-          navigate(`/quiz/slot/${future[0].slotId}`);
-        } else if (!cancelled) {
-          navigate(`/results/${slot.quiz_id}`);
+          navigate('/quiz/slot/' + future[0].slotId);
         }
       } catch {
-        if (!cancelled) navigate(`/results/${slot.quiz_id}`);
+        // ignore
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [phase, slot?.quiz_id, slot?.category, slot?.end_time, navigate]);
+    return () => { cancelled = true; };
+  }, [quizState, slot?.id, slot?.category, slot?.end_time, navigate]);
 
-  // If live, use quiz engine directly
-  const engine = useQuizEngine(slot?.quiz_id, navigate, { slotId });
+  // Close handler for modals
+  const handleClose = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
+  // Navigate to home
+  const handleNavigateHome = () => navigate('/');
+
+  // Loading state
+  if (loading || quizState === 'loading' || !slot) {
+    return <LoadingView quizId={slotId} />;
+  }
+
+  // Error state
+  if (error) {
+    return <ErrorView message={error} />;
+  }
+
+  // Get slot/quiz details
+  const quizTitle = slot.quiz_title || quiz?.title || 'Quiz';
+  const prizes = Array.isArray(slot.prizes) ? slot.prizes : [];
+  const prizeType = 'coins';
+
+  // Calculate if quiz is currently active
+  const now = new Date();
+  const startTime = slot.start_time ? new Date(slot.start_time) : null;
+  const endTime = slot.end_time ? new Date(slot.end_time) : null;
+  const isActive = startTime && endTime && now >= startTime && now < endTime;
+
+  // Pre-lobby: not joined yet
+  if (!joined && quizState !== 'completed') {
+    return (
+      <PreLobbyView
+        quiz={{ start_time: slot.start_time, end_time: slot.end_time }}
+        title={quizTitle}
+        isActive={isActive}
+        timeLeft={timeLeft}
+        displayJoined={displayJoined}
+        prizes={prizes}
+        prizeType={prizeType}
+        formatTime={formatTime}
+        onJoin={handleJoinOrPrejoin}
+        onClose={handleClose}
+      />
+    );
+  }
+
+  // Waiting for quiz to start
+  if (quizState === 'waiting') {
+    return (
+      <WaitingView
+        quiz={{ start_time: slot.start_time, end_time: slot.end_time }}
+        title={quizTitle}
+        timeLeft={timeLeft}
+        totalJoined={totalJoined}
+        prizes={prizes}
+        prizeType={prizeType}
+        formatTime={formatTime}
+        onClose={handleClose}
+      />
+    );
+  }
+
+  // Check if user answered any questions
+  const hasAnsweredQuestions = Object.keys(answers).length > 0;
+
+  // Completed/finished state with answers
+  if (quizState === 'completed' || (quizState === 'finished' && hasAnsweredQuestions)) {
+    return (
+      <CompletedView
+        title={quizTitle}
+        onNavigateHome={handleNavigateHome}
+      />
+    );
+  }
+
+  // Quiz finished but user didn't answer - show time's up
+  if (quizState === 'finished' && !hasAnsweredQuestions) {
+    return <TimesUpView title={quizTitle} onNavigateHome={handleNavigateHome} />;
+  }
+
+  // Active quiz state - check for questions
+  if (!questions || questions.length === 0) {
+    return <NoQuestionsView />;
+  }
+
+  // Active quiz with questions
   return (
-    <div className="container mx-auto px-4 py-4 text-foreground">
-      <SEO title="Slot Lobby – Quiz Dangal" description="Live quiz slot lobby" />
-      {loading && <div className="text-center py-24">Loading slot…</div>}
-      {!loading && error && <div className="text-center py-24 text-red-400">{error}</div>}
-      {!loading && !error && (
-        <div className="max-w-xl mx-auto">
-          <h1 className="text-xl font-bold mb-2">Quiz Slot</h1>
-          <div className="text-sm text-slate-400 mb-4">
-            Start: {slot.start_time ? formatTimeOnly(slot.start_time) : '—'} • End:{' '}
-            {slot.end_time ? formatTimeOnly(slot.end_time) : '—'}
-          </div>
-          {phase === 'paused' && (
-            <div className="p-4 rounded-lg bg-amber-700/30 border border-amber-600 text-amber-200 text-sm mb-4">
-              Slot paused by admin. Please wait…
-            </div>
-          )}
-          {phase === 'pre-slot' && engine.timeLeft > 0 && (
-            <LobbyCountdown seconds={engine.timeLeft} />
-          )}
-          {phase === 'live' && <LiveQuizInner quizEngine={engine} />}
-          {phase === 'error' && <div className="text-center text-red-400">Invalid slot state.</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LiveQuizInner({ quizEngine }) {
-  const engine = quizEngine;
-  if (!engine) return null;
-  if (engine.quizState === 'loading') return <div className="mt-6">Quiz loading…</div>;
-  if (engine.quizState === 'waiting') return <div className="mt-6">Preparing…</div>;
-  return (
-    <div className="mt-4 border border-slate-700 rounded-xl p-4 bg-slate-900/60">
-      <div className="text-sm text-slate-300 mb-2">Live Quiz</div>
-      {engine.questions && engine.questions.length > 0 ? (
-        <div>
-          <div className="font-semibold mb-2">
-            Q{engine.currentQuestionIndex + 1}.{' '}
-            {engine.questions[engine.currentQuestionIndex]?.question_text}
-          </div>
-          <div className="space-y-2">
-            {engine.questions[engine.currentQuestionIndex]?.options?.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() =>
-                  engine.handleAnswerSelect(
-                    engine.questions[engine.currentQuestionIndex].id,
-                    opt.id,
-                  )
-                }
-                className="w-full text-left px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm"
-              >
-                {opt.option_text}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div>No questions loaded yet.</div>
-      )}
-      {engine.quizState === 'finished' && (
-        <div className="mt-4 text-indigo-300 text-sm">Finished – redirecting…</div>
-      )}
-    </div>
+    <ActiveQuizView
+      title={quizTitle}
+      quizId={slotId}
+      questions={questions}
+      currentQuestionIndex={currentQuestionIndex}
+      answers={answers}
+      timeLeft={timeLeft}
+      submitting={submitting}
+      quizState={quizState}
+      participantStatus={participantStatus}
+      formatTime={formatTime}
+      onAnswerSelect={handleAnswerSelect}
+      onSubmit={handleSubmit}
+    />
   );
 }

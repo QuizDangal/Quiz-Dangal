@@ -10,16 +10,11 @@ import { warmMotion } from '@/lib/motion-lite';
 
 const rootEl = document.getElementById('root');
 
-// Remove static loader before React renders
-const staticLoader = document.getElementById('static-loader');
-if (staticLoader) {
-  staticLoader.remove();
-}
-
 if (!rootEl) {
   // eslint-disable-next-line no-console
   console.error('Root element #root not found in index.html');
 } else {
+  // Start React render
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
       <AuthProvider>
@@ -31,6 +26,18 @@ if (!rootEl) {
       </AuthProvider>
     </React.StrictMode>,
   );
+  
+  // Smoothly fade out static loader after React starts rendering
+  // Using requestAnimationFrame ensures DOM is updated before we fade out
+  requestAnimationFrame(() => {
+    const staticLoader = document.getElementById('static-loader');
+    if (staticLoader) {
+      staticLoader.style.opacity = '0';
+      setTimeout(() => {
+        staticLoader.remove();
+      }, 300); // Match the CSS transition duration
+    }
+  });
 }
 
 // Defer vitals collection until after initial paint.

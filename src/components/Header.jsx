@@ -100,7 +100,7 @@ const Header = () => {
               {/* Brand */}
               <Link
                 to="/"
-                className="flex items-center gap-2 group"
+                className="flex items-center gap-2 group shrink-0 min-w-0"
                 onMouseEnter={() => prefetchRoute('/')}
                 onFocus={() => prefetchRoute('/')}
                 aria-label="Go to home page"
@@ -111,25 +111,25 @@ const Header = () => {
                   width="48"
                   height="48"
                   decoding="async"
-                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none shrink-0"
                   draggable="false"
                   style={{ imageRendering: 'auto' }}
                 />
-                <div className="leading-tight whitespace-nowrap select-none">
+                <div className="leading-tight select-none min-w-0">
                   <div
-                    className="text-lg sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight"
+                    className="text-base sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight truncate"
                     aria-hidden="true"
                   >
                     Quiz Dangal
                   </div>
-                  <div className="text-[11px] sm:text-xs text-white/70 -mt-0.5 font-medium">
+                  <div className="text-[10px] sm:text-xs text-white/70 -mt-0.5 font-medium truncate">
                     Where Minds Clash
                   </div>
                 </div>
               </Link>
 
               {/* Actions */}
-              <div className="ml-auto flex items-center gap-2 sm:gap-3 translate-x-1 sm:translate-x-0">
+              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 {/* When not logged in: show Login button */}
                 {!user && (
                   <Link

@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type OptionPayload = {
@@ -25,9 +24,8 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("VITE_SUPABASE_ANON_KEY") ?? "";
 
 const DEFAULT_ORIGINS = "https://quizdangal.com,http://localhost:5173,http://localhost:5174";
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS")
-  ?? Deno.env.get("ALLOWED_ORIGIN")
-  ?? DEFAULT_ORIGINS)
+const originsEnv = Deno.env.get("ALLOWED_ORIGINS") ?? Deno.env.get("ALLOWED_ORIGIN") ?? "";
+const ALLOWED_ORIGINS = (originsEnv || DEFAULT_ORIGINS)
   .split(",")
   .map((entry) => entry.trim())
   .filter(Boolean);
@@ -176,22 +174,32 @@ async function runRpcOrFallback(adminClient: ReturnType<typeof createClient>, qu
   return { ok: true as const, usedFallback: true as const };
 }
 
-serve(async (req) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+Deno.serve(async (req: Request) => {
+  // Always handle OPTIONS first with simple headers
   if (req.method === "OPTIONS") {
-    return new Response("", { status: 204, headers: { ...makeCorsHeaders(req) } });
+    return new Response("ok", { status: 200, headers: corsHeaders });
   }
+
+  // Get dynamic CORS headers for actual requests
+  const dynamicCors = makeCorsHeaders(req);
 
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
-      headers: { ...makeCorsHeaders(req) },
+      headers: dynamicCors,
     });
   }
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return new Response(JSON.stringify({ error: "Server not configured" }), {
       status: 500,
-      headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+      headers: { "Content-Type": "application/json", ...dynamicCors },
     });
   }
 
@@ -204,21 +212,21 @@ serve(async (req) => {
     if (!isUuid(quizId)) {
       return new Response(JSON.stringify({ error: "Invalid quizId" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+        headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }
 
     if (!items.length) {
       return new Response(JSON.stringify({ error: "No questions supplied" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+        headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }
 
     if (mode !== "append" && mode !== "replace") {
       return new Response(JSON.stringify({ error: "Invalid mode" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+        headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }
 
@@ -226,7 +234,7 @@ serve(async (req) => {
     if (!adminCheck.ok) {
       return new Response(JSON.stringify({ error: adminCheck.reason }), {
         status: adminCheck.status,
-        headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+        headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }
 
@@ -234,21 +242,20 @@ serve(async (req) => {
     if (!result.ok) {
       return new Response(JSON.stringify({ error: result.reason ?? "Insert failed" }), {
         status: 500,
-        headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+        headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }
 
     return new Response(JSON.stringify({ ok: true, fallback: result.usedFallback ?? false }), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+      headers: { "Content-Type": "application/json", ...dynamicCors },
     });
   } catch (error) {
-    // Avoid leaking stack traces or internal details in responses
     const safeMsg = error instanceof Error ? error.message : 'internal_error';
     console.error("admin-upsert-questions error", safeMsg);
     return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
-      headers: { "Content-Type": "application/json", ...makeCorsHeaders(req) },
+      headers: { "Content-Type": "application/json", ...dynamicCors },
     });
   }
 });

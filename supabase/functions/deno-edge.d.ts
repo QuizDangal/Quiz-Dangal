@@ -5,6 +5,7 @@
 declare const Deno: {
   env: { get(name: string): string | undefined };
   exit(code?: number): never;
+  serve(handler: (req: Request) => Response | Promise<Response>): void;
 };
 
 // Deno-specific ImportMeta extension
@@ -16,6 +17,37 @@ interface ImportMeta {
 // Remote std server module stub
 declare module "https://deno.land/std@0.224.0/http/server.ts" {
   export function serve(handler: (req: Request) => Response | Promise<Response>): void;
+}
+
+// JSR Supabase module stub
+declare module "jsr:@supabase/supabase-js@2" {
+  export interface SupabaseClient {
+    from(table: string): QueryBuilder;
+    rpc(fn: string, params?: Record<string, any>): Promise<{ data: any; error: any }>;
+  }
+  
+  interface QueryBuilder {
+    eq(column: string, value: any): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    in(column: string, values: any[]): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    lte(column: string, value: any): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    gte(column: string, value: any): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    limit(count: number): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    select(columns?: string, options?: { head?: boolean; count?: 'exact' | 'planned' | 'estimated' }): QueryBuilder & Promise<{ data: any; error: any; count?: number }>;
+    update(values: Record<string, any>): QueryBuilder & Promise<{ data: any; error: any }>;
+    insert(values: Record<string, any> | Record<string, any>[]): Promise<{ data: any; error: any }>;
+    delete(): QueryBuilder & Promise<{ data: any; error: any }>;
+  }
+  
+  export function createClient(
+    supabaseUrl: string,
+    supabaseKey: string,
+    options?: {
+      auth?: {
+        autoRefreshToken?: boolean;
+        persistSession?: boolean;
+      };
+    }
+  ): SupabaseClient;
 }
 
 // Supabase JS client stub for ESM imports

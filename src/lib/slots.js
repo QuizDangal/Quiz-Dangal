@@ -49,63 +49,105 @@ function normalizeSlot(row) {
 }
 
 // Fetch slots for a category for today + next 3 days.
-// If view is unavailable, fallback to quizzes table (legacy) and synthesize slot objects.
+// Merges both slot-based quizzes AND legacy quizzes from quizzes table.
 export async function fetchSlotsForCategory(supabase, category) {
   if (!supabase) return { slots: [], mode: 'none', auto: true };
+  
+  let slotsFromView = [];
+  let legacySlots = [];
+  let autoEnabled = true;
+  
+  // Try to fetch from quiz_slots_view
   try {
     const { data, error } = await supabase
       .from('quiz_slots_view')
       .select('*')
       .eq('category', category)
       .order('start_time', { ascending: true });
-    if (error) {
-      // If the view doesn't exist yet (PGRST codes vary), log and fallback
-      logger.debug('quiz_slots_view error; fallback to quizzes', error.message || error);
-      throw error;
+    if (!error && data) {
+      slotsFromView = data.map(normalizeSlot);
     }
-    const slots = (data || []).map(normalizeSlot);
-    // Fetch runtime override (optional). If table missing, assume enabled.
-    let autoEnabled = true;
-    try {
-      const { data: over, error: overErr } = await supabase
-        .from('category_runtime_overrides')
-        .select('category,auto_enabled:is_auto')
-        .eq('category', category)
-        .maybeSingle();
-      if (!overErr && over) autoEnabled = !!over.auto_enabled;
-    } catch (e) {
-      /* ignore missing override table */
-    }
-    return { slots, mode: 'slots', auto: autoEnabled };
-  } catch {
-    // Fallback legacy quiz mode
-    try {
-      const { data, error } = await supabase
-        .from('quizzes')
-        .select('id,title,start_time,end_time,status,prizes,prize_type')
-        .eq('category', category)
-        .order('start_time', { ascending: true });
-      if (error) throw error;
+  } catch (e) {
+    logger.debug('quiz_slots_view error', e.message || e);
+  }
+  
+  // Also fetch legacy quizzes that don't have a slot_id (directly created quizzes)
+  try {
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select('id,title,start_time,end_time,status,prizes,prize_type,slot_id,questions(count)')
+      .eq('category', category)
+      .order('start_time', { ascending: true });
+    if (!error && data) {
       const now = Date.now();
-      const slots = (data || []).map((q) => ({
+      // Only include quizzes that are NOT linked to a slot (legacy quizzes)
+      const legacyQuizzes = (data || []).filter(q => !q.slot_id);
+      
+      // Fetch participant counts for legacy quizzes
+      let participantCounts = {};
+      if (legacyQuizzes.length > 0) {
+        try {
+          const { data: countData } = await supabase.rpc('get_engagement_counts_many', {
+            p_quiz_ids: legacyQuizzes.map(q => q.id)
+          });
+          if (countData) {
+            for (const row of countData) {
+              participantCounts[row.quiz_id] = (row.pre_joined || 0) + (row.joined || 0);
+            }
+          }
+        } catch (e) {
+          // Ignore RPC errors, just show 0 participants
+        }
+      }
+      
+      legacySlots = legacyQuizzes.map((q) => ({
         slotId: q.id,
         quizId: q.id,
         category,
+        title: q.title,
+        quiz_title: q.title,
         start_time: q.start_time,
         end_time: q.end_time,
         status: deriveLegacyStatus(q, now),
         prizes: Array.isArray(q.prizes) ? q.prizes : [],
         prize_type: q.prize_type || 'coins',
-        participants_joined: 0,
-        participants_total: 0,
+        participants_joined: participantCounts[q.id] || 0,
+        participants_total: participantCounts[q.id] || 0,
+        questions_count: q.questions?.[0]?.count || 0,
         auto_enabled: true,
+        isLegacy: true,
       }));
-      return { slots, mode: 'legacy', auto: true };
-    } catch (err2) {
-      logger.error('Legacy fallback failed', err2.message || err2);
-      return { slots: [], mode: 'error', auto: true };
     }
+  } catch (e) {
+    logger.debug('Legacy quizzes fetch error', e.message || e);
   }
+  
+  // Fetch runtime override (optional)
+  try {
+    const { data: over, error: overErr } = await supabase
+      .from('category_runtime_overrides')
+      .select('category,auto_enabled:is_auto')
+      .eq('category', category)
+      .maybeSingle();
+    if (!overErr && over) autoEnabled = !!over.auto_enabled;
+  } catch (e) {
+    /* ignore missing override table */
+  }
+  
+  // Merge and deduplicate (slots take priority if same quiz_id exists)
+  const slotQuizIds = new Set(slotsFromView.map(s => s.quizId).filter(Boolean));
+  const uniqueLegacy = legacySlots.filter(l => !slotQuizIds.has(l.quizId));
+  const allSlots = [...slotsFromView, ...uniqueLegacy];
+  
+  // Sort by start_time
+  allSlots.sort((a, b) => {
+    const ta = a.start_time ? new Date(a.start_time).getTime() : 0;
+    const tb = b.start_time ? new Date(b.start_time).getTime() : 0;
+    return ta - tb;
+  });
+  
+  const mode = slotsFromView.length > 0 ? 'slots' : (uniqueLegacy.length > 0 ? 'legacy' : 'none');
+  return { slots: allSlots, mode, auto: autoEnabled };
 }
 
 function deriveLegacyStatus(q, nowMs) {

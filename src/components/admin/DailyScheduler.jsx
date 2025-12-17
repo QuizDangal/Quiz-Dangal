@@ -433,7 +433,7 @@ export default function DailyScheduler() {
       };
 
       // Call RPC
-      const { data, error } = await supabase.rpc('admin_seed_quiz_day_multi', { p_payload: payload });
+      const { error } = await supabase.rpc('admin_seed_quiz_day_multi', { p_payload: payload });
       if (error) throw error;
 
       toast({ 

@@ -14,7 +14,6 @@ import {
   prefetchRoute,
 } from '@/lib/utils';
 import SEO from '@/components/SEO';
-import { useToast } from '@/components/ui/use-toast';
 // Match Category status badge visuals
 function statusBadge(s) {
   const base = 'px-2 py-0.5 rounded-full text-xs font-semibold';
@@ -134,7 +133,7 @@ const GoldTrophy = ({ size = 72, centered = false, fitParent = false }) => {
 const MyQuizzes = () => {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
-  const { toast: _toast } = useToast();
+  // useToast removed - not used currently
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   // tick state hata diya (countdown UI reactivity sufficient without forced re-render)
@@ -521,14 +520,16 @@ const MyQuizzes = () => {
                     return display.formatted;
                   };
                   const joined = counts[quiz.id] || 0;
+                  // Determine navigation path based on slot_id
+                  const quizPath = quiz.slot_id ? `/quiz/slot/${quiz.slot_id}` : `/quiz/${quiz.id}`;
                   // Removed unused local UI state placeholders (already, btnDisabled, btnLabel, btnColor) for lint cleanliness
                   return (
                     <m.div
-                      key={`lu-${quiz.id}`}
+                      key={`lu-${quiz.slot_id || quiz.id}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      onClick={() => navigate(`/quiz/${quiz.id}`)}
+                      onClick={() => navigate(quizPath)}
                       className={`relative overflow-hidden rounded-2xl border ${isActive ? 'border-emerald-700/50' : 'border-slate-800'} bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-900/60 shadow-xl cursor-pointer group hover:-translate-y-0.5 transition-transform qd-card p-4 sm:p-5`}
                     >
                       {/* Background accents to match Category */}
@@ -634,7 +635,7 @@ const MyQuizzes = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/quiz/${quiz.id}`);
+                            navigate(quizPath);
                           }}
                           onMouseEnter={() => prefetchRoute('/quiz')}
                           onFocus={() => prefetchRoute('/quiz')}
@@ -668,7 +669,6 @@ const MyQuizzes = () => {
               });
               const board = Array.isArray(quiz.leaderboard) ? quiz.leaderboard : [];
               const isResultOut = now >= endTime && board.length > 0;
-              const _isPastEnd = now >= endTime;
               const userRank = isResultOut ? board.find((p) => p.user_id === user?.id) : null;
               const prizeType =
                 quiz.prize_type && String(quiz.prize_type).trim() ? quiz.prize_type : 'coins';
@@ -682,11 +682,11 @@ const MyQuizzes = () => {
 
               return (
                 <m.div
-                  key={quiz.id}
+                  key={quiz.slot_id || quiz.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.06 }}
-                  onClick={() => navigate(`/results/${quiz.id}`)}
+                  onClick={() => navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`)}
                   className="group relative overflow-hidden rounded-2xl p-[1px] cursor-pointer shadow-[0_14px_34px_-22px_rgba(99,102,241,0.55)] hover:-translate-y-1 transition-transform bg-gradient-to-r from-indigo-600/40 via-fuchsia-600/30 to-emerald-600/30"
                 >
                   <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/80 p-4">
@@ -721,7 +721,7 @@ const MyQuizzes = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/results/${quiz.id}`);
+                          navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`);
                         }}
                         className="shrink-0 rounded-full border border-violet-500/40 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-white transition hover:scale-[1.03] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-fuchsia-300/60"
                       >

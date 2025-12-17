@@ -320,7 +320,12 @@ export default function Admin() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      const res = await fetch('/functions/v1/admin-upsert-questions', {
+      // Use Supabase functions URL (not relative path which only works in proxy setup)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const fnUrl = supabaseUrl
+        ? `${supabaseUrl}/functions/v1/admin-upsert-questions`
+        : '/functions/v1/admin-upsert-questions';
+      const res = await fetch(fnUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

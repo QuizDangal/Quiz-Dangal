@@ -18,7 +18,7 @@ const supabase = createClient(url, key, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-export default async function handler(req: Request) {
+Deno.serve(async (req: Request) => {
   // Allow both GET and POST for flexibility
   if (req.method !== 'POST' && req.method !== 'GET') {
     return new Response(JSON.stringify({ ok: false, error: 'GET or POST only' }), {
@@ -57,11 +57,4 @@ export default async function handler(req: Request) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
-}
-
-// Enable direct invoke for testing
-if (import.meta.main) {
-  handler(new Request('http://local/invoke', { method: 'POST' })).then((r) =>
-    r.text().then((t) => console.log(t))
-  );
-}
+});

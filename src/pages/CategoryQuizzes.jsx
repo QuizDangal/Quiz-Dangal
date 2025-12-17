@@ -6,21 +6,11 @@ import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
 import { formatDateOnly, formatTimeOnly, getPrizeDisplay, prefetchRoute } from '@/lib/utils';
-import { RECENT_COMPLETED_GRACE_MIN } from '@/constants';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SEO from '@/components/SEO';
-
-function _statusBadge(s) {
-  const base = 'px-2 py-0.5 rounded-full text-xs font-semibold';
-  if (s === 'active') return base + ' bg-green-600/15 text-green-400 border border-green-700/40';
-  if (s === 'upcoming') return base + ' bg-blue-600/15 text-blue-300 border border-blue-700/40';
-  if (s === 'finished' || s === 'completed')
-    return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
-  return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
-}
 
 function categoryMeta(slug = '') {
   const s = String(slug || '').toLowerCase();
@@ -91,7 +81,7 @@ const CategoryQuizzes = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isSubscribed, subscribeToPush } = usePushNotifications();
-  const [quizzes, setQuizzes] = useState([]); // legacy quizzes list fallback
+  const [quizzes] = useState([]); // legacy quizzes list fallback (setQuizzes removed)
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [counts, setCounts] = useState({}); // { [quizId]: joined (pre+joined+completed as joined) }
@@ -109,14 +99,12 @@ const CategoryQuizzes = () => {
     if (!supabase) return;
     try {
       const { slots: s, mode, auto } = await fetchSlotsForCategory(supabase, slug);
-      if (mode === 'slots') {
-        setSlots(s);
-        setSlotMode('slots');
-        setCategoryAutoEnabled(auto);
-      } else if (mode === 'legacy') {
-        // fallback legacy path – we still populate quizzes via existing fetch
-        setSlotMode('legacy');
-      } else if (mode === 'error') {
+      // Always set slots regardless of mode - fetchSlotsForCategory now returns merged results
+      setSlots(s);
+      setCategoryAutoEnabled(auto);
+      if (mode === 'slots' || mode === 'legacy') {
+        setSlotMode('slots'); // Use slots UI for both - they're unified now
+      } else {
         setSlotMode('legacy');
       }
     } catch {
@@ -124,36 +112,18 @@ const CategoryQuizzes = () => {
     }
   }, [slug]);
 
-  const fetchQuizzes = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('quizzes')
-        .select('id,title,category,start_time,end_time,status,prize_pool,prizes,prize_type')
-        .eq('category', slug)
-        .order('start_time', { ascending: true });
-      if (error) throw error;
-      setQuizzes(data || []);
-    } catch (e) {
-      toast({ title: 'Error', description: 'Could not load quizzes.', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [slug, toast]);
-
   useEffect(() => {
     setLoading(true);
-    // Attempt slots first
+    // Load all quizzes (both slots and legacy are now merged in loadSlots)
     loadSlots().finally(() => {
-      // If not in slots mode after attempt, load legacy quizzes
-      if (slotMode !== 'slots') fetchQuizzes();
-      else setLoading(false);
+      setLoading(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchQuizzes, loadSlots, slug]);
+  }, [loadSlots, slug]);
 
-  // Poll slots if slot mode active
+  // Poll slots for updates
   useEffect(() => {
-    if (slotMode !== 'slots') return;
+    if (slotMode === 'none') return;
     const id = setInterval(() => {
       loadSlots();
     }, pollIntervalMs);
@@ -216,29 +186,57 @@ const CategoryQuizzes = () => {
   // Fetch whether current user has joined or pre-joined each quiz
   useEffect(() => {
     const run = async () => {
-      if (!user || !quizzes?.length) {
+      // Collect IDs from both quizzes and slots
+      const quizIds = (quizzes || []).map((q) => q.id).filter(Boolean);
+      // For slot-based quizzes, collect slotIds (used as slot_id in quiz_participants)
+      const slotIds = (slots || []).filter(s => !s.isLegacy).map((s) => s.slotId).filter(Boolean);
+      // For legacy quizzes from slots, collect quizIds
+      const legacyQuizIds = (slots || []).filter(s => s.isLegacy).map((s) => s.quizId).filter(Boolean);
+      
+      const allQuizIds = [...new Set([...quizIds, ...legacyQuizIds])];
+      
+      if (!user || (!allQuizIds.length && !slotIds.length)) {
         setJoinedMap({});
         return;
       }
       try {
-        const ids = quizzes.map((q) => q.id);
-        const { data, error } = await supabase
-          .from('quiz_participants')
-          .select('quiz_id,status')
-          .eq('user_id', user.id)
-          .in('quiz_id', ids);
-        if (error) throw error;
         const map = {};
-        for (const r of data || []) {
-          map[r.quiz_id] = r.status === 'pre_joined' ? 'pre' : 'joined';
+        
+        // Fetch by quiz_id for legacy quizzes
+        if (allQuizIds.length) {
+          const { data, error } = await supabase
+            .from('quiz_participants')
+            .select('quiz_id,status')
+            .eq('user_id', user.id)
+            .in('quiz_id', allQuizIds);
+          if (!error && data) {
+            for (const r of data) {
+              map[r.quiz_id] = r.status === 'pre_joined' ? 'pre' : 'joined';
+            }
+          }
         }
+        
+        // Fetch by slot_id for slot-based quizzes
+        if (slotIds.length) {
+          const { data, error } = await supabase
+            .from('quiz_participants')
+            .select('slot_id,status')
+            .eq('user_id', user.id)
+            .in('slot_id', slotIds);
+          if (!error && data) {
+            for (const r of data) {
+              map[r.slot_id] = r.status === 'pre_joined' ? 'pre' : 'joined';
+            }
+          }
+        }
+        
         setJoinedMap(map);
       } catch {
         setJoinedMap({});
       }
     };
     run();
-  }, [user, quizzes]);
+  }, [user, quizzes, slots]);
 
   const handleJoin = async (q) => {
     if (!user) {
@@ -250,8 +248,10 @@ const CategoryQuizzes = () => {
       navigate('/login');
       return;
     }
+    // Get the identifier (slotId for slots, id for legacy quizzes)
+    const qId = q.slotId || q.id;
     // Immediately reflect UI state
-    setJoiningId(q.id);
+    setJoiningId(qId);
     // Try to enable push notifications on first join/pre-join (fire-and-forget; don't block join)
     try {
       if (
@@ -271,10 +271,10 @@ const CategoryQuizzes = () => {
       const result = await smartJoinQuiz({ supabase, quiz: q, user });
       if (result.status === 'error') throw result.error;
       if (result.status === 'already') {
-        setJoinedMap((prev) => ({ ...prev, [q.id]: 'joined' }));
+        setJoinedMap((prev) => ({ ...prev, [qId]: 'joined' }));
         toast({ title: 'Already Joined', description: 'You are in this quiz.' });
       } else if (result.status === 'joined') {
-        setJoinedMap((prev) => ({ ...prev, [q.id]: 'joined' }));
+        setJoinedMap((prev) => ({ ...prev, [qId]: 'joined' }));
         const rl = rateLimit(`join_${user?.id || 'anon'}`, { max: 4, windowMs: 8000 });
         if (!rl.allowed) {
           toast({
@@ -284,13 +284,14 @@ const CategoryQuizzes = () => {
           });
         } else {
           toast({ title: 'Joined!', description: 'Taking you to the quiz.' });
-          navigate(`/quiz/${q.id}`);
+          // Navigate to appropriate route
+          navigate(q.slotId && !q.isLegacy ? `/quiz/slot/${q.slotId}` : `/quiz/${q.id}`);
         }
       } else if (result.status === 'pre_joined') {
-        setJoinedMap((prev) => ({ ...prev, [q.id]: 'pre' }));
+        setJoinedMap((prev) => ({ ...prev, [qId]: 'pre' }));
         toast({ title: 'Pre-joined!', description: 'We will remind you before start.' });
       } else if (result.status === 'scheduled_retry') {
-        setJoinedMap((prev) => ({ ...prev, [q.id]: 'pre' }));
+        setJoinedMap((prev) => ({ ...prev, [qId]: 'pre' }));
         toast({ title: 'Pre-joined!', description: 'Auto joining at start time.' });
       }
     } catch (err) {
@@ -328,12 +329,13 @@ const CategoryQuizzes = () => {
         const et = q.end_time ? new Date(q.end_time).getTime() : 0;
         return acc + (st && et && nowHeader >= st && nowHeader < et ? 1 : 0);
       }, 0);
-  const upcomingCount = slotSource
-    ? liveItems.filter((slot) => isSlotUpcomingWindow(slot)).length
-    : liveItems.reduce((acc, q) => {
-        const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-        return acc + (st && nowHeader < st ? 1 : 0);
-      }, 0);
+  // Upcoming count: Legacy quizzes = all upcoming, Slot quizzes = within 5 min
+  const upcomingCount = liveItems.filter((slot) => {
+    const st = slot.start_time ? new Date(slot.start_time).getTime() : 0;
+    if (!st || nowHeader >= st) return false;
+    // Legacy: count all upcoming, Slot: count only within 5 min
+    return slot.isLegacy ? true : (st - nowHeader) <= 5 * 60 * 1000;
+  }).length;
   const nextStartTs = slotSource
     ? liveItems
         .map((slot) => slotStartMs(slot))
@@ -344,9 +346,9 @@ const CategoryQuizzes = () => {
         .filter((ts) => ts && ts > nowHeader)
         .sort((a, b) => a - b)[0] || null;
   // Slot classification (only in slot mode)
-  const { live: liveSlot, next: nextSlot } = classifyThreeSlots(slots);
+  const { next: nextSlot } = classifyThreeSlots(slots);
 
-  const renderSlotCard = (slot, label) => {
+  const renderSlotCard = (slot) => {
     if (!slot) return null;
     const now = Date.now();
     const st = slotStartMs(slot);
@@ -362,9 +364,11 @@ const CategoryQuizzes = () => {
           ? Math.max(0, Math.floor((et - now) / 1000))
           : null;
     const prizes = Array.isArray(slot.prizes) ? slot.prizes : [];
+    const prizeType = slot.prize_type || 'coins';
     const p1 = prizes[0] ?? 0;
     const p2 = prizes[1] ?? 0;
     const p3 = prizes[2] ?? 0;
+    const formatPrize = (value) => getPrizeDisplay(prizeType, value, { fallback: 0 }).formatted;
     const participantsJoined = slot.participants_total || slot.participants_joined || 0;
     const qCount = slot.questions_count || 10;
     const stopped = !categoryAutoEnabled && !isActive && !upcoming;
@@ -376,17 +380,49 @@ const CategoryQuizzes = () => {
       if (isFinished) return 'FINISHED';
       return (slot.status || '').toUpperCase();
     })();
-    const cta = isFinished ? 'Results' : isActive ? 'Join' : upcoming ? 'Preview' : 'View';
+    
+    // Check if user has already joined/pre-joined this quiz
+    // For slots, use slotId as key (since that's what pre_join_slot/join_slot expects)
+    const cardId = slot.isLegacy ? slot.quizId : slot.slotId;
+    const myJoinStatus = joinedMap[cardId]; // 'pre' | 'joined' | undefined
+    const hasJoined = !!myJoinStatus;
+    const isJoining = joiningId === cardId;
+    
+    // Determine button text and action
+    const getCta = () => {
+      if (isFinished) return 'Results';
+      if (isActive) return hasJoined ? 'Play' : 'Join Now';
+      if (upcoming) return hasJoined ? 'Joined ✓' : 'Pre-Join';
+      return 'View';
+    };
+    const cta = getCta();
+    
+    // Handle button click
+    const handleClick = async () => {
+      if (isFinished || (hasJoined && !isActive)) {
+        // Results or already joined upcoming - just navigate
+        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        return;
+      }
+      if (isActive) {
+        // Live quiz - navigate to play
+        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        return;
+      }
+      if (upcoming && !hasJoined) {
+        // Pre-join the quiz - pass the full slot object with id for legacy compatibility
+        await handleJoin({ id: slot.quizId, ...slot });
+      }
+    };
+    
     return (
       <div
         key={slot.slotId}
         className={`p-[1px] rounded-xl sm:rounded-2xl ${isActive ? 'bg-gradient-to-r from-emerald-500/60 to-green-500/60' : 'bg-gradient-to-r from-indigo-500/40 via-violet-500/30 to-fuchsia-500/40'}`}
       >
         <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4 lg:p-5">
-          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-[10px] sm:text-xs font-semibold">
-              {label}
-            </span>
+          {/* Badge at top-right corner */}
+          <div className="flex justify-end mb-1.5 sm:mb-2">
             <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[11px] font-bold ${
               badge === 'LIVE' ? 'bg-rose-600 text-white' :
               badge === 'UPCOMING' ? 'bg-sky-600 text-white' :
@@ -396,6 +432,10 @@ const CategoryQuizzes = () => {
               {badge}
             </span>
           </div>
+          {/* Title - full width, wraps if needed */}
+          <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3 line-clamp-2">
+            {slot.quiz_title || slot.title || 'Quiz'}
+          </h3>
           <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-400 mb-2 sm:mb-3">
             <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
               <span className="text-[9px] sm:text-[10px] text-slate-500">Start</span> {slot.start_time ? formatTimeOnly(slot.start_time) : '—'}
@@ -405,13 +445,18 @@ const CategoryQuizzes = () => {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs mb-2 sm:mb-3">
-            <span className="px-1.5 sm:px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-600/30">🥇 {p1}</span>
-            <span className="px-1.5 sm:px-2 py-1 rounded bg-sky-500/15 text-sky-300 border border-sky-600/30">🥈 {p2}</span>
-            <span className="px-1.5 sm:px-2 py-1 rounded bg-violet-500/15 text-violet-300 border border-violet-600/30">🥉 {p3}</span>
+            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-400/10 text-amber-200 border border-amber-500/30 shadow-sm">🥇 {formatPrize(p1)}</span>
+            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-sky-500/20 to-sky-400/10 text-sky-200 border border-sky-500/30 shadow-sm">🥈 {formatPrize(p2)}</span>
+            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-violet-400/10 text-violet-200 border border-violet-500/30 shadow-sm">🥉 {formatPrize(p3)}</span>
           </div>
           <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-            <div className="text-[10px] sm:text-xs text-slate-500">
-              {qCount} Qs • {participantsJoined} joined
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs">
+              <span className="px-2 py-1 rounded-md bg-slate-800/70 border border-slate-700/50 text-slate-300">
+                📝 {qCount} Questions
+              </span>
+              <span className="px-2 py-1 rounded-md bg-slate-800/70 border border-slate-700/50 text-slate-300">
+                👥 {participantsJoined} Joined
+              </span>
             </div>
             {secs !== null && (
               <div className="text-xs sm:text-sm font-semibold text-indigo-300">
@@ -421,15 +466,18 @@ const CategoryQuizzes = () => {
           </div>
           <button
             type="button"
-            onClick={() => navigate(`/quiz/slot/${slot.slotId}`)}
-            onMouseEnter={() => prefetchRoute(`/quiz/slot/${slot.slotId}`)}
+            disabled={isJoining || (hasJoined && upcoming)}
+            onClick={handleClick}
+            onMouseEnter={() => prefetchRoute(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`)}
             className={`w-full h-9 sm:h-10 lg:h-11 rounded-lg text-xs sm:text-sm font-bold text-white transition ${
+              isJoining ? 'opacity-50 cursor-wait' :
+              hasJoined && upcoming ? 'bg-gradient-to-r from-emerald-700 to-green-600 cursor-default' :
               isActive
                 ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90'
                 : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90'
             }`}
           >
-            {cta}
+            {isJoining ? 'Joining...' : cta}
           </button>
         </div>
       </div>
@@ -463,14 +511,12 @@ const CategoryQuizzes = () => {
     typeof window !== 'undefined'
       ? `${window.location.origin}/category/${slug}/`
       : `https://quizdangal.com/category/${slug}/`;
-  // Ensures legacy SEO template referencing hasRecent does not break lint; we deliberately exclude recent finished quizzes now.
-  const hasRecent = false;
 
   return (
     <div className="px-3 sm:px-4 pt-16 sm:pt-20 pb-6">
       <SEO
         title={`${meta.title} – Quiz Dangal`}
-        description={`Active and upcoming quizzes${hasRecent ? ' + recent results' : ''} in ${meta.title}.`}
+        description={`Active and upcoming quizzes in ${meta.title}.`}
         canonical={canonical}
         robots="index, follow"
       />
@@ -509,8 +555,8 @@ const CategoryQuizzes = () => {
       {slotMode === 'slots' ? (
         <>
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              {Array.from({ length: 2 }).map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
                   className="h-40 sm:h-48 lg:h-52 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
@@ -519,14 +565,32 @@ const CategoryQuizzes = () => {
             </div>
           ) : (
             <>
-              {liveSlot || nextSlot ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {renderSlotCard(liveSlot, 'Live now')}
-                  {renderSlotCard(nextSlot, 'Upcoming')}
+              {slots.filter(s => {
+                const now = Date.now();
+                const st = s.start_time ? new Date(s.start_time).getTime() : null;
+                const et = s.end_time ? new Date(s.end_time).getTime() : null;
+                const isLive = st && et && now >= st && now < et;
+                // Legacy quizzes: show ALL upcoming. Slot quizzes: show within 5 min only
+                const isUpcoming = st && now < st;
+                const isUpcomingSoon = isUpcoming && (st - now) <= 5 * 60 * 1000;
+                // Legacy quizzes show all upcoming, slot quizzes only within 5 min
+                return isLive || (s.isLegacy ? isUpcoming : isUpcomingSoon);
+              }).length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {/* Show LIVE + Legacy UPCOMING (any time) + Slot UPCOMING (within 5 min) */}
+                  {slots.filter(s => {
+                    const now = Date.now();
+                    const st = s.start_time ? new Date(s.start_time).getTime() : null;
+                    const et = s.end_time ? new Date(s.end_time).getTime() : null;
+                    const isLive = st && et && now >= st && now < et;
+                    const isUpcoming = st && now < st;
+                    const isUpcomingSoon = isUpcoming && (st - now) <= 5 * 60 * 1000;
+                    return isLive || (s.isLegacy ? isUpcoming : isUpcomingSoon);
+                  }).map((slot) => renderSlotCard(slot, null))}
                 </div>
               ) : (
                 <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6 text-center text-sm sm:text-base text-slate-400">
-                  Schedule will appear once today’s slots go live.
+                  No quizzes scheduled yet.
                 </div>
               )}
             </>
@@ -554,8 +618,6 @@ const CategoryQuizzes = () => {
             const et = q.end_time ? new Date(q.end_time).getTime() : null;
             const isActive = st && et && now >= st && now < et;
             const isUpcoming = st && now < st;
-            const _isRecentCompleted =
-              et && now >= et && now - et <= RECENT_COMPLETED_GRACE_MIN * 60 * 1000;
             const canJoin = isActive || isUpcoming;
             const secs =
               isUpcoming && st

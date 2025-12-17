@@ -80,16 +80,29 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   );
 
   // Finalize (partial submit) on route unmount if user leaves mid-quiz without submitting
+  // Only mark completed if user actually answered at least 1 question
+  const answersRef = useRef({});
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+  
   useEffect(() => {
     return () => {
       try {
-        if (quiz && quizState === 'active' && participantStatus !== 'completed' && user?.id) {
+        const hasAnswers = Object.keys(answersRef.current).length > 0;
+        if (quiz && quizState === 'active' && participantStatus !== 'completed' && user?.id && hasAnswers) {
           // Mark completed with whatever answers were saved so far
-          supabase
+          // Use slot_id for slots, quiz_id for legacy
+          let query = supabase
             .from('quiz_participants')
             .update({ status: 'completed' })
-            .eq('user_id', user.id)
-            .eq('quiz_id', quizId)
+            .eq('user_id', user.id);
+          if (slotId) {
+            query = query.eq('slot_id', slotId);
+          } else {
+            query = query.eq('quiz_id', quizId);
+          }
+          query
             .then(() => {
               /* noop */
             })
@@ -171,17 +184,46 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     return totalJoined;
   })();
 
-  const loadQuestions = useCallback(async () => {
-    const { data: questionsData, error: questionsError } = await supabase
-      .from('questions')
-      .select(`id, question_text, options ( id, option_text )`)
-      .eq('quiz_id', quizId)
-      .order('id');
-    if (!questionsError) setQuestions(questionsData || []);
-    else setQuestions([]);
-  }, [quizId]);
+  const loadQuestions = useCallback(async (actualQuizId = null) => {
+    // Use passed actualQuizId, or fall back to quiz state, or URL params
+    const effectiveId = actualQuizId || quiz?.id || quizId || slotId;
+    if (!effectiveId) return;
+    
+    try {
+      // Always fetch from questions table (tick_quiz_slots populates it before quiz starts)
+      const { data: questionsData, error: questionsError } = await supabase
+        .from('questions')
+        .select(`id, question_text, options ( id, option_text )`)
+        .eq('quiz_id', effectiveId)
+        .order('id');
+      
+      if (questionsError) {
+        console.error('Questions fetch error:', questionsError);
+        logger.error('Failed to load questions', questionsError.message);
+        // Set empty array but don't show error toast - quiz might not be ready yet
+        setQuestions([]);
+        return;
+      }
+      
+      if (!questionsData || questionsData.length === 0) {
+        logger.warn('No questions found for quiz', effectiveId);
+        setQuestions([]);
+        return;
+      }
+      
+      setQuestions(questionsData);
+    } catch (err) {
+      console.error('Questions load exception:', err);
+      setQuestions([]);
+    }
+  }, [quiz?.id, quizId, slotId]);
 
   const refreshEngagement = useCallback(async () => {
+    // Skip if quizId not yet available
+    if (!quizId) {
+      setEngagement({ joined: 0, pre_joined: 0 });
+      return;
+    }
     try {
       const { data: engagementData, error: engagementError } = await supabase.rpc(
         'get_engagement_counts',
@@ -203,26 +245,80 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   const fetchQuizData = useCallback(async () => {
     try {
-      const { data: quizData, error: quizError } = await supabase
-        .from('quizzes')
-        .select('*')
-        .eq('id', quizId)
-        .single();
-      if (quizError || !quizData) {
-        toast({ title: 'Error', description: 'Quiz not found.', variant: 'destructive' });
-        navigate('/');
-        return;
+      let quizData = null;
+      
+      // If slotId is provided, fetch from quiz_slots_view instead of quizzes table
+      if (slotId) {
+        const { data: slotData, error: slotError } = await supabase
+          .from('quiz_slots_view')
+          .select('*')
+          .eq('id', slotId)
+          .maybeSingle();
+        if (slotError || !slotData) {
+          toast({ title: 'Error', description: 'Quiz slot not found.', variant: 'destructive' });
+          navigate('/');
+          return;
+        }
+        // Map slot data to quiz-like structure
+        // quiz_id is the actual quiz ID from quizzes table (for loading questions)
+        // slotData.id is the slot ID (for participation tracking)
+        quizData = {
+          id: slotData.quiz_id || slotData.id, // Use actual quiz_id for questions loading
+          slotId: slotData.id, // Keep slot ID for participation
+          title: slotData.quiz_title,
+          category: slotData.category,
+          start_time: slotData.start_time,
+          end_time: slotData.end_time,
+          status: slotData.status,
+          prizes: slotData.prizes,
+          prize_type: 'coins',
+          questions: slotData.questions,
+        };
+        setSlotMeta(slotData);
+      } else {
+        // Legacy: fetch from quizzes table
+        const { data, error: quizError } = await supabase
+          .from('quizzes')
+          .select('*')
+          .eq('id', quizId)
+          .single();
+        if (quizError || !data) {
+          toast({ title: 'Error', description: 'Quiz not found.', variant: 'destructive' });
+          navigate('/');
+          return;
+        }
+        quizData = data;
       }
+      
       setQuiz(quizData);
 
+      // Use the actual quiz ID from loaded data (slot.id = quiz.id)
+      const effectiveQuizId = quizData?.id || quizId;
+
       let participant = null;
-      if (user && user.id) {
-        const { data: pData, error: pError } = await supabase
-          .from('quiz_participants')
-          .select('status')
-          .eq('user_id', user.id)
-          .eq('quiz_id', quizId)
-          .maybeSingle();
+      if (user && user.id && effectiveQuizId) {
+        // For slots, check by slot_id; for legacy, check by quiz_id
+        let pData = null;
+        let pError = null;
+        if (slotId) {
+          const result = await supabase
+            .from('quiz_participants')
+            .select('status')
+            .eq('user_id', user.id)
+            .eq('slot_id', slotId)
+            .maybeSingle();
+          pData = result.data;
+          pError = result.error;
+        } else {
+          const result = await supabase
+            .from('quiz_participants')
+            .select('status')
+            .eq('user_id', user.id)
+            .eq('quiz_id', effectiveQuizId)
+            .maybeSingle();
+          pData = result.data;
+          pError = result.error;
+        }
         if (!pError && pData) {
           participant = pData;
           setJoined(true);
@@ -237,14 +333,14 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         setParticipantStatus(null);
       }
 
-      if (participant && participant.status !== 'completed') await loadQuestions();
+      if (participant && participant.status !== 'completed') await loadQuestions(quizData?.id);
       await refreshEngagement();
     } catch (error) {
       console.error('Error fetching quiz data:', error);
       toast({ title: 'Error', description: 'Failed to load quiz.', variant: 'destructive' });
       navigate('/');
     }
-  }, [quizId, user, navigate, toast, loadQuestions, refreshEngagement]); // user included
+  }, [quizId, slotId, user, navigate, toast, loadQuestions, refreshEngagement]); // slotId included
 
   useEffect(() => {
     fetchQuizData();
@@ -321,20 +417,28 @@ export function useQuizEngine(quizId, navigate, options = {}) {
           let joinOk = false;
           let lastErr = null;
           for (let attempt = 0; attempt < 2 && !joinOk; attempt++) {
-            const { error } = await supabase.rpc('join_quiz', { p_quiz_id: quizId });
+            // Use slot-specific RPC if this is a slot-based quiz
+            const { error } = slotId 
+              ? await supabase.rpc('join_slot', { p_slot_id: slotId })
+              : await supabase.rpc('join_quiz', { p_quiz_id: quizId });
             if (!error) {
               joinOk = true;
               break;
             }
             lastErr = error;
             const msg = String(error.message || '').toLowerCase();
-            if (msg.includes('not active')) {
+            if (msg.includes('not active') || msg.includes('not ready')) {
               // Grace: wait briefly and retry once
               await new Promise((r) => setTimeout(r, 1500));
               continue;
             }
             if (msg.includes('already') || msg.includes('completed')) {
               joinOk = true;
+              break;
+            }
+            if (msg.includes('ended') || msg.includes('has ended')) {
+              // Quiz has ended, don't retry
+              setQuizState('finished');
               break;
             }
             break; // other errors: do not loop
@@ -344,7 +448,9 @@ export function useQuizEngine(quizId, navigate, options = {}) {
             setParticipantStatus('joined');
           } else if (lastErr) {
             // As a fallback, pre-join so the user is tracked and reminded
-            const { error: pjErr } = await supabase.rpc('pre_join_quiz', { p_quiz_id: quizId });
+            const { error: pjErr } = slotId
+              ? await supabase.rpc('pre_join_slot', { p_slot_id: slotId })
+              : await supabase.rpc('pre_join_quiz', { p_quiz_id: quizId });
             if (!pjErr) {
               setJoined(true);
               setParticipantStatus('pre_joined');
@@ -353,7 +459,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
             }
           }
         }
-        if (questions.length === 0) await loadQuestions();
+        if (questions.length === 0) await loadQuestions(quiz?.id);
       } catch (e) {
         // Only show error if it's not a duplicate join attempt
         if (!e?.message?.includes('already') && !e?.message?.includes('completed')) {
@@ -370,14 +476,22 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     joined,
     participantStatus,
     quizId,
+    slotId,
     loadQuestions,
     questions.length,
     toast,
   ]);
 
-  // Auto-submit on finish (if the user answered anything)
+  // Auto-submit on finish (if the user answered anything and was actively participating)
   useEffect(() => {
-    if (quizState === 'finished' && Object.keys(answers).length > 0 && !submitting) {
+    // Only auto-submit if:
+    // 1. Quiz just finished
+    // 2. User has answered at least 1 question
+    // 3. User was in 'joined' status (actually playing)
+    // 4. Not already submitting
+    const hasAnswers = Object.keys(answers).length > 0;
+    const wasPlaying = participantStatus === 'joined';
+    if (quizState === 'finished' && hasAnswers && wasPlaying && !submitting) {
       handleSubmit();
     }
     // Only react to quizState transitions; answers/submitting handled internally by handleSubmit side effects
@@ -481,16 +595,17 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         setParticipantStatus('joined');
         toast({ title: 'Joined!', description: 'Starting now.' });
       } else if (result.status === 'pre_joined') {
+        // Pre-join acts like join in UI - user is in the quiz
         setJoined(true);
-        setParticipantStatus('pre_joined');
-        toast({ title: 'Pre-joined!', description: 'We will remind you before start.' });
+        setParticipantStatus('joined'); // Show as joined, not pre_joined
+        toast({ title: 'Joined!', description: 'Quiz starts soon. Stay tuned!' });
       } else if (result.status === 'scheduled_retry') {
         setJoined(true);
-        setParticipantStatus('pre_joined');
-        toast({ title: 'Pre-joined!', description: 'Auto join near start time.' });
+        setParticipantStatus('joined'); // Show as joined
+        toast({ title: 'Joined!', description: 'Quiz starts soon. Stay tuned!' });
       }
       if (quiz.status === 'active' && (result.status === 'joined' || result.status === 'already')) {
-        await loadQuestions();
+        await loadQuestions(quiz?.id);
         setQuizState('active');
       }
       refreshEngagement();
@@ -570,11 +685,17 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      // Use slot_id for slots, quiz_id for legacy
+      let query = supabase
         .from('quiz_participants')
         .update({ status: 'completed' })
-        .eq('user_id', user.id)
-        .eq('quiz_id', quizId);
+        .eq('user_id', user.id);
+      if (slotId) {
+        query = query.eq('slot_id', slotId);
+      } else {
+        query = query.eq('quiz_id', quizId);
+      }
+      const { error } = await query;
       if (error) throw error;
       toast({
         title: 'Quiz Completed!',
@@ -582,11 +703,13 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       });
       setQuizState('completed');
       try {
-        await safeComputeResultsIfDue(supabase, quizId);
+        // For slots, pass slotId for results computation
+        await safeComputeResultsIfDue(supabase, slotId || quizId);
       } catch {
         /* ignore */
       }
-      navigate(`/results/${quizId}`);
+      // Navigate to results - use slot path for slots
+      navigate(slotId ? `/results/slot/${slotId}` : `/results/${quizId}`);
     } catch (error) {
       console.error('Error submitting quiz:', error);
       toast({

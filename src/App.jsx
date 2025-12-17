@@ -20,7 +20,6 @@ const ContactUs = lazy(() => import('@/pages/ContactUs'));
 const TermsConditions = lazy(() => import('@/pages/TermsConditions'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const Quiz = lazy(() => import('@/pages/Quiz'));
-const SlotQuiz = lazy(() => import('@/pages/SlotQuiz'));
 const CategoryQuizzes = lazy(() => import('@/pages/CategoryQuizzes'));
 // Unified Admin panel now lives in Admin.jsx
 const Admin = lazy(() => import('@/pages/Admin'));
@@ -195,7 +194,7 @@ function App() {
                 ) : (
                   <>
                     <Route path="/quiz/:id" element={<Quiz />} />
-                    <Route path="/quiz/slot/:slotId" element={<SlotQuiz />} />
+                    <Route path="/quiz/slot/:slotId" element={<Quiz />} />
                     {/* Accept both with and without trailing slash for category routes */}
                     <Route
                       path="/category/:slug"
@@ -214,6 +213,7 @@ function App() {
                       }
                     />
                     <Route path="/results/:id" element={<Results />} />
+                    <Route path="/results/slot/:slotId" element={<Results />} />
                     <Route path="/*" element={<MainLayout />} />
                   </>
                 )}
