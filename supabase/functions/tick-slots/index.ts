@@ -23,6 +23,15 @@ Deno.serve(async (req: Request) => {
 
   const start = Date.now();
 
+  // Correlation id to match client failures with server logs
+  const errorId = (() => {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      return String(Date.now());
+    }
+  })();
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -39,11 +48,12 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await supabase.rpc('tick_quiz_slots');
 
     if (error) {
-      console.error('tick_quiz_slots error:', error.message);
+      console.error('tick_quiz_slots error', { errorId, error });
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          error: error.message,
+          error: 'internal_error',
+          errorId,
           durationMs: Date.now() - start
         }),
         { 
@@ -66,10 +76,9 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('tick-slots error:', message);
+    console.error('tick-slots error', { errorId, error: err });
     return new Response(
-      JSON.stringify({ ok: false, error: message, durationMs: Date.now() - start }),
+      JSON.stringify({ ok: false, error: 'internal_error', errorId, durationMs: Date.now() - start }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

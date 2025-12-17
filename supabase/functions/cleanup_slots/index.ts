@@ -29,6 +29,15 @@ Deno.serve(async (req: Request) => {
 
   const start = Date.now();
 
+  // Correlation id to match client failures with server logs
+  const errorId = (() => {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      return String(Date.now());
+    }
+  })();
+
   try {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
@@ -51,9 +60,10 @@ Deno.serve(async (req: Request) => {
       { headers: { 'Content-Type': 'application/json' } }
     );
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+    // Do not leak stack traces or internal error details to the caller.
+    console.error('cleanup_slots error', { errorId, error: e });
     return new Response(
-      JSON.stringify({ ok: false, error: msg, durationMs: Date.now() - start }),
+      JSON.stringify({ ok: false, error: 'internal_error', errorId, durationMs: Date.now() - start }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
