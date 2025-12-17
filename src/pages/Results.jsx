@@ -116,22 +116,8 @@ const Results = () => {
       // Process participation
       let amParticipant = !!participationResult.data;
       
-      // Fallback participation check only if needed (avoid if already found)
-      if (!amParticipant && user?.id) {
-        try {
-          const { count } = await supabase
-            .from('user_answers')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .in('question_id', 
-              supabase.from('questions').select('id').eq('quiz_id', quizId)
-            )
-            .limit(1);
-          if (count && count > 0) amParticipant = true;
-        } catch {
-          /* ignore fallback check */
-        }
-      }
+      // Skip slow fallback check - quiz_participants table is the source of truth
+      // The fallback was causing slow subqueries
       setIsParticipant(amParticipant);
 
       // Process engagement
@@ -180,18 +166,19 @@ const Results = () => {
           }))
         : [];
       setResults(normalized);
+      setLoading(false); // Show results immediately!
 
       // Find current user's rank
       const me = normalized.find((p) => (p.user_id || p.userId) === user?.id);
       if (me) setUserRank(me);
 
-      // === PHASE 2: Parallel fetch of secondary data (non-blocking) ===
+      // === PHASE 2: Background fetch of secondary data (non-blocking) ===
       const category = (quizData?.category || '').toLowerCase();
       const shouldLoadQA = category !== 'opinion' && (amParticipant || normalized.length);
       const topIds = normalized.slice(0, 10).map((e) => e.user_id).filter(Boolean);
 
-      // Run Q&A and profile enrichment in parallel
-      const [qaResult, profilesResult] = await Promise.all([
+      // Run Q&A and profile enrichment in parallel (background, don't block UI)
+      Promise.all([
         // Q&A review (only for non-opinion)
         shouldLoadQA
           ? supabase
@@ -204,70 +191,69 @@ const Results = () => {
         topIds.length
           ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
           : Promise.resolve({ data: [] }),
-      ]);
-
-      // Process Q&A
-      try {
-        if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
-          let selectionsMap = new Map();
-          if (user?.id) {
-            const qids = qaResult.data.map((q) => q.id);
-            const { data: uans } = await supabase
-              .from('user_answers')
-              .select('question_id, selected_option_id')
-              .in('question_id', qids)
-              .eq('user_id', user.id);
-            if (Array.isArray(uans))
-              selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
+      ]).then(async ([qaResult, profilesResult]) => {
+        // Process Q&A in background
+        try {
+          if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
+            let selectionsMap = new Map();
+            if (user?.id) {
+              const qids = qaResult.data.map((q) => q.id);
+              const { data: uans } = await supabase
+                .from('user_answers')
+                .select('question_id, selected_option_id')
+                .in('question_id', qids)
+                .eq('user_id', user.id);
+              if (Array.isArray(uans))
+                selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
+            }
+            const mapped = qaResult.data.map((q) => ({
+              id: q.id,
+              question_text: q.question_text,
+              options: (q.options || []).map((o) => ({
+                id: o.id,
+                option_text: o.option_text,
+                is_correct: !!o.is_correct,
+                isSelected: selectionsMap.get(q.id) === o.id,
+              })),
+            }));
+            setQaItems(mapped);
           }
-          const mapped = qaResult.data.map((q) => ({
-            id: q.id,
-            question_text: q.question_text,
-            options: (q.options || []).map((o) => ({
-              id: o.id,
-              option_text: o.option_text,
-              is_correct: !!o.is_correct,
-              isSelected: selectionsMap.get(q.id) === o.id,
-            })),
-          }));
-          setQaItems(mapped);
-        } else {
-          setQaItems([]);
+        } catch {
+          /* ignore Q&A errors */
         }
-      } catch {
-        setQaItems([]);
-      }
 
-      // Process profile enrichment
-      try {
-        if (Array.isArray(profilesResult.data) && profilesResult.data.length) {
-          const profileMap = new Map(profilesResult.data.map((p) => [p.id, p]));
-          const signedMap = await getSignedAvatarUrls(
-            profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
-          );
-          setResults((prev) =>
-            prev.map((item) => {
-              const p = profileMap.get(item.user_id);
-              if (!p) return item;
-              const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
-              return {
-                ...item,
-                profiles: {
-                  username: p.username,
-                  full_name: p.full_name,
-                  avatar_url: signedUrl,
-                },
-              };
-            }),
-          );
+        // Process profile enrichment in background
+        try {
+          if (Array.isArray(profilesResult.data) && profilesResult.data.length) {
+            const profileMap = new Map(profilesResult.data.map((p) => [p.id, p]));
+            const signedMap = await getSignedAvatarUrls(
+              profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
+            );
+            setResults((prev) =>
+              prev.map((item) => {
+                const p = profileMap.get(item.user_id);
+                if (!p) return item;
+                const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
+                return {
+                  ...item,
+                  profiles: {
+                    username: p.username,
+                    full_name: p.full_name,
+                    avatar_url: signedUrl,
+                  },
+                };
+              }),
+            );
+          }
+        } catch {
+          /* ignore avatar enrichment */
         }
-      } catch {
-        /* ignore avatar enrichment */
-      }
+      }).catch(() => {
+        /* ignore background errors */
+      });
     } catch (error) {
       console.error('Error fetching results:', error);
       setErrorMessage(error?.message || 'Failed to load results.');
-    } finally {
       setLoading(false);
     }
   }, [quizId, quizIdParam, slotId, user?.id, isAdmin]);
