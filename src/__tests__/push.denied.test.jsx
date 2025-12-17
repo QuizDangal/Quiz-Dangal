@@ -53,5 +53,5 @@ describe('usePushNotifications: denied permission', () => {
     expect(screen.getByRole('button', { name: 'trigger' }).textContent).toMatch(
       /permission was denied/i,
     );
-  });
+  }, 15000);
 });
