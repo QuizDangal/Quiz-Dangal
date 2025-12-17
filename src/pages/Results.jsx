@@ -80,82 +80,74 @@ const Results = () => {
     }
     try {
       setErrorMessage('');
-      // Load quiz meta (title, prizes)
-      const { data: quizData, error: quizError } = await supabase
-        .from('quizzes')
-        .select('*')
-        .eq('id', quizId)
-        .single();
-      if (quizError) throw quizError;
+
+      // === PHASE 1: Parallel fetch of core data ===
+      // Run quiz meta, results, engagement, and participation check in parallel
+      const [quizResult, resultsResult, engagementResult, participationResult] = await Promise.all([
+        // 1. Quiz meta
+        supabase.from('quizzes').select('*').eq('id', quizId).single(),
+        // 2. Results leaderboard
+        supabase.from('quiz_results').select('leaderboard').eq('quiz_id', quizId).maybeSingle(),
+        // 3. Engagement counts
+        supabase.rpc('get_engagement_counts', { p_quiz_id: quizId }).catch(() => ({ data: null })),
+        // 4. Participation check (combined query)
+        user?.id
+          ? supabase
+              .from('quiz_participants')
+              .select('id, status')
+              .eq('user_id', user.id)
+              .or(slotId ? `slot_id.eq.${slotId},quiz_id.eq.${quizId}` : `quiz_id.eq.${quizId}`)
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      // Process quiz data
+      if (quizResult.error) throw quizResult.error;
+      const quizData = quizResult.data;
       setQuiz(quizData || null);
 
-      // Participation check - check if user joined this quiz OR answered questions
-      let amParticipant = false;
-      if (user?.id) {
+      // Process participation
+      let amParticipant = !!participationResult.data;
+      
+      // Fallback participation check only if needed (avoid if already found)
+      if (!amParticipant && user?.id) {
         try {
-          // First check quiz_participants - by quiz_id or slot_id
-          let meRow = null;
-          if (slotId) {
-            const { data } = await supabase
-              .from('quiz_participants')
-              .select('id, status')
-              .eq('slot_id', slotId)
-              .eq('user_id', user.id)
-              .maybeSingle();
-            meRow = data;
-          }
-          if (!meRow) {
-            const { data } = await supabase
-              .from('quiz_participants')
-              .select('id, status')
-              .eq('quiz_id', quizId)
-              .eq('user_id', user.id)
-              .maybeSingle();
-            meRow = data;
-          }
-          
-          if (meRow) {
-            amParticipant = true;
-          } else {
-            // Fallback: check if user has any answers for this quiz's questions
-            const { data: qIds } = await supabase
-              .from('questions')
-              .select('id')
-              .eq('quiz_id', quizId)
-              .limit(1);
-            if (qIds?.length) {
-              const { data: ansRow } = await supabase
-                .from('user_answers')
-                .select('id')
-                .eq('question_id', qIds[0].id)
-                .eq('user_id', user.id)
-                .maybeSingle();
-              if (ansRow) amParticipant = true;
-            }
-          }
-          
-          setIsParticipant(amParticipant);
-        } catch (err) {
-          console.error('[Results] Participation check error:', err);
-          amParticipant = false;
-          setIsParticipant(false);
+          const { count } = await supabase
+            .from('user_answers')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .in('question_id', 
+              supabase.from('questions').select('id').eq('quiz_id', quizId)
+            )
+            .limit(1);
+          if (count && count > 0) amParticipant = true;
+        } catch {
+          /* ignore fallback check */
         }
       }
+      setIsParticipant(amParticipant);
 
+      // Process engagement
+      try {
+        const rec = Array.isArray(engagementResult.data) ? engagementResult.data[0] : engagementResult.data;
+        const joined = Number(rec?.joined ?? 0);
+        const pre = Number(rec?.pre_joined ?? 0);
+        setParticipantsCount(joined + pre);
+      } catch {
+        setParticipantsCount(0);
+      }
+
+      // Process results
       const allowClientCompute =
         isAdmin || amParticipant || shouldAllowClientCompute({ defaultValue: true });
-
-      // Fetch existing results row
-      const { data: resRow, error: resErr } = await supabase
-        .from('quiz_results')
-        .select('leaderboard')
-        .eq('quiz_id', quizId)
-        .maybeSingle();
-      if (resErr) throw resErr;
-      let leaderboard = Array.isArray(resRow?.leaderboard) ? resRow.leaderboard : [];
+      
+      let leaderboard = Array.isArray(resultsResult.data?.leaderboard) 
+        ? resultsResult.data.leaderboard 
+        : [];
 
       // If missing leaderboard and quiz ended, attempt compute once
-      if ((!resRow || leaderboard.length === 0) && quizData?.end_time) {
+      if (leaderboard.length === 0 && quizData?.end_time) {
         const endTs = new Date(quizData.end_time).getTime();
         const diff = endTs - Date.now();
         setTimeLeftMs(diff > 0 ? diff : 0);
@@ -183,30 +175,37 @@ const Results = () => {
         : [];
       setResults(normalized);
 
-      // Participants count (non-blocking)
-      try {
-        const { data: ec } = await supabase.rpc('get_engagement_counts', { p_quiz_id: quizId });
-        const rec = Array.isArray(ec) ? ec[0] : ec;
-        const joined = Number(rec?.joined ?? 0);
-        const pre = Number(rec?.pre_joined ?? 0);
-        setParticipantsCount(joined + pre);
-      } catch {
-        /* ignore */
-      }
+      // Find current user's rank
+      const me = normalized.find((p) => (p.user_id || p.userId) === user?.id);
+      if (me) setUserRank(me);
 
-      // Q&A review for non-opinion quizzes (after end) - load for all participants
+      // === PHASE 2: Parallel fetch of secondary data (non-blocking) ===
+      const category = (quizData?.category || '').toLowerCase();
+      const shouldLoadQA = category !== 'opinion' && (amParticipant || normalized.length);
+      const topIds = normalized.slice(0, 10).map((e) => e.user_id).filter(Boolean);
+
+      // Run Q&A and profile enrichment in parallel
+      const [qaResult, profilesResult] = await Promise.all([
+        // Q&A review (only for non-opinion)
+        shouldLoadQA
+          ? supabase
+              .from('questions')
+              .select('id, question_text, options ( id, option_text, is_correct )')
+              .eq('quiz_id', quizId)
+              .order('id')
+          : Promise.resolve({ data: [] }),
+        // Profile enrichment
+        topIds.length
+          ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      // Process Q&A
       try {
-        const category = (quizData?.category || '').toLowerCase();
-        // Only show Q&A for non-opinion quizzes
-        if (category !== 'opinion' && quizId && (amParticipant || normalized.length)) {
-          const { data: qrows } = await supabase
-            .from('questions')
-            .select('id, question_text, options ( id, option_text, is_correct )')
-            .eq('quiz_id', quizId)
-            .order('id');
+        if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
           let selectionsMap = new Map();
-          if (user?.id && Array.isArray(qrows) && qrows.length) {
-            const qids = qrows.map((q) => q.id);
+          if (user?.id) {
+            const qids = qaResult.data.map((q) => q.id);
             const { data: uans } = await supabase
               .from('user_answers')
               .select('question_id, selected_option_id')
@@ -215,7 +214,7 @@ const Results = () => {
             if (Array.isArray(uans))
               selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
           }
-          const mapped = (qrows || []).map((q) => ({
+          const mapped = qaResult.data.map((q) => ({
             id: q.id,
             question_text: q.question_text,
             options: (q.options || []).map((o) => ({
@@ -233,40 +232,32 @@ const Results = () => {
         setQaItems([]);
       }
 
-      // Enrich top leaderboard profiles
+      // Process profile enrichment
       try {
-        const topIds = normalized.slice(0, 10).map((e) => e.user_id);
-        if (topIds.length) {
-          const { data: profs } = await supabase.rpc('profiles_public_by_ids', { p_ids: topIds });
-          if (Array.isArray(profs) && profs.length) {
-            const profileMap = new Map(profs.map((p) => [p.id, p]));
-            const signedMap = await getSignedAvatarUrls(
-              profs.map((p) => p.avatar_url).filter(Boolean),
-            );
-            setResults((prev) =>
-              prev.map((item) => {
-                const p = profileMap.get(item.user_id);
-                if (!p) return item;
-                const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
-                return {
-                  ...item,
-                  profiles: {
-                    username: p.username,
-                    full_name: p.full_name,
-                    avatar_url: signedUrl,
-                  },
-                };
-              }),
-            );
-          }
+        if (Array.isArray(profilesResult.data) && profilesResult.data.length) {
+          const profileMap = new Map(profilesResult.data.map((p) => [p.id, p]));
+          const signedMap = await getSignedAvatarUrls(
+            profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
+          );
+          setResults((prev) =>
+            prev.map((item) => {
+              const p = profileMap.get(item.user_id);
+              if (!p) return item;
+              const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
+              return {
+                ...item,
+                profiles: {
+                  username: p.username,
+                  full_name: p.full_name,
+                  avatar_url: signedUrl,
+                },
+              };
+            }),
+          );
         }
       } catch {
         /* ignore avatar enrichment */
       }
-
-      const me = normalized.find((p) => (p.user_id || p.userId) === user?.id);
-      if (me) setUserRank(me);
-      // Non-participant users still allowed to view public leaderboard
     } catch (error) {
       console.error('Error fetching results:', error);
       setErrorMessage(error?.message || 'Failed to load results.');

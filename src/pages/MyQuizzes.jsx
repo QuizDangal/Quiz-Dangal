@@ -229,14 +229,31 @@ const MyQuizzes = () => {
     };
     initialFetch();
 
-    const interval = setInterval(fetchMyQuizzes, 120000); // Poll every 2 minutes (realtime will push sooner)
+    // Poll every 30 seconds as fallback (realtime will push sooner)
+    const interval = setInterval(fetchMyQuizzes, 30000);
+
+    // Refresh when page becomes visible (user switches tabs back)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMyQuizzes();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Refresh when network comes back online
+    const handleOnline = () => {
+      fetchMyQuizzes();
+    };
+    window.addEventListener('online', handleOnline);
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
     };
   }, [user, fetchMyQuizzes]);
 
-  // Realtime replaced with centralized hook (only for INSERT quiz_results)
+  // Realtime for instant result updates without page refresh
   const realtimeEnabled = (() => {
     try {
       const runtimeEnv =
@@ -246,11 +263,11 @@ const MyQuizzes = () => {
       const raw =
         import.meta.env.VITE_ENABLE_REALTIME ??
         runtimeEnv.VITE_ENABLE_REALTIME ??
-        (import.meta.env.DEV ? '0' : '0');
+        '1'; // Enabled by default now
       const v = String(raw).toLowerCase();
       return v === '1' || v === 'true' || v === 'yes';
     } catch {
-      return false;
+      return true; // Default enabled
     }
   })();
   const realtimeConditionsOk = (() => {
@@ -259,7 +276,7 @@ const MyQuizzes = () => {
       if (!window.isSecureContext) return false;
       if (!('WebSocket' in window)) return false;
       if (navigator && navigator.onLine === false) return false;
-      if (document && document.visibilityState === 'hidden') return false;
+      // Removed visibility check - still listen in background for updates
       const conn =
         (navigator &&
           (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) ||
@@ -274,9 +291,13 @@ const MyQuizzes = () => {
       return false;
     }
   })();
+  
+  const realtimeActive = realtimeEnabled && realtimeConditionsOk && !!user && !!hasSupabaseConfig && !!supabase;
+
+  // Subscribe to quiz_results INSERT (when results are computed)
   useRealtimeChannel({
-    enabled: realtimeEnabled && realtimeConditionsOk && !!user && !!hasSupabaseConfig && !!supabase,
-    channelName: 'quiz-results-channel',
+    enabled: realtimeActive,
+    channelName: 'myquizzes-results-channel',
     event: 'INSERT',
     table: 'quiz_results',
     onChange: () => {
@@ -294,6 +315,30 @@ const MyQuizzes = () => {
       } catch {
         /* ignore */
       }
+    },
+    joinTimeoutMs: 5000,
+  });
+
+  // Subscribe to quiz_results UPDATE (when leaderboard is updated)
+  useRealtimeChannel({
+    enabled: realtimeActive,
+    channelName: 'myquizzes-results-update-channel',
+    event: 'UPDATE',
+    table: 'quiz_results',
+    onChange: () => {
+      fetchMyQuizzes();
+    },
+    joinTimeoutMs: 5000,
+  });
+
+  // Subscribe to quiz_slots changes (status updates)
+  useRealtimeChannel({
+    enabled: realtimeActive,
+    channelName: 'myquizzes-slots-channel',
+    event: '*',
+    table: 'quiz_slots',
+    onChange: () => {
+      fetchMyQuizzes();
     },
     joinTimeoutMs: 5000,
   });
