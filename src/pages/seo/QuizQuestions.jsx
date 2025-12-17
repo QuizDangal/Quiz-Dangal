@@ -1,0 +1,41 @@
+import React from 'react';
+import SeoLanding from './SeoLanding';
+
+export default function QuizQuestions() {
+  return (
+    <SeoLanding
+      path="/quiz-questions"
+      title="Quiz Questions – Free Online Quiz Questions | Quiz Dangal"
+      h1="Quiz Questions"
+      description="Practice free quiz questions across GK, sports, movies, and opinion polls. Play daily, earn coins, and climb the Quiz Dangal leaderboards."
+      keywords={[
+        'quiz questions',
+        'online quiz questions',
+        'daily quiz',
+        'india quiz',
+        'quiz app',
+      ]}
+      relatedLinks={[
+        { href: '/category/gk/', label: 'GK Quiz' },
+        { href: '/category/sports/', label: 'Sports Quiz' },
+        { href: '/category/movies/', label: 'Movie Quiz' },
+        { href: '/category/opinion/', label: 'Opinion Quiz' },
+        { href: '/leaderboards/', label: 'Leaderboards' },
+      ]}
+      faqs={[
+        {
+          question: 'Are these quiz questions free?',
+          answer: 'Yes. Quiz Dangal is free to play — you can participate in quizzes and earn coins by playing regularly.',
+        },
+        {
+          question: 'Do you have quiz questions with answers?',
+          answer: 'Yes. After you play a quiz, you can review results and see correct answers based on the quiz format.',
+        },
+        {
+          question: 'Which topics are available?',
+          answer: 'We host daily quizzes across GK, sports, movies, and opinion-based formats — with new rounds added regularly.',
+        },
+      ]}
+    />
+  );
+}

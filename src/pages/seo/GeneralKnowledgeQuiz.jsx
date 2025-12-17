@@ -1,0 +1,25 @@
+import React from 'react';
+import SeoLanding from './SeoLanding';
+
+export default function GeneralKnowledgeQuiz() {
+  return (
+    <SeoLanding
+      path="/general-knowledge-quiz"
+      title="General Knowledge Quiz – GK Practice Online | Quiz Dangal"
+      h1="General Knowledge Quiz"
+      description="Practice general knowledge quizzes on Quiz Dangal with daily rounds and leaderboard competition. Great for quick GK revision." 
+      keywords={['general knowledge quiz', 'general quiz', 'gk quiz', 'gk questions', 'quiz test']}
+      relatedLinks={[
+        { href: '/gk-quiz/', label: 'GK Quiz' },
+        { href: '/category/gk/', label: 'Play GK' },
+        { href: '/quiz-questions-with-answers/', label: 'Quiz Questions With Answers' },
+      ]}
+      faqs={[
+        {
+          question: 'Is this useful for quick GK revision?',
+          answer: 'Yes — playing short rounds daily helps you practice speed and recall.',
+        },
+      ]}
+    />
+  );
+}

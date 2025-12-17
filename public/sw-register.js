@@ -77,12 +77,8 @@
                   } catch (e) {
                     // ignore
                   }
-                  // Avoid hard reload loops; refresh softly when visible
-                  try {
-                    if (document.visibilityState === 'visible') window.location.reload();
-                  } catch (e) {
-                    // ignore
-                  }
+                  // Never force a reload here. Auto-reloads can interrupt Lighthouse/PSI runs
+                  // and can cause reload loops on some mobile browsers.
                 }
               });
             });

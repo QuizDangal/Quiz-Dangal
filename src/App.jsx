@@ -31,6 +31,25 @@ const PlayWinQuiz = lazy(() => import('@/pages/PlayWinQuiz'));
 const OpinionQuiz = lazy(() => import('@/pages/OpinionQuiz'));
 const ReferEarnInfo = lazy(() => import('@/pages/ReferEarnInfo'));
 const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
+// SEO landing pages (keyword-targeted)
+const QuizQuestions = lazy(() => import('@/pages/seo/QuizQuestions'));
+const QuizQuestionsWithAnswers = lazy(() => import('@/pages/seo/QuizQuestionsWithAnswers'));
+const GKQuiz = lazy(() => import('@/pages/seo/GKQuiz'));
+const GKQuestions = lazy(() => import('@/pages/seo/GKQuestions'));
+const HindiQuiz = lazy(() => import('@/pages/seo/HindiQuiz'));
+const EnglishQuiz = lazy(() => import('@/pages/seo/EnglishQuiz'));
+const OnlineQuiz = lazy(() => import('@/pages/seo/OnlineQuiz'));
+const ScienceQuiz = lazy(() => import('@/pages/seo/ScienceQuiz'));
+const CurrentAffairsQuiz = lazy(() => import('@/pages/seo/CurrentAffairsQuiz'));
+const MathsQuiz = lazy(() => import('@/pages/seo/MathsQuiz'));
+const QuizGame = lazy(() => import('@/pages/seo/QuizGame'));
+const QuizCompetition = lazy(() => import('@/pages/seo/QuizCompetition'));
+const QuizApp = lazy(() => import('@/pages/seo/QuizApp'));
+const QuizForKids = lazy(() => import('@/pages/seo/QuizForKids'));
+const IndiaQuiz = lazy(() => import('@/pages/seo/IndiaQuiz'));
+const SportsQuizLanding = lazy(() => import('@/pages/seo/SportsQuizLanding'));
+const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
+const GeneralKnowledgeQuiz = lazy(() => import('@/pages/seo/GeneralKnowledgeQuiz'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
 const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
@@ -49,6 +68,30 @@ const policyRoutes = (
     <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
     <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
     <Route path="/leaderboards/" element={<Leaderboards />} />
+  </>
+);
+
+// Public SEO routes (indexable landing pages)
+const seoLandingRoutes = (
+  <>
+    <Route path="/quiz-questions/" element={<QuizQuestions />} />
+    <Route path="/quiz-questions-with-answers/" element={<QuizQuestionsWithAnswers />} />
+    <Route path="/gk-quiz/" element={<GKQuiz />} />
+    <Route path="/gk-questions/" element={<GKQuestions />} />
+    <Route path="/hindi-quiz/" element={<HindiQuiz />} />
+    <Route path="/english-quiz/" element={<EnglishQuiz />} />
+    <Route path="/online-quiz/" element={<OnlineQuiz />} />
+    <Route path="/science-quiz/" element={<ScienceQuiz />} />
+    <Route path="/current-affairs-quiz/" element={<CurrentAffairsQuiz />} />
+    <Route path="/maths-quiz/" element={<MathsQuiz />} />
+    <Route path="/quiz-game/" element={<QuizGame />} />
+    <Route path="/quiz-competition/" element={<QuizCompetition />} />
+    <Route path="/quiz-app/" element={<QuizApp />} />
+    <Route path="/quiz-for-kids/" element={<QuizForKids />} />
+    <Route path="/india-quiz/" element={<IndiaQuiz />} />
+    <Route path="/sports-quiz/" element={<SportsQuizLanding />} />
+    <Route path="/cricket-quiz/" element={<CricketQuiz />} />
+    <Route path="/general-knowledge-quiz/" element={<GeneralKnowledgeQuiz />} />
   </>
 );
 
@@ -330,6 +373,7 @@ const PublicLayout = () => {
                 </Page>
               }
             />
+            {seoLandingRoutes}
             {policyRoutes}
             {/* Publicly accessible category pages for SEO */}
             <Route
@@ -444,6 +488,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            {seoLandingRoutes}
             <Route
               path="/my-quizzes/"
               element={

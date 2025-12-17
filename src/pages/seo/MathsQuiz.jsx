@@ -1,0 +1,25 @@
+import React from 'react';
+import SeoLanding from './SeoLanding';
+
+export default function MathsQuiz() {
+  return (
+    <SeoLanding
+      path="/maths-quiz"
+      title="Maths Quiz – Quick Math Practice Online | Quiz Dangal"
+      h1="Maths Quiz"
+      description="Do quick maths-quiz style practice on Quiz Dangal with fast rounds and a smooth mobile experience. Combine with daily GK and themed quizzes." 
+      keywords={['maths quiz', 'math quiz', 'quiz test', 'online quiz', 'quiz questions']}
+      relatedLinks={[
+        { href: '/quiz-questions/', label: 'Quiz Questions' },
+        { href: '/online-quiz/', label: 'Online Quiz' },
+        { href: '/category/gk/', label: 'GK Quizzes' },
+      ]}
+      faqs={[
+        {
+          question: 'Do you have math quiz questions?',
+          answer: 'Math-style questions can appear in our themed knowledge rounds. We keep adding new quizzes regularly.',
+        },
+      ]}
+    />
+  );
+}

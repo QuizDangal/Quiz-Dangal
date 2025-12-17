@@ -25,6 +25,25 @@ const ROUTES = [
   { path: '/play-win-quiz-app', title: 'Play & Win – Quiz Dangal | How It Works', description: 'Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India – start free on Quiz Dangal.' },
   { path: '/opinion-quiz-app', title: 'Opinion Quiz – Quiz Dangal | Fun & Fast Rounds', description: 'Try quick, low-pressure opinion quizzes on Quiz Dangal. Share your take, compare with others, and earn coins as you play.' },
   { path: '/refer-earn-quiz-app', title: 'Refer & Earn – Quiz Dangal | Invite Friends, Get Coins', description: 'Invite friends to Quiz Dangal and earn bonus coins when they join and play opinion-based and GK quizzes.' },
+  // SEO landing pages (keyword-targeted)
+  { path: '/quiz-questions', title: 'Quiz Questions – Quiz Dangal', description: 'Practice quiz questions across GK, sports, science, and more. Play free on Quiz Dangal and improve your score daily.' },
+  { path: '/quiz-questions-with-answers', title: 'Quiz Questions With Answers – Quiz Dangal', description: 'Explore quiz questions with answers and explanations. Play smart, build streaks, and learn faster on Quiz Dangal.' },
+  { path: '/gk-quiz', title: 'GK Quiz – Quiz Dangal', description: 'Play a GK quiz daily and sharpen your general knowledge. Compete, earn coins, and climb the leaderboards.' },
+  { path: '/gk-questions', title: 'GK Questions – Quiz Dangal', description: 'Practice GK questions for exams and daily learning. Attempt quizzes, track streaks, and level up your knowledge.' },
+  { path: '/general-knowledge-quiz', title: 'General Knowledge Quiz – Quiz Dangal', description: 'Try a general knowledge quiz for quick practice. New questions daily—play free on Quiz Dangal.' },
+  { path: '/hindi-quiz', title: 'Hindi Quiz – Quiz Dangal', description: 'Play Hindi quizzes across multiple topics. Quick rounds, daily streaks, and rewards on Quiz Dangal.' },
+  { path: '/english-quiz', title: 'English Quiz – Quiz Dangal', description: 'Improve English with quick quizzes—vocabulary and more. Play, learn, and track your streak on Quiz Dangal.' },
+  { path: '/online-quiz', title: 'Online Quiz – Quiz Dangal', description: 'Play online quizzes instantly on mobile or desktop. Join daily rounds, win coins, and climb the ranks.' },
+  { path: '/science-quiz', title: 'Science Quiz – Quiz Dangal', description: 'Test your science knowledge with daily quizzes. Quick practice, fun rounds, and rewards on Quiz Dangal.' },
+  { path: '/current-affairs-quiz', title: 'Current Affairs Quiz – Quiz Dangal', description: 'Stay updated with current affairs quizzes. Practice daily and improve your score on Quiz Dangal.' },
+  { path: '/maths-quiz', title: 'Maths Quiz – Quiz Dangal', description: 'Practice maths with quick quizzes. Improve speed and accuracy with daily rounds on Quiz Dangal.' },
+  { path: '/quiz-game', title: 'Quiz Game – Quiz Dangal', description: 'Play quiz games that are fast and competitive. Earn coins, build streaks, and win rewards.' },
+  { path: '/quiz-competition', title: 'Quiz Competition – Quiz Dangal', description: 'Join quiz competitions and compete on leaderboards. Play daily rounds and win coins on Quiz Dangal.' },
+  { path: '/quiz-app', title: 'Quiz App – Quiz Dangal', description: 'Use Quiz Dangal like a quiz app on your phone. Play daily quizzes, track streaks, and earn rewards.' },
+  { path: '/quiz-for-kids', title: 'Quiz For Kids – Quiz Dangal', description: 'Fun quizzes for kids with easy questions across topics. Learn daily and enjoy quick rounds.' },
+  { path: '/india-quiz', title: 'India Quiz – Quiz Dangal', description: 'Test your knowledge about India—history, culture, and more. Play free quizzes on Quiz Dangal.' },
+  { path: '/sports-quiz', title: 'Sports Quiz – Quiz Dangal', description: 'Play sports quizzes on cricket, football, and more. Compete daily and climb the leaderboards.' },
+  { path: '/cricket-quiz', title: 'Cricket Quiz – Quiz Dangal', description: 'Cricket quizzes for fans—IPL, records, players, and more. Play daily and win coins on Quiz Dangal.' },
   { path: '/about-us', title: 'About Us – Quiz Dangal', description: 'Quiz Dangal – India’s most exciting quiz and rewards platform where knowledge meets entertainment.' },
   { path: '/contact-us', title: 'Contact Us – Quiz Dangal', description: 'Get in touch with the Quiz Dangal team for support, partnership, or feedback.' },
   { path: '/terms-conditions', title: 'Terms & Conditions – Quiz Dangal', description: 'Read Quiz Dangal’s terms and conditions.' },
@@ -81,6 +100,21 @@ function replaceHead(html, { title, description, url, robots }) {
   return out;
 }
 
+function replaceStaticLoaderCopy(html, { title, description }) {
+  let out = html;
+  // Replace loader title (data-prerender-title)
+  out = out.replace(
+    /<h1([^>]*\bdata-prerender-title\b[^>]*)>[\s\S]*?<\/h1>/i,
+    `<h1$1>${escapeHtml(title)}</h1>`,
+  );
+  // Replace loader description (data-prerender-desc)
+  out = out.replace(
+    /<p([^>]*\bdata-prerender-desc\b[^>]*)>[\s\S]*?<\/p>/i,
+    `<p$1>${escapeHtml(description)}</p>`,
+  );
+  return out;
+}
+
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -97,11 +131,17 @@ async function main() {
   const baseHtml = await fs.readFile(srcIndex, 'utf8');
   for (const route of ROUTES) {
     const url = toUrl(route.path);
-    const html = replaceHead(baseHtml, {
+    let html = replaceHead(baseHtml, {
       title: route.title,
       description: route.description,
       url,
         robots: route.robots,
+    });
+
+    // Keep above-the-fold static copy aligned with each route for non-JS crawlers and faster LCP.
+    html = replaceStaticLoaderCopy(html, {
+      title: route.title,
+      description: route.description,
     });
 
     const outDir = route.path === '/' ? distDir : path.join(distDir, route.path.replace(/^\//, ''));
