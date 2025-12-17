@@ -5,7 +5,13 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
-import { formatDateOnly, formatTimeOnly, getPrizeDisplay, prefetchRoute } from '@/lib/utils';
+import {
+  formatDateOnly,
+  formatTimeOnly,
+  getPrizeDisplay,
+  prefetchRoute,
+  formatSupabaseError,
+} from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -250,6 +256,22 @@ const CategoryQuizzes = () => {
     }
     // Get the identifier (slotId for slots, id for legacy quizzes)
     const qId = q.slotId || q.id;
+
+    // Guard: if slot/category is paused/stopped, don't call join_slot (prevents repeated 400s).
+    try {
+      const st = String(q?.status || '').trim().toLowerCase();
+      if (st === 'paused' || st === 'stopped' || st === 'skipped' || q?.stop_override) {
+        toast({
+          title: 'Paused',
+          description: 'This category is paused right now. Please try later.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+
     // Immediately reflect UI state
     setJoiningId(qId);
     // Try to enable push notifications on first join/pre-join (fire-and-forget; don't block join)
@@ -295,9 +317,10 @@ const CategoryQuizzes = () => {
         toast({ title: 'Pre-joined!', description: 'Auto joining at start time.' });
       }
     } catch (err) {
+      const msg = formatSupabaseError(err);
       toast({
         title: 'Error',
-        description: err?.message || 'Could not join quiz.',
+        description: msg || err?.message || 'Could not join quiz.',
         variant: 'destructive',
       });
     } finally {

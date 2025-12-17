@@ -40,6 +40,21 @@ export async function smartJoinQuiz({ supabase, quiz, user }) {
     return { status: 'error', error: new Error('Missing quiz or supabase client') };
   if (!user || !user.id) return { status: 'error', error: new Error('Not authenticated') };
 
+  // Guard: if backend marks slot/quiz as paused/stopped, do not call join RPC.
+  // This avoids repeated 400 spam when category auto is OFF or runtime overrides paused.
+  try {
+    const status = String(quiz?.status || '').trim().toLowerCase();
+    const paused = status === 'paused' || status === 'stopped' || status === 'skipped';
+    if (paused) {
+      return { status: 'error', error: new Error('Quiz is paused. Please try later.') };
+    }
+    if (quiz?.stop_override) {
+      return { status: 'error', error: new Error('Quiz is temporarily stopped. Please try later.') };
+    }
+  } catch {
+    /* ignore */
+  }
+
   try {
     const startMs = quiz.start_time ? new Date(quiz.start_time).getTime() : null;
     const endMs = quiz.end_time ? new Date(quiz.end_time).getTime() : null;

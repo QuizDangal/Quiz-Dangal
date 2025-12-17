@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { isDocumentHidden } from '@/lib/visibility';
-import { safeComputeResultsIfDue } from '@/lib/utils';
+import { safeComputeResultsIfDue, formatSupabaseError } from '@/lib/utils';
 import { QUIZ_ENGAGEMENT_POLL_INTERVAL_MS } from '@/constants';
 
 /**
@@ -411,6 +411,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       if (!quiz) return;
       if (quizState !== 'active') return;
       if (!user) return;
+      if (slotId && slotPaused) return;
 
       try {
         if (!joined || participantStatus === 'pre_joined') {
@@ -463,7 +464,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       } catch (e) {
         // Only show error if it's not a duplicate join attempt
         if (!e?.message?.includes('already') && !e?.message?.includes('completed')) {
-          console.error('Quiz join error:', e);
+          const msg = formatSupabaseError(e);
+          console.error('Quiz join error:', msg, e);
           // Don't show toast to user, just log it
         }
       }
@@ -477,6 +479,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     participantStatus,
     quizId,
     slotId,
+    slotPaused,
     loadQuestions,
     questions.length,
     toast,
@@ -611,10 +614,11 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       refreshEngagement();
     } catch (err) {
       if (!err?.message?.includes('already') && !err?.message?.includes('completed')) {
-        console.error('Join quiz error:', err);
+        const msg = formatSupabaseError(err);
+        console.error('Join quiz error:', msg, err);
         toast({
           title: 'Error',
-          description: 'Could not join quiz. Please try again.',
+          description: msg || 'Could not join quiz. Please try again.',
           variant: 'destructive',
         });
       }

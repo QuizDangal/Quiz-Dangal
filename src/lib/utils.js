@@ -123,6 +123,25 @@ export function shouldAllowClientCompute(options = {}) {
   }
 }
 
+// Formats Supabase/PostgREST errors into a readable one-liner.
+// Useful when the browser console only shows "Object" for minified bundles.
+export function formatSupabaseError(err) {
+  try {
+    if (!err) return 'Unknown error';
+    if (typeof err === 'string') return err;
+    const message = String(err.message || err.error_description || err.msg || '').trim();
+    const details = String(err.details || '').trim();
+    const hint = String(err.hint || '').trim();
+    const code = String(err.code || err.status || '').trim();
+    const parts = [message, details, hint].filter(Boolean);
+    const joined = parts.join(' • ');
+    if (code && joined) return `[${code}] ${joined}`;
+    return joined || (code ? `[${code}]` : 'Unknown error');
+  } catch {
+    return 'Unknown error';
+  }
+}
+
 // For HTML <input type="datetime-local"> value attribute (local time, YYYY-MM-DDTHH:mm)
 export function toDatetimeLocalValue(value) {
   if (!value) return '';
