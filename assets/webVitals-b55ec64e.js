@@ -1,0 +1,1 @@
+import{_ as a}from"./supabase-07ebd5d8.js";import"./react-63c462fe.js";async function r(){try{if(!{}.VITE_ENABLE_VITALS)return;const o=await a(()=>import("./web-vitals-a2a3a7fd.js"),[]),n=t=>{console.info("[Vitals]",t.name,Math.round(t.value),t)};o.onCLS(n),o.onFID(n),o.onLCP(n),o.onINP&&o.onINP(n),o.onTTFB(n)}catch(o){}}export{r as initWebVitals};
