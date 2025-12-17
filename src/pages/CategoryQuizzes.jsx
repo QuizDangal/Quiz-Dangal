@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
 import { supabase } from '@/lib/customSupabaseClient';
 import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
@@ -84,6 +84,7 @@ const isSlotUpcomingWindow = (slot) => {
 const CategoryQuizzes = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const { isSubscribed, subscribeToPush } = usePushNotifications();
@@ -422,8 +423,25 @@ const CategoryQuizzes = () => {
     
     // Handle button click
     const handleClick = async () => {
-      if (isFinished || (hasJoined && !isActive)) {
-        // Results or already joined upcoming - just navigate
+      // Results page - anyone can view
+      if (isFinished) {
+        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        return;
+      }
+      
+      // For live/upcoming quizzes, require login
+      if (!user) {
+        toast({
+          title: 'Login Required',
+          description: 'Please login to join the quiz.',
+          variant: 'destructive',
+        });
+        navigate('/login', { state: { from: location.pathname, message: 'Login to join the quiz' } });
+        return;
+      }
+      
+      if (hasJoined && !isActive) {
+        // Already joined upcoming - navigate to lobby
         navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
         return;
       }

@@ -30,6 +30,21 @@ const Login = () => {
   const [signInHint, setSignInHint] = useState(null); // { type: 'unconfirmed'|'invalid', message }
   const [resendLoading, setResendLoading] = useState(false);
 
+  // Get redirect path from state (if user was redirected from protected route)
+  const redirectTo = location.state?.from || '/';
+  const loginMessage = location.state?.message;
+
+  // Show message if redirected from a page requiring login
+  useEffect(() => {
+    if (loginMessage) {
+      toast({
+        title: 'Login Required',
+        description: loginMessage,
+        variant: 'destructive',
+      });
+    }
+  }, [loginMessage, toast]);
+
   // Show a success toast if redirected from reset-password and switch to Sign In mode
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -155,6 +170,9 @@ const Login = () => {
           });
           toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
         }
+      } else {
+        // Successful login - redirect to saved path or home
+        navigate(redirectTo, { replace: true });
       }
     }
     setIsLoading(false);
