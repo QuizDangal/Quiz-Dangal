@@ -138,7 +138,7 @@ const MyQuizzes = () => {
   const [loading, setLoading] = useState(true);
   // tick state hata diya (countdown UI reactivity sufficient without forced re-render)
   // const [tick, setTick] = useState(0);
-  const [counts, setCounts] = useState({}); // quiz_id -> joined (pre + joined, where joined includes completed)
+  const [counts, setCounts] = useState({}); // key (slot_id or quiz_id) -> joined (pre + joined, where joined includes completed)
 
   // joinAndPlay removed
 
@@ -330,23 +330,47 @@ const MyQuizzes = () => {
           return;
         }
         const now = Date.now();
-        const ids = (quizzes || [])
-          .filter((q) => q.end_time && now < new Date(q.end_time).getTime())
-          .map((q) => q.id);
-        if (!ids.length) {
-          setCounts({});
-          return;
-        }
-        const { data, error } = await supabase.rpc('get_engagement_counts_many', {
-          p_quiz_ids: ids,
-        });
-        if (error) throw error;
+        const visible = (quizzes || []).filter(
+          (q) => q.end_time && now < new Date(q.end_time).getTime(),
+        );
+
+        const legacyQuizIds = visible.filter((q) => !q.slot_id).map((q) => q.id);
+        const slotIds = visible.filter((q) => !!q.slot_id).map((q) => q.slot_id);
+
         const map = {};
-        for (const row of data || []) {
-          const pre = row.pre_joined || 0;
-          const joined = row.joined || 0; // SQL includes completed
-          map[row.quiz_id] = pre + joined;
+
+        // Legacy quizzes: use existing bulk RPC by quiz_id
+        if (legacyQuizIds.length) {
+          const { data, error } = await supabase.rpc('get_engagement_counts_many', {
+            p_quiz_ids: legacyQuizIds,
+          });
+          if (error) throw error;
+          for (const row of data || []) {
+            const pre = row.pre_joined || 0;
+            const joined = row.joined || 0; // SQL includes completed
+            map[row.quiz_id] = pre + joined;
+          }
         }
+
+        // Slot-based quizzes: participants are tracked by slot_id, so read counts from quiz_slots_view
+        if (slotIds.length) {
+          try {
+            const { data: slotRows, error: slotErr } = await supabase
+              .from('quiz_slots_view')
+              .select('id, participants_pre, participants_joined, participants_total')
+              .in('id', slotIds);
+            if (slotErr) throw slotErr;
+            for (const s of slotRows || []) {
+              const pre = Number(s.participants_pre ?? 0);
+              const joined = Number(s.participants_joined ?? 0);
+              const total = Number(s.participants_total ?? pre + joined);
+              map[s.id] = Number.isFinite(total) ? total : 0;
+            }
+          } catch {
+            // If view is missing, just leave slot counts as 0
+          }
+        }
+
         setCounts(map);
       } catch {
         setCounts({});
@@ -519,7 +543,7 @@ const MyQuizzes = () => {
                     // UI decision: do not show separate coin icon; plain text only
                     return display.formatted;
                   };
-                  const joined = counts[quiz.id] || 0;
+                  const joined = counts[quiz.slot_id || quiz.id] || 0;
                   // Determine navigation path based on slot_id
                   const quizPath = quiz.slot_id ? `/quiz/slot/${quiz.slot_id}` : `/quiz/${quiz.id}`;
                   // Removed unused local UI state placeholders (already, btnDisabled, btnLabel, btnColor) for lint cleanliness
