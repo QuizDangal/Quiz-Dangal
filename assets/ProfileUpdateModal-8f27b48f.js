@@ -1,4 +1,4 @@
-import{z as oe,j as a,P,A as le,C,o as I,u as ie,e as ce,D as ue,t as de,v as me,w as fe,B as pe}from"./index-2c066c85.js";import{r as d}from"./react-63c462fe.js";import{L as k,I as D}from"./label-7bd035e9.js";import{m as he,L as ve}from"./icons-1e9e0bae.js";import"./supabase-07ebd5d8.js";import"./router-d6d570a4.js";var M={exports:{}},B={};/**
+import{z as oe,j as a,P,A as le,C,o as I,u as ie,e as ce,D as ue,t as de,v as me,w as fe,B as pe}from"./index-920576b1.js";import{r as d}from"./react-63c462fe.js";import{L as k,I as D}from"./label-946a10ef.js";import{m as he,L as ve}from"./icons-1e9e0bae.js";import"./supabase-07ebd5d8.js";import"./router-d6d570a4.js";var M={exports:{}},B={};/**
  * @license React
  * use-sync-external-store-shim.production.js
  *
