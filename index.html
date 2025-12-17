@@ -17,6 +17,10 @@
 	<!-- Supabase project preconnects (auth/api endpoints) -->
 	<link rel="preconnect" href="https://gcheopiqayyptfxowulv.supabase.co" crossorigin>
 	<link rel="dns-prefetch" href="//gcheopiqayyptfxowulv.supabase.co">
+	<!-- Runtime env overrides (deferred; must run before app bundle) -->
+	<script defer src="/env-config.js"></script>
+	<!-- Must run before the app bundle to restore clean paths from 404 redirect -->
+	<script defer src="/url-migrate.js"></script>
 	<script>document.documentElement.classList.add('js')</script>
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -138,106 +142,37 @@
 		<a href="#app-main" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
 	<!-- Primary heading is inside static-loader for FCP, and will be in React app after mount -->
 
-	<!-- Static fallback content for FCP - visible until React hydrates -->
+	<!-- Static fallback content for FCP/LCP - visible until React renders -->
 	<div id="root">
-		<div id="static-loader" style="display:none;">
-			<!-- Loader hidden by default - React will render directly -->
+		<div
+			id="static-loader"
+			style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b1020;color:#fff;"
+		>
+			<main id="app-main" tabindex="-1" role="main" aria-label="Quiz Dangal">
+				<div style="max-width:680px;text-align:center;">
+					<div style="width:72px;height:72px;margin:0 auto 16px;border-radius:9999px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.35);">
+						<img src="/android-chrome-192x192.png" alt="Quiz Dangal" width="72" height="72" decoding="async" fetchpriority="high" style="display:block;width:72px;height:72px;object-fit:cover;" />
+					</div>
+					<h1 style="margin:0 0 10px;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-0.02em;">Quiz Dangal</h1>
+					<p style="margin:0 0 16px;opacity:0.88;line-height:1.6;">Play daily quizzes, grow streaks, invite friends, and redeem rewards.</p>
+					<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+						<a href="/" style="display:inline-block;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);color:#fff;text-decoration:none;font-weight:600;">Open App</a>
+						<a href="/login" style="display:inline-block;padding:10px 14px;border-radius:14px;background:rgba(99,102,241,0.25);border:1px solid rgba(99,102,241,0.35);color:#fff;text-decoration:none;font-weight:600;">Sign In</a>
+					</div>
+					<div style="margin-top:18px;opacity:0.75;">
+						<span style="display:inline-block;animation:pulse 1.2s ease-in-out infinite;">Loading…</span>
+					</div>
+				</div>
+			</main>
 		</div>
 	</div>
 	<!-- No-JS fallback -->
 	<noscript>
 		<style>#static-loader{display:flex !important;}</style>
 	</noscript>
-	<script src="/env-config.js"></script>
-	<script>
-	  // If 404.html redirected here with ?p=<encoded>, restore the original path before app mounts
-	  (function(){
-	    try {
-	      var u = new URL(window.location.href);
-	      var p = u.searchParams.get('p');
-	      if (p) {
-	        var target = decodeURIComponent(p);
-	        // Use history.replaceState to avoid another reload
-	        window.history.replaceState({}, '', target);
-	      }
-	      // Migrate old hash-based URLs (#/about-us) to clean paths (/about-us)
-	      if (window.location.hash && window.location.hash.indexOf('#/') === 0) {
-	        var clean = window.location.hash.slice(1); // remove '#'
-	        var cleanUrl = clean;
-	        if (!cleanUrl.startsWith('/')) cleanUrl = '/' + cleanUrl;
-	        window.history.replaceState({}, '', cleanUrl);
-	      }
-	    } catch (e) {}
-	  })();
-	</script>
 	<script type="module" src="/src/main.jsx" fetchpriority="high"></script>
-	<script>
-	  // Lightweight modulepreload polyfill for older browsers
-	  (function(){const d=document;const l=d.createElement('link');if(l.relList&&l.relList.supports&&l.relList.supports('modulepreload'))return;for(const s of d.querySelectorAll('link[rel="modulepreload"]'))o(s);new MutationObserver(e=>{for(const t of e)if(t.type==='childList')for(const n of t.addedNodes)if(n.tagName==='LINK'&&n.rel==='modulepreload')o(n)}).observe(d,{childList:true,subtree:true});function o(e){if(e.ep)return;e.ep=true;const s={};if(e.integrity)s.integrity=e.integrity;if(e.referrerPolicy)s.referrerPolicy=e.referrerPolicy;s.credentials=e.crossOrigin==='use-credentials'?'include':e.crossOrigin==='anonymous'?'omit':'same-origin';fetch(e.href,s)}})();
-	</script>
-	<script>
-		// Register service worker (prod by default). For local testing, enable via ?sw=1 once or localStorage flag.
-		(function() {
-			var h = window.location.hostname;
-			var isLocal = /(^localhost$)|(^127\.0\.0\.1$)|(^0\.0\.0\.0$)|(^192\.168\.)|(^10\.)|(^172\.(1[6-9]|2[0-9]|3[0-1])\.)|(\.local$)/.test(h);
-			try {
-				var u = new URL(window.location.href);
-				if (u.searchParams.get('sw') === '1') {
-					localStorage.setItem('qd_sw_dev', '1');
-				}
-			} catch (e) {}
-			var forceDevSW = false;
-			try { forceDevSW = localStorage.getItem('qd_sw_dev') === '1'; } catch (e) { forceDevSW = false; }
-			function isLikelyAutomation() {
-				try {
-					var ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-					if (/googlebot|bingbot|duckduckbot|baiduspider|yandex|lighthouse|pagespeed|headless|crawler|spider|bot|wrsparams/.test(ua)) return true;
-					if (navigator.webdriver === true) return true;
-					if (document.prerendering === true) return true;
-				} catch (e) {}
-				return false;
-			}
-
-			var canSW = ('serviceWorker' in navigator) && window.isSecureContext;
-			var shouldRegister = canSW && (!isLocal || forceDevSW) && !isLikelyAutomation();
-			if (!shouldRegister) return;
-
-			function preflight(url) {
-				return fetch(url, { cache: 'no-store' }).then(function(res) {
-					if (!res.ok) throw new Error('sw.js fetch failed: ' + res.status);
-					var ct = (res.headers.get('content-type') || '').toLowerCase();
-					if (!/javascript|application\/javascript|text\/javascript/.test(ct)) {
-						throw new Error('sw.js unexpected content-type: ' + ct);
-					}
-					return true;
-				});
-			}
-
-			window.addEventListener('load', function() {
-				var swUrl = '/sw.js';
-				preflight(swUrl).then(function() {
-					return navigator.serviceWorker.register(swUrl, { scope: '/', updateViaCache: 'none' });
-				}).then(function(registration) {
-					console.log('SW registered:', registration);
-					registration.addEventListener('updatefound', function() {
-						var newWorker = registration.installing;
-						if (!newWorker) return;
-						newWorker.addEventListener('statechange', function() {
-							if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-								try { newWorker.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
-								// Avoid hard reload loops; refresh softly when visible
-								try {
-									if (document.visibilityState === 'visible') window.location.reload();
-								} catch (e) {}
-							}
-						});
-					});
-				}).catch(function(err) {
-					console.warn('SW disabled:', err && (err.message || err));
-				});
-			});
-		})();
-	</script>
+	<script defer src="/modulepreload-polyfill.js"></script>
+	<script defer src="/sw-register.js"></script>
 </body>
 
 </html>
