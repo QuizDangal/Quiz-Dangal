@@ -88,8 +88,14 @@ const Results = () => {
         supabase.from('quizzes').select('*').eq('id', quizId).single(),
         // 2. Results leaderboard
         supabase.from('quiz_results').select('leaderboard').eq('quiz_id', quizId).maybeSingle(),
-        // 3. Engagement counts
-        supabase.rpc('get_engagement_counts', { p_quiz_id: quizId }).catch(() => ({ data: null })),
+        // 3. Engagement counts (wrap in async to catch errors properly)
+        (async () => {
+          try {
+            return await supabase.rpc('get_engagement_counts', { p_quiz_id: quizId });
+          } catch {
+            return { data: null };
+          }
+        })(),
         // 4. Participation check (combined query)
         user?.id
           ? supabase
