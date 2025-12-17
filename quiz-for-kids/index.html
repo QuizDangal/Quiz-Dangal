@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<!-- Minimal preconnects for critical resources only -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<!-- Fonts loaded async to avoid render blocking -->
+	<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+	<noscript>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+	</noscript>
+	<!-- Speed up critical third-parties (Supabase auth + GA) -->
+	<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+	<link rel="dns-prefetch" href="//www.googletagmanager.com">
+	<!-- Supabase project preconnects (auth/api endpoints) -->
+	<link rel="preconnect" href="https://gcheopiqayyptfxowulv.supabase.co" crossorigin>
+	<link rel="dns-prefetch" href="//gcheopiqayyptfxowulv.supabase.co">
+	<!-- Runtime env overrides (deferred; must run before app bundle) -->
+	<script defer src="/env-config.js"></script>
+	<!-- Must run before the app bundle to restore clean paths from 404 redirect -->
+	<script defer src="/url-migrate.js"></script>
+	<script>document.documentElement.classList.add('js')</script>
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+	<link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+	<meta name="generator" content="Quiz Dangal" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual" />
+	<!-- Remove deprecated AJAX crawling fragment meta -->
+	<meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+	<meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+	<!-- Security & privacy hardening (frontend-only, no backend dependency) -->
+	<meta name="referrer" content="strict-origin-when-cross-origin" />
+	<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+	<meta name="color-scheme" content="light dark" />
+	<!-- Permissions-Policy: allow notifications (for push), geolocation optional; block unused powerful features -->
+	<!-- Modern Permissions-Policy (Feature-Policy successor) -->
+	<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self), notifications=(self)" />
+	<meta name="theme-color" content="#6366f1" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	<meta name="apple-mobile-web-app-title" content="Quiz Dangal" />
+	<meta name="description" content="Fun quizzes for kids with easy questions across topics. Learn daily and enjoy quick rounds." />
+	<meta name="keywords" content="Quiz Dangal, quizdangal, quiz, india quiz, indiaquiz, money quiz, moneyquiz, play and win, play & win, refer and earn, opinion based quiz, daily quiz India, online quiz contest, win rewards, leaderboards" />
+	<title>Quiz For Kids – Quiz Dangal</title>
+	<!-- Open Graph / Social share defaults -->
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Quiz Dangal" />
+	<meta property="og:title" content="Quiz For Kids – Quiz Dangal" />
+	<meta property="og:description" content="Fun quizzes for kids with easy questions across topics. Learn daily and enjoy quick rounds." />
+	<meta property="og:url" content="https://quizdangal.com/quiz-for-kids/" />
+	<meta property="og:image" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
+	<meta property="og:image:secure_url" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
+	<meta property="og:image:type" content="image/png" />
+	<meta property="og:image:alt" content="Quiz Dangal — Refer & Earn" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Quiz For Kids – Quiz Dangal" />
+	<meta name="twitter:description" content="Fun quizzes for kids with easy questions across topics. Learn daily and enjoy quick rounds." />
+	<meta name="twitter:image" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
+	<style>
+		/* Ensure system UI fonts render fast; any web fonts should use swap */
+		@font-face { font-display: swap; }
+		/* Accessible, visually-hidden utility for SEO/a11y headings */
+		.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+		/* Loading animation for static loader */
+		@keyframes pulse{0%,100%{opacity:0.7;transform:scale(0.95)}50%{opacity:1;transform:scale(1)}}
+		/* Hide static loader when React has rendered content */
+		#static-loader{transition:opacity 0.3s ease-out}
+	</style>
+	<!-- Google tag (gtag.js) - deferred for better performance -->
+	<script>
+		// Defer GA loading until after page is interactive
+		window.addEventListener('load', function() {
+			setTimeout(function() {
+				var s = document.createElement('script');
+				s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
+				s.async = true;
+				document.head.appendChild(s);
+				s.onload = function() {
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					window.gtag = gtag;
+					gtag('js', new Date());
+					gtag('config', 'G-98624Q56YT');
+				};
+			}, 2000); // Load GA 2 seconds after page load
+		});
+	</script>
+	
+	<!-- Structured Data: WebSite + Organization + WebApplication -->
+	<script type="application/ld+json">
+	  {
+	    "@context": "https://schema.org",
+	    "@type": "WebSite",
+	    "name": "Quiz Dangal",
+	    "url": "https://quizdangal.com/",
+	    "potentialAction": {
+	      "@type": "SearchAction",
+	      "target": "https://quizdangal.com/search?q={search_term_string}",
+	      "query-input": "required name=search_term_string"
+	    }
+	  }
+	</script>
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "Organization",
+				"name": "Quiz Dangal",
+				"url": "https://quizdangal.com/",
+				"logo": "https://quizdangal.com/android-chrome-512x512.png",
+				"sameAs": [
+					"https://www.instagram.com/quizdangal?igsh=eGF1OGE4NGgzY2Ry",
+					"https://www.facebook.com/profile.php?id=61576614092243",
+					"https://x.com/quizdangal?t=6XBXmd0n87YTF8JstqrKVQ&s=09"
+				]
+			}
+		</script>
+	<script type="application/ld+json">
+	  {
+	    "@context": "https://schema.org",
+	    "@type": "WebApplication",
+	    "name": "Quiz Dangal",
+	    "url": "https://quizdangal.com/",
+	    "applicationCategory": "Game",
+	    "operatingSystem": "Web",
+	    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+	  }
+	</script>
+  <script type="module" crossorigin src="/assets/index-05805094.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/react-63c462fe.js">
+  <link rel="modulepreload" crossorigin href="/assets/supabase-07ebd5d8.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-d6d570a4.js">
+  <link rel="modulepreload" crossorigin href="/assets/icons-1e9e0bae.js">
+  <link rel="stylesheet" href="/assets/index-fdde8c35.css">
+  <link rel="canonical" href="https://quizdangal.com/quiz-for-kids/" />
+</head>
+
+	<body>
+		<a href="#app-main" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
+	<!-- Primary heading is inside static-loader for FCP, and will be in React app after mount -->
+
+	<!-- Static fallback content for FCP/LCP - visible until React renders -->
+	<div id="root">
+		<div
+			id="static-loader"
+			style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b1020;color:#fff;"
+		>
+			<main id="app-main" tabindex="-1" role="main" aria-label="Quiz Dangal">
+				<div style="max-width:680px;text-align:center;">
+					<div style="width:72px;height:72px;margin:0 auto 16px;border-radius:9999px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.35);">
+						<img src="/android-chrome-192x192.png" alt="Quiz Dangal" width="72" height="72" decoding="async" fetchpriority="high" style="display:block;width:72px;height:72px;object-fit:cover;" />
+					</div>
+					<h1 data-prerender-title style="margin:0 0 10px;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-0.02em;">Quiz For Kids – Quiz Dangal</h1>
+					<p data-prerender-desc style="margin:0 0 16px;opacity:0.88;line-height:1.6;">Fun quizzes for kids with easy questions across topics. Learn daily and enjoy quick rounds.</p>
+					<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+						<a href="/" style="display:inline-block;padding:12px 18px;border-radius:14px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);color:#fff;text-decoration:none;font-weight:800;font-size:18px;">Play</a>
+					</div>
+					<div style="margin-top:18px;opacity:0.75;">
+						<span style="display:inline-block;animation:pulse 1.2s ease-in-out infinite;">Loading…</span>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+	<!-- No-JS fallback -->
+	<noscript>
+		<style>#static-loader{display:flex !important;}</style>
+	</noscript>
+	
+	<script defer src="/modulepreload-polyfill.js"></script>
+	<script defer src="/sw-register.js"></script>
+</body>
+
+</html>
