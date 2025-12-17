@@ -1,12 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { initWebVitals } from '@/lib/webVitals';
 import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 import App from '@/App';
 import '@/index.css';
 import { HelmetProvider } from 'react-helmet-async';
 import { SoundProvider } from './contexts/SoundContext';
-import { warmMotion } from '@/lib/motion-lite';
 
 const rootEl = document.getElementById('root');
 
@@ -42,8 +40,41 @@ if (!rootEl) {
 
 // Defer vitals collection until after initial paint.
 if (typeof window !== 'undefined') {
-  requestIdleCallback
-    ? requestIdleCallback(() => initWebVitals())
-    : setTimeout(() => initWebVitals(), 1500);
-  warmMotion();
+  const schedule = (cb, timeoutMs = 1500) => {
+    try {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(cb, { timeout: timeoutMs });
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    window.setTimeout(cb, Math.max(0, timeoutMs));
+  };
+
+  // Web-vitals is optional and should never compete with first paint.
+  schedule(() => {
+    import('@/lib/webVitals')
+      .then((mod) => mod.initWebVitals?.())
+      .catch(() => {
+        /* ignore */
+      });
+  }, 1800);
+
+  // Warm framer-motion only after a real user interaction (keeps Lighthouse/PSI quiet).
+  const warmOnce = () => {
+    schedule(() => {
+      import('@/lib/motion-lite')
+        .then((mod) => mod.warmMotion?.())
+        .catch(() => {
+          /* ignore */
+        });
+    }, 2500);
+  };
+
+  // Run at most once.
+  const opts = { once: true, passive: true };
+  window.addEventListener('pointerdown', warmOnce, opts);
+  window.addEventListener('touchstart', warmOnce, opts);
+  window.addEventListener('keydown', warmOnce, { once: true });
 }
