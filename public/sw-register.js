@@ -40,33 +40,32 @@
     }
 
     var canSW = 'serviceWorker' in navigator && window.isSecureContext;
-    var shouldRegister = canSW && (!isLocal || forceDevSW) && !isLikelyAutomation();
-    if (!shouldRegister) return;
-
-    function preflight(url) {
-      return fetch(url, { cache: 'no-store' }).then(function (res) {
-        if (!res.ok) throw new Error('sw.js fetch failed: ' + res.status);
-        var ct = (res.headers.get('content-type') || '').toLowerCase();
-        if (!/javascript|application\/javascript|text\/javascript/.test(ct)) {
-          throw new Error('sw.js unexpected content-type: ' + ct);
-        }
-        return true;
-      });
+    var isAutomation = isLikelyAutomation();
+    var shouldRegister = canSW && (!isLocal || forceDevSW) && !isAutomation;
+    
+    // If automation detected (Lighthouse/PSI), unregister any existing SW to prevent interference
+    if (canSW && isAutomation) {
+      try {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(reg) { reg.unregister(); });
+        });
+      } catch (e) {
+        // ignore
+      }
+      return;
     }
+    
+    if (!shouldRegister) return;
 
     window.addEventListener('load', function () {
       var swUrl = '/sw.js';
 
       var register = function () {
-        preflight(swUrl)
-          .then(function () {
-            return navigator.serviceWorker.register(swUrl, {
-              scope: '/',
-              updateViaCache: 'none',
-            });
-          })
+        navigator.serviceWorker.register(swUrl, {
+          scope: '/',
+          updateViaCache: 'none',
+        })
           .then(function (registration) {
-            console.log('SW registered:', registration);
             registration.addEventListener('updatefound', function () {
               var newWorker = registration.installing;
               if (!newWorker) return;
@@ -84,7 +83,7 @@
             });
           })
           .catch(function (err) {
-            console.warn('SW disabled:', err && (err.message || err));
+            // SW registration fail is non-critical; app still works
           });
       };
 
