@@ -12,6 +12,29 @@ const periods = [
   { key: 'weekly', label: 'Weekly' },
 ];
 
+// Cache TTL: 5 minutes for leaderboard data (reduces RPC calls on free tier)
+const LEADERBOARD_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getLeaderboardCache(period) {
+  try {
+    const raw = sessionStorage.getItem(`qd_lb_${period}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > LEADERBOARD_CACHE_TTL_MS) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function setLeaderboardCache(period, data) {
+  try {
+    sessionStorage.setItem(`qd_lb_${period}`, JSON.stringify({ data, ts: Date.now() }));
+  } catch {
+    // Quota exceeded or unavailable
+  }
+}
+
 function useQuery() {
   const { search } = useLocation();
   return useMemo(() => new URLSearchParams(search), [search]);
@@ -30,6 +53,14 @@ export default function Leaderboards() {
   const [showAll, setShowAll] = useState(false);
 
   const loadLeaderboard = useCallback(async (p) => {
+    // Check cache first (5 min TTL) - reduces RPC calls on free tier
+    const cached = getLeaderboardCache(p);
+    if (cached) {
+      setRows(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -75,6 +106,7 @@ export default function Leaderboards() {
         }
       }
 
+      setLeaderboardCache(p, data); // Cache for 5 min
       setRows(data);
     } catch (err) {
       const errorMessage = err.message || 'Failed to load leaderboard.';

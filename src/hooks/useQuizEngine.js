@@ -54,7 +54,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   useEffect(() => {
     fetchSlotMeta();
-    const id = slotId ? setInterval(fetchSlotMeta, 15000) : null;
+    // Slot meta polling - 30s interval for free tier optimization (was 15s)
+    const id = slotId ? setInterval(fetchSlotMeta, 30000) : null;
     return () => {
       if (id) clearInterval(id);
     };

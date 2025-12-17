@@ -102,7 +102,8 @@ export default function Redemptions() {
       await loadRedemptions();
     };
     run();
-    const interval = setInterval(run, 15000);
+    // Increased from 15s to 30s for Supabase free tier optimization
+    const interval = setInterval(run, 30000);
     return () => {
       clearInterval(interval);
     };
