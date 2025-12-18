@@ -11,12 +11,7 @@
 	<noscript>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 	</noscript>
-	<!-- Speed up critical third-parties (Supabase auth + GA) -->
-	<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
-	<link rel="dns-prefetch" href="//www.googletagmanager.com">
-	<!-- Supabase project preconnects (auth/api endpoints) -->
-	<link rel="preconnect" href="https://gcheopiqayyptfxowulv.supabase.co" crossorigin>
-	<link rel="dns-prefetch" href="//gcheopiqayyptfxowulv.supabase.co">
+	<!-- Avoid preconnecting to third-parties on first paint (helps Mobile PSI); they load later on demand. -->
 	<!-- Runtime env overrides (deferred; must run before app bundle) -->
 	<script defer src="/env-config.js"></script>
 	<!-- Must run before the app bundle to restore clean paths from 404 redirect -->
