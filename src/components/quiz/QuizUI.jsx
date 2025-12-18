@@ -354,33 +354,41 @@ export const ActiveQuizView = ({
               })}
             </div>
 
-            {/* Submit Button - Show on last question after answering it OR if all questions answered */}
-            {(currentQuestionIndex === questions.length - 1 && answers[currentQuestion?.id]) && (
-              <m.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-4"
-              >
-                <Button
-                  onClick={onSubmit}
-                  disabled={submitting}
-                  className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
+            {/* Submit Button (show on last question once user has answered at least 1) */}
+            {(() => {
+              const isLast = currentQuestionIndex === questions.length - 1;
+              const answeredCount = Object.keys(answers).length;
+              const total = questions.length;
+              if (!isLast) return null;
+              if (answeredCount === 0) return null;
+              if (quizState !== 'active' || participantStatus === 'completed') return null;
+              return (
+                <m.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-4"
                 >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Submit Quiz ({Object.keys(answers).length}/{questions.length} answered)
-                    </>
-                  )}
-                </Button>
-              </m.div>
-            )}
+                  <Button
+                    onClick={onSubmit}
+                    disabled={submitting}
+                    className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Submit Quiz ({answeredCount}/{total})
+                      </>
+                    )}
+                  </Button>
+                </m.div>
+              );
+            })()}
           </m.div>
         </AnimatePresence>
       </div>

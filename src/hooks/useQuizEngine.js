@@ -27,6 +27,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [quizState, setQuizState] = useState('loading'); // loading, waiting, active, finished, completed
+  const [error, setError] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   // Slot integration state
   const [slotMeta, setSlotMeta] = useState(null); // raw slot row
@@ -53,7 +54,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       if (!error && data) {
         setSlotMeta(data);
         setSlotPaused(data.status === 'paused');
-        // Keep joined/pre-joined counts accurate for slot-based quizzes
+        // Keep engagement counts accurate for slot-based quizzes
         setEngagement(normalizeEngagementFromSlotRow(data));
       }
     } catch (e) {
@@ -81,6 +82,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const mountedRef = useRef(true);
   const retryQueueRef = useRef([]); // { questionId, optionId, attempt }
   const retryTimerRef = useRef(null);
+  const handleSubmitRef = useRef(null);
 
   useEffect(
     () => () => {
@@ -91,45 +93,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     [],
   );
 
-  // Finalize (partial submit) on route unmount if user leaves mid-quiz without submitting
-  // Only mark completed if user actually answered at least 1 question AND quiz is currently active
   const answersRef = useRef({});
-  const quizStateRef = useRef(quizState);
   useEffect(() => {
     answersRef.current = answers;
-    quizStateRef.current = quizState;
-  }, [answers, quizState]);
-  
-  useEffect(() => {
-    return () => {
-      try {
-        const hasAnswers = Object.keys(answersRef.current).length > 0;
-        const wasActive = quizStateRef.current === 'active';
-        if (quiz && wasActive && participantStatus !== 'completed' && user?.id && hasAnswers) {
-          // Mark completed with whatever answers were saved so far
-          // Use slot_id for slots, quiz_id for legacy
-          let query = supabase
-            .from('quiz_participants')
-            .update({ status: 'completed' })
-            .eq('user_id', user.id);
-          if (slotId) {
-            query = query.eq('slot_id', slotId);
-          } else {
-            query = query.eq('quiz_id', quizId);
-          }
-          query
-            .then(() => {
-              /* noop */
-            })
-            .catch(() => {
-              /* ignore */
-            });
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-  }, [quiz, quizId, slotId, participantStatus, user?.id]);
+  }, [answers]);
 
   // Retry queue helpers
   const scheduleRetry = useCallback(() => {
@@ -236,12 +203,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const refreshEngagement = useCallback(async () => {
     // Slot-based quizzes: engagement is tracked by slot_id; prefer slot meta/view.
     if (slotId) {
-      // If we already have slot meta, update from it (no network).
       if (slotMeta) {
         setEngagement(normalizeEngagementFromSlotRow(slotMeta));
         return;
       }
-      // Otherwise fetch once.
       await fetchSlotMeta();
       return;
     }
@@ -251,6 +216,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       setEngagement({ joined: 0, pre_joined: 0 });
       return;
     }
+
     try {
       const { data: engagementData, error: engagementError } = await supabase.rpc(
         'get_engagement_counts',
@@ -272,6 +238,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   const fetchQuizData = useCallback(async () => {
     try {
+      setError(null);
       let quizData = null;
       
       // If slotId is provided, fetch from quiz_slots_view instead of quizzes table
@@ -282,8 +249,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
           .eq('id', slotId)
           .maybeSingle();
         if (slotError || !slotData) {
-          toast({ title: 'Error', description: 'Quiz slot not found.', variant: 'destructive' });
-          navigate('/');
+          const msg = 'Quiz slot not found.';
+          toast({ title: 'Error', description: msg, variant: 'destructive' });
+          setError(msg);
+          setQuizState('error');
           return;
         }
         // Map slot data to quiz-like structure
@@ -310,8 +279,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
           .eq('id', quizId)
           .single();
         if (quizError || !data) {
-          toast({ title: 'Error', description: 'Quiz not found.', variant: 'destructive' });
-          navigate('/');
+          const msg = 'Quiz not found.';
+          toast({ title: 'Error', description: msg, variant: 'destructive' });
+          setError(msg);
+          setQuizState('error');
           return;
         }
         quizData = data;
@@ -364,8 +335,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       await refreshEngagement();
     } catch (error) {
       console.error('Error fetching quiz data:', error);
-      toast({ title: 'Error', description: 'Failed to load quiz.', variant: 'destructive' });
-      navigate('/');
+      const msg = 'Failed to load quiz. Please check your internet and try again.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      setError(msg);
+      setQuizState('error');
     }
   }, [quizId, slotId, user, navigate, toast, loadQuestions, refreshEngagement]); // slotId included
 
@@ -375,7 +348,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   // Timer / phase management
   useEffect(() => {
-    if (!quiz || quizState === 'completed') return;
+    if (!quiz || quizState === 'completed' || quizState === 'error') return;
     const update = () => {
       const now = new Date();
       // Prefer slot times if slotMeta available
@@ -512,29 +485,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     toast,
   ]);
 
-  // Auto-submit on finish (if the user answered anything and was actively participating)
-  const prevQuizStateRef = useRef(quizState);
-  useEffect(() => {
-    // Only auto-submit when state TRANSITIONS to finished (not on initial load)
-    const prevState = prevQuizStateRef.current;
-    prevQuizStateRef.current = quizState;
-    
-    // Skip if not a transition to 'finished'
-    if (quizState !== 'finished' || prevState === 'finished') return;
-    
-    // Only auto-submit if:
-    // 1. User has answered at least 1 question
-    // 2. User was in 'joined' status (actually playing)
-    // 3. Not already submitting
-    // 4. Not already completed
-    const hasAnswers = Object.keys(answers).length > 0;
-    const wasPlaying = participantStatus === 'joined';
-    const notCompleted = participantStatus !== 'completed';
-    
-    if (hasAnswers && wasPlaying && notCompleted && !submitting) {
-      handleSubmit();
-    }
-  }, [quizState, answers, participantStatus, submitting, handleSubmit]);
 
   // After finish/completion: Wait for timer to complete, then redirect to Results
   useEffect(() => {
@@ -677,6 +627,17 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     async (questionId, optionId) => {
       if (submitting || quizState !== 'active' || participantStatus === 'completed') return;
       if (!user?.id) return; // Guard against null user
+
+      // Optimistic UI update so selection + submit button are reliable even under flaky networks.
+      setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+      if (currentQuestionIndex < questions.length - 1) {
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(() => setCurrentQuestionIndex((prev) => prev + 1));
+        } else {
+          setTimeout(() => setCurrentQuestionIndex((prev) => prev + 1), 250);
+        }
+      }
+
       try {
         const { error } = await supabase
           .from('user_answers')
@@ -685,14 +646,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
             { onConflict: 'user_id,question_id' },
           );
         if (error) throw error;
-        setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-        if (currentQuestionIndex < questions.length - 1) {
-          if (typeof requestAnimationFrame === 'function') {
-            requestAnimationFrame(() => setCurrentQuestionIndex((prev) => prev + 1));
-          } else {
-            setTimeout(() => setCurrentQuestionIndex((prev) => prev + 1), 250);
-          }
-        }
       } catch (error) {
         console.error('Error saving answer:', error);
         // Queue silently; inform user first time only for this question
@@ -704,6 +657,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
             variant: 'destructive',
           });
         }
+        // Keep only latest selection for a question in the retry queue
+        retryQueueRef.current = retryQueueRef.current.filter((e) => e.questionId !== questionId);
         retryQueueRef.current.push({ questionId, optionId, attempt: 1 });
         scheduleRetry();
       }
@@ -722,8 +677,20 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   const handleSubmit = useCallback(async () => {
     if (submitting) return;
+    if (!user?.id) return;
     setSubmitting(true);
     try {
+      // Best-effort: flush any pending answer sync before finalizing.
+      await flushRetryQueue();
+      if (retryQueueRef.current.length > 0) {
+        toast({
+          title: 'Sync pending',
+          description: 'Some answers are still syncing. Please check internet and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Use slot_id for slots, quiz_id for legacy
       let query = supabase
         .from('quiz_participants')
@@ -759,7 +726,38 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
-  }, [submitting, user?.id, quizId, toast, navigate]);
+  }, [submitting, user?.id, quizId, slotId, toast, navigate, flushRetryQueue]);
+
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
+
+  // Auto-submit on finish (only on transition to finished, only once per quiz/slot)
+  const prevQuizStateRef = useRef(null);
+  const autoSubmitDoneRef = useRef(null);
+  useEffect(() => {
+    // Reset guards when quiz changes
+    autoSubmitDoneRef.current = null;
+    prevQuizStateRef.current = null;
+  }, [quizId, slotId]);
+
+  useEffect(() => {
+    const prev = prevQuizStateRef.current;
+    prevQuizStateRef.current = quizState;
+
+    if (quizState !== 'finished') return;
+    if (prev === 'finished') return; // not a transition
+
+    const key = slotId ? `slot:${slotId}` : `quiz:${quizId}`;
+    if (autoSubmitDoneRef.current === key) return;
+
+    const hasAnswers = Object.keys(answersRef.current || {}).length > 0;
+    const wasPlaying = participantStatus === 'joined';
+    if (hasAnswers && wasPlaying && !submitting) {
+      autoSubmitDoneRef.current = key;
+      if (typeof handleSubmitRef.current === 'function') handleSubmitRef.current();
+    }
+  }, [quizState, participantStatus, submitting, quizId, slotId]);
 
   const formatTime = useCallback((seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -774,6 +772,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     currentQuestionIndex,
     answers,
     quizState,
+    error,
     timeLeft,
     submitting,
     engagement,

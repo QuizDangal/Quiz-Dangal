@@ -464,9 +464,26 @@ const MainLayout = () => {
     };
     if (!shouldWarm()) return;
 
-    warmedRoutesRef.current = true;
-    prefetch(() => import('@/pages/Leaderboards'));
-    prefetch(() => import('@/pages/Wallet'));
+    // Defer prefetch until a real user interaction to keep initial load (and Lighthouse mobile) clean.
+    const warm = () => {
+      if (warmedRoutesRef.current) return;
+      warmedRoutesRef.current = true;
+      prefetch(() => import('@/pages/Leaderboards'));
+      prefetch(() => import('@/pages/Wallet'));
+    };
+
+    const opts = { once: true, passive: true };
+    window.addEventListener('pointerdown', warm, opts);
+    window.addEventListener('touchstart', warm, opts);
+    window.addEventListener('keydown', warm, { once: true });
+    window.addEventListener('scroll', warm, opts);
+
+    return () => {
+      window.removeEventListener('pointerdown', warm, opts);
+      window.removeEventListener('touchstart', warm, opts);
+      window.removeEventListener('keydown', warm, { once: true });
+      window.removeEventListener('scroll', warm, opts);
+    };
   }, []);
   return (
     <>

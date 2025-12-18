@@ -75,6 +75,7 @@ const Quiz = () => {
     submitting,
     joined,
     participantStatus,
+    error,
     totalJoined,
     displayJoined,
     handleJoinOrPrejoin,
@@ -82,19 +83,6 @@ const Quiz = () => {
     handleSubmit,
     formatTime,
   } = useQuizEngine(isSlotQuiz ? slot?.id : quizId, navigate, isSlotQuiz ? { slotId } : undefined);
-
-  // Redirect finished slot to next slot in category (with delay to show completion)
-  useEffect(() => {
-    if (!isSlotQuiz) return;
-    if (quizState !== 'finished' && quizState !== 'completed') return;
-    if (!slot?.id || !slot?.category) return;
-    
-    // Don't auto-redirect - let user see the result first
-    // Only redirect if user explicitly navigates or after viewing results
-    // Removed auto-redirect to prevent confusion
-    
-    return () => {};
-  }, [isSlotQuiz, quizState, slot?.id, slot?.category, slot?.end_time, navigate]);
 
   // Close handler for modals
   const handleClose = () => {
@@ -116,6 +104,11 @@ const Quiz = () => {
   // Error state for slot quiz
   if (isSlotQuiz && slotError) {
     return <ErrorView message={slotError} />;
+  }
+
+  // Engine-level error state (avoid auto-navigation on transient failures)
+  if (quizState === 'error') {
+    return <ErrorView message={error || 'Something went wrong. Please try again.'} />;
   }
 
   // Loading state for regular quiz
