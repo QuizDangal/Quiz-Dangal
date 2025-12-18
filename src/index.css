@@ -145,6 +145,20 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* Mobile/perf: disable entrance animations that keep elements on opacity:0 initially.
+   Lighthouse mobile penalizes long main-thread + animated layout/paint; keep UI static on mobile. */
+@media (max-width: 1024px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .animate-fade-up,
+  .animate-fade-scale,
+  .animate-slide-down {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+}
 * {
   box-sizing: border-box;
 }
