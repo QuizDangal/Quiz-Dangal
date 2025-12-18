@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { getSignedAvatarUrls } from '@/lib/avatar';
-import { getPrizeDisplay, shouldAllowClientCompute, safeComputeResultsIfDue } from '@/lib/utils';
+import { getPrizeDisplay, safeComputeResultsIfDue } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -40,7 +40,6 @@ const Results = () => {
   const [qaItems, setQaItems] = useState([]); // [{ id, question_text, options: [{id, option_text, is_correct, isSelected}] }]
   const [showQA, setShowQA] = useState(false);
   // no ShareSheet dialog anymore; direct share only
-  const isAdmin = userProfile?.role === 'admin';
 
   // Simple motion variants for smoother entrance
   const itemVariants = {
@@ -81,82 +80,25 @@ const Results = () => {
     try {
       setErrorMessage('');
 
-      // === PHASE 1: Parallel fetch of core data ===
-      // Run quiz meta, results, engagement, and participation check in parallel
-      const [quizResult, resultsResult, engagementResult, participationResult] = await Promise.all([
-        // 1. Quiz meta
+      // === ULTRA-FAST: Only fetch quiz + results first ===
+      const [quizResult, resultsResult] = await Promise.all([
         supabase.from('quizzes').select('*').eq('id', quizId).single(),
-        // 2. Results leaderboard
         supabase.from('quiz_results').select('leaderboard').eq('quiz_id', quizId).maybeSingle(),
-        // 3. Engagement counts (wrap in async to catch errors properly)
-        (async () => {
-          try {
-            return await supabase.rpc('get_engagement_counts', { p_quiz_id: quizId });
-          } catch {
-            return { data: null };
-          }
-        })(),
-        // 4. Participation check (combined query)
-        user?.id
-          ? supabase
-              .from('quiz_participants')
-              .select('id, status')
-              .eq('user_id', user.id)
-              .or(slotId ? `slot_id.eq.${slotId},quiz_id.eq.${quizId}` : `quiz_id.eq.${quizId}`)
-              .limit(1)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
       ]);
 
-      // Process quiz data
       if (quizResult.error) throw quizResult.error;
       const quizData = quizResult.data;
       setQuiz(quizData || null);
 
-      // Process participation
-      let amParticipant = !!participationResult.data;
-      
-      // Skip slow fallback check - quiz_participants table is the source of truth
-      // The fallback was causing slow subqueries
-      setIsParticipant(amParticipant);
-
-      // Process engagement
-      try {
-        const rec = Array.isArray(engagementResult.data) ? engagementResult.data[0] : engagementResult.data;
-        const joined = Number(rec?.joined ?? 0);
-        const pre = Number(rec?.pre_joined ?? 0);
-        setParticipantsCount(joined + pre);
-      } catch {
-        setParticipantsCount(0);
-      }
-
-      // Process results
-      const allowClientCompute =
-        isAdmin || amParticipant || shouldAllowClientCompute({ defaultValue: true });
-      
       let leaderboard = Array.isArray(resultsResult.data?.leaderboard) 
         ? resultsResult.data.leaderboard 
         : [];
 
-      // If missing leaderboard and quiz ended, attempt compute once
-      if (leaderboard.length === 0 && quizData?.end_time) {
+      // Set time left for countdown
+      if (quizData?.end_time) {
         const endTs = new Date(quizData.end_time).getTime();
         const diff = endTs - Date.now();
         setTimeLeftMs(diff > 0 ? diff : 0);
-        if (diff <= 0 && allowClientCompute) {
-          try {
-            await safeComputeResultsIfDue(supabase, quizId, { throttleMs: 200 });
-            const { data: resRow2 } = await supabase
-              .from('quiz_results')
-              .select('leaderboard')
-              .eq('quiz_id', quizId)
-              .maybeSingle();
-            const lb2 = Array.isArray(resRow2?.leaderboard) ? resRow2.leaderboard : [];
-            if (lb2.length) leaderboard = lb2;
-          } catch {
-            /* compute failure ignored */
-          }
-        }
       }
 
       const normalized = Array.isArray(leaderboard)
@@ -166,97 +108,138 @@ const Results = () => {
           }))
         : [];
       setResults(normalized);
-      setLoading(false); // Show results immediately!
+      setLoading(false); // Show results INSTANTLY!
 
-      // Find current user's rank
+      // Find current user's rank immediately
       const me = normalized.find((p) => (p.user_id || p.userId) === user?.id);
       if (me) setUserRank(me);
 
-      // === PHASE 2: Background fetch of secondary data (non-blocking) ===
-      const category = (quizData?.category || '').toLowerCase();
-      const shouldLoadQA = category !== 'opinion' && (amParticipant || normalized.length);
-      const topIds = normalized.slice(0, 10).map((e) => e.user_id).filter(Boolean);
+      // === BACKGROUND: Fetch secondary data non-blocking ===
+      // Participation check (for Q&A visibility)
+      const participationPromise = user?.id
+        ? supabase
+            .from('quiz_participants')
+            .select('id')
+            .eq('user_id', user.id)
+            .or(slotId ? `slot_id.eq.${slotId},quiz_id.eq.${quizId}` : `quiz_id.eq.${quizId}`)
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null });
 
-      // Run Q&A and profile enrichment in parallel (background, don't block UI)
-      Promise.all([
-        // Q&A review (only for non-opinion)
-        shouldLoadQA
-          ? supabase
-              .from('questions')
-              .select('id, question_text, options ( id, option_text, is_correct )')
-              .eq('quiz_id', quizId)
-              .order('id')
-          : Promise.resolve({ data: [] }),
-        // Profile enrichment
-        topIds.length
-          ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
-          : Promise.resolve({ data: [] }),
-      ]).then(async ([qaResult, profilesResult]) => {
-        // Process Q&A in background
-        try {
-          if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
-            let selectionsMap = new Map();
-            if (user?.id) {
-              const qids = qaResult.data.map((q) => q.id);
-              const { data: uans } = await supabase
-                .from('user_answers')
-                .select('question_id, selected_option_id')
-                .in('question_id', qids)
-                .eq('user_id', user.id);
-              if (Array.isArray(uans))
-                selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
+      // Engagement counts (for participant count display)
+      const engagementPromise = supabase.rpc('get_engagement_counts', { p_quiz_id: quizId }).catch(() => ({ data: null }));
+
+      // If no results and quiz ended, trigger compute in background
+      if (leaderboard.length === 0 && quizData?.end_time) {
+        const endTs = new Date(quizData.end_time).getTime();
+        if (endTs <= Date.now()) {
+          safeComputeResultsIfDue(supabase, quizId, { throttleMs: 0 }).then(async (computed) => {
+            if (computed) {
+              const { data: resRow2 } = await supabase
+                .from('quiz_results')
+                .select('leaderboard')
+                .eq('quiz_id', quizId)
+                .maybeSingle();
+              const lb2 = Array.isArray(resRow2?.leaderboard) ? resRow2.leaderboard : [];
+              if (lb2.length) {
+                setResults(lb2.map((row, idx) => ({ ...row, rank: row.rank ?? idx + 1 })));
+              }
             }
-            const mapped = qaResult.data.map((q) => ({
-              id: q.id,
-              question_text: q.question_text,
-              options: (q.options || []).map((o) => ({
-                id: o.id,
-                option_text: o.option_text,
-                is_correct: !!o.is_correct,
-                isSelected: selectionsMap.get(q.id) === o.id,
-              })),
-            }));
-            setQaItems(mapped);
-          }
+          }).catch(() => {});
+        }
+      }
+
+      // Process participation and engagement in background
+      Promise.all([participationPromise, engagementPromise]).then(([participationResult, engagementResult]) => {
+        const amParticipant = !!participationResult.data;
+        setIsParticipant(amParticipant);
+
+        try {
+          const rec = Array.isArray(engagementResult.data) ? engagementResult.data[0] : engagementResult.data;
+          const joined = Number(rec?.joined ?? 0);
+          const pre = Number(rec?.pre_joined ?? 0);
+          setParticipantsCount(joined + pre);
         } catch {
-          /* ignore Q&A errors */
+          setParticipantsCount(0);
         }
 
-        // Process profile enrichment in background
-        try {
-          if (Array.isArray(profilesResult.data) && profilesResult.data.length) {
-            const profileMap = new Map(profilesResult.data.map((p) => [p.id, p]));
-            const signedMap = await getSignedAvatarUrls(
-              profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
-            );
-            setResults((prev) =>
-              prev.map((item) => {
-                const p = profileMap.get(item.user_id);
-                if (!p) return item;
-                const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
-                return {
-                  ...item,
-                  profiles: {
-                    username: p.username,
-                    full_name: p.full_name,
-                    avatar_url: signedUrl,
-                  },
-                };
-              }),
-            );
-          }
-        } catch {
-          /* ignore avatar enrichment */
-        }
-      }).catch(() => {
-        /* ignore background errors */
-      });
+        // === Q&A and Profile enrichment (background) ===
+        const category = (quizData?.category || '').toLowerCase();
+        const shouldLoadQA = category !== 'opinion' && (amParticipant || normalized.length);
+        const topIds = normalized.slice(0, 10).map((e) => e.user_id).filter(Boolean);
+
+        Promise.all([
+          shouldLoadQA
+            ? supabase
+                .from('questions')
+                .select('id, question_text, options ( id, option_text, is_correct )')
+                .eq('quiz_id', quizId)
+                .order('id')
+            : Promise.resolve({ data: [] }),
+          topIds.length
+            ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
+            : Promise.resolve({ data: [] }),
+        ]).then(async ([qaResult, profilesResult]) => {
+          // Process Q&A
+          try {
+            if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
+              let selectionsMap = new Map();
+              if (user?.id) {
+                const qids = qaResult.data.map((q) => q.id);
+                const { data: uans } = await supabase
+                  .from('user_answers')
+                  .select('question_id, selected_option_id')
+                  .in('question_id', qids)
+                  .eq('user_id', user.id);
+                if (Array.isArray(uans))
+                  selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
+              }
+              const mapped = qaResult.data.map((q) => ({
+                id: q.id,
+                question_text: q.question_text,
+                options: (q.options || []).map((o) => ({
+                  id: o.id,
+                  option_text: o.option_text,
+                  is_correct: !!o.is_correct,
+                  isSelected: selectionsMap.get(q.id) === o.id,
+                })),
+              }));
+              setQaItems(mapped);
+            }
+          } catch { /* ignore */ }
+
+          // Process profile enrichment
+          try {
+            if (Array.isArray(profilesResult.data) && profilesResult.data.length) {
+              const profileMap = new Map(profilesResult.data.map((p) => [p.id, p]));
+              const signedMap = await getSignedAvatarUrls(
+                profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
+              );
+              setResults((prev) =>
+                prev.map((item) => {
+                  const p = profileMap.get(item.user_id);
+                  if (!p) return item;
+                  const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
+                  return {
+                    ...item,
+                    profiles: {
+                      username: p.username,
+                      full_name: p.full_name,
+                      avatar_url: signedUrl,
+                    },
+                  };
+                }),
+              );
+            }
+          } catch { /* ignore */ }
+        }).catch(() => {});
+      }).catch(() => {});
     } catch (error) {
       console.error('Error fetching results:', error);
       setErrorMessage(error?.message || 'Failed to load results.');
       setLoading(false);
     }
-  }, [quizId, quizIdParam, slotId, user?.id, isAdmin]);
+  }, [quizId, quizIdParam, slotId, user?.id]);
 
   useEffect(() => {
     if (quizId) fetchResults();
