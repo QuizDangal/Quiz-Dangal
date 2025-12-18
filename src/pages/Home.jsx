@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import SEO from '@/components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Brain, Trophy, Clapperboard } from 'lucide-react';
+import { getSupabase } from '@/lib/customSupabaseClient';
 // Modal removed; navigate to a dedicated page instead
 
 // Use same count and names as existing app (styled like the screenshot)
@@ -148,7 +149,13 @@ Tile.displayName = 'HomeTile';
 const Home = () => {
   const navigate = useNavigate();
   const navigateToCategory = useCallback(
-    (slug) => {
+    async (slug) => {
+      // Category page hits Supabase immediately; ensure client is initialized first.
+      try {
+        await getSupabase();
+      } catch {
+        /* ignore */
+      }
       navigate(`/category/${slug}/`);
     },
     [navigate],

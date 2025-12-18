@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
-import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
+import { supabase, hasSupabaseConfig, getSupabase } from '@/lib/customSupabaseClient';
 import { loadReferralCode, clearReferralCode, normalizeReferralCode } from '@/lib/referralStorage';
 
 const AuthContext = createContext();
@@ -17,11 +17,14 @@ function AuthProviderInner({ children }) {
   const [loading, setLoading] = useState(true);
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
   const initProfileRef = useRef(false);
+  const authSubRef = useRef(null);
 
   // Profile fetch karne ka function
   const refreshUserProfile = async (currentUser) => {
     if (currentUser) {
       try {
+        const sb = await getSupabase();
+        if (!sb) return;
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -79,6 +82,11 @@ function AuthProviderInner({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) {
+      setLoading(false);
+      return;
+    }
+
     // Detect recovery intent in URL once, so routing can allow reset page even if a session appears
     try {
       const u = new URL(window.location.href);
@@ -89,50 +97,112 @@ function AuthProviderInner({ children }) {
     } catch (e) {
       /* recovery URL parse fail */
     }
-    setLoading(true);
-    // Pehli baar session check karne ke liye
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        const currentUser = session?.user;
+    const path = (() => {
+      try {
+        return window.location?.pathname || '/';
+      } catch {
+        return '/';
+      }
+    })();
+
+    const hasStoredSession = (() => {
+      try {
+        // Supabase stores session keys under sb-* in localStorage
+        for (const k of Object.keys(localStorage || {})) {
+          if (k && k.startsWith('sb-')) return true;
+        }
+      } catch {
+        /* ignore */
+      }
+      return false;
+    })();
+
+    // Init immediately for returning sessions or for non-home routes.
+    // For anonymous home ('/'), defer init to keep Mobile PSI clean.
+    const shouldInitNow = hasStoredSession || path !== '/';
+
+    const initAuth = async ({ showLoading } = {}) => {
+      if (authSubRef.current) return; // already initialized
+      if (showLoading) setLoading(true);
+      const sb = await getSupabase();
+      if (!sb) {
+        if (showLoading) setLoading(false);
+        return;
+      }
+
+      // First session check
+      try {
+        const { data } = await supabase.auth.getSession();
+        const currentUser = data?.session?.user;
         setUser(currentUser ?? null);
-        setLoading(false);
         if (currentUser) {
           refreshUserProfile(currentUser);
         } else {
           setUserProfile(null);
         }
-      })
-      .catch(() => {
+      } catch {
         // Network/offline errors shouldn't force logout; keep prior session state
-        setLoading(false);
-      });
+      } finally {
+        if (showLoading) setLoading(false);
+      }
 
-    // Login ya logout hone par changes ko sunne ke liye
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      const currentUser = session?.user;
-      setUser(currentUser ?? null);
+      // Subscribe to auth state
+      try {
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
+          const currentUser = session?.user;
+          setUser(currentUser ?? null);
+          setLoading(false);
+          if (currentUser) {
+            refreshUserProfile(currentUser);
+          } else {
+            setUserProfile(null);
+          }
+          if (event === 'PASSWORD_RECOVERY') {
+            setIsRecoveryFlow(true);
+          }
+          if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setUserProfile(null);
+            setIsRecoveryFlow(false);
+          }
+        });
+        authSubRef.current = data?.subscription || null;
+      } catch {
+        /* ignore */
+      }
+    };
+
+    if (shouldInitNow) {
+      void initAuth({ showLoading: true });
+    } else {
+      // Anonymous home: don't block render.
       setLoading(false);
-      if (currentUser) {
-        refreshUserProfile(currentUser);
-      } else {
-        setUserProfile(null);
-      }
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecoveryFlow(true);
-      }
-      // If Supabase reports the user signed out (often after a failed refresh), clear state
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setUserProfile(null);
-        setIsRecoveryFlow(false); // clear recovery mode after logout
-      }
-    });
+
+      // Warm Supabase after user interaction or after a delay.
+      const warm = () => {
+        void initAuth({ showLoading: false });
+      };
+      const opts = { once: true, passive: true };
+      window.addEventListener('pointerdown', warm, opts);
+      window.addEventListener('touchstart', warm, opts);
+      window.addEventListener('keydown', warm, { once: true });
+
+      const tid = window.setTimeout(warm, 8000);
+      return () => {
+        try {
+          window.removeEventListener('pointerdown', warm, opts);
+          window.removeEventListener('touchstart', warm, opts);
+          window.removeEventListener('keydown', warm, { once: true });
+          window.clearTimeout(tid);
+        } catch {
+          /* ignore */
+        }
+        authSubRef.current?.unsubscribe?.();
+      };
+    }
 
     return () => {
-      subscription?.unsubscribe();
+      authSubRef.current?.unsubscribe?.();
     };
   }, []);
 
@@ -298,6 +368,8 @@ function AuthProviderInner({ children }) {
 
   // SIGN UP FUNCTION (EMAIL)
   const signUp = async (email, password, { referralCode, options } = {}) => {
+    const sb = await getSupabase();
+    if (!sb) throw new Error('Supabase not configured');
     const supabaseOptions = { ...(options || {}) };
     // Ensure a valid redirect URL exists to avoid Gotrue 500 if SITE_URL is not configured
     if (!supabaseOptions.emailRedirectTo) {
@@ -321,14 +393,16 @@ function AuthProviderInner({ children }) {
       payload.options = supabaseOptions;
     }
 
-    return await supabase.auth.signUp(payload);
+    return await sb.auth.signUp(payload);
   };
 
   // SIGN IN FUNCTION (EMAIL)
   const signIn = async (email, password) => {
+    const sb = await getSupabase();
+    if (!sb) throw new Error('Supabase not configured');
     const e = (email || '').trim();
     const p = (password || '').trim();
-    return await supabase.auth.signInWithPassword({ email: e, password: p });
+    return await sb.auth.signInWithPassword({ email: e, password: p });
   };
 
   const value = {
@@ -337,7 +411,7 @@ function AuthProviderInner({ children }) {
     userProfile,
     loading,
     isRecoveryFlow,
-    hasSupabaseConfig: true,
+    hasSupabaseConfig,
     signUp,
     signIn,
     signOut: hardSignOut,
