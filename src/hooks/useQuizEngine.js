@@ -33,6 +33,15 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const [slotPaused, setSlotPaused] = useState(false);
   const [slotLoading, setSlotLoading] = useState(!!slotId);
 
+  const normalizeEngagementFromSlotRow = useCallback((row) => {
+    const joined = Number(row?.participants_joined ?? row?.joined_count ?? row?.joined ?? 0);
+    const pre = Number(row?.participants_pre ?? row?.pre_joined_count ?? row?.pre_joined ?? 0);
+    return {
+      joined: Number.isFinite(joined) ? joined : 0,
+      pre_joined: Number.isFinite(pre) ? pre : 0,
+    };
+  }, []);
+
   const fetchSlotMeta = useCallback(async () => {
     if (!slotId || !supabase) return;
     try {
@@ -44,13 +53,15 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       if (!error && data) {
         setSlotMeta(data);
         setSlotPaused(data.status === 'paused');
+        // Keep joined/pre-joined counts accurate for slot-based quizzes
+        setEngagement(normalizeEngagementFromSlotRow(data));
       }
     } catch (e) {
       // silent fail
     } finally {
       setSlotLoading(false);
     }
-  }, [slotId]);
+  }, [slotId, normalizeEngagementFromSlotRow]);
 
   useEffect(() => {
     fetchSlotMeta();
@@ -220,7 +231,19 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   }, [quiz?.id, quizId, slotId]);
 
   const refreshEngagement = useCallback(async () => {
-    // Skip if quizId not yet available
+    // Slot-based quizzes: engagement is tracked by slot_id; prefer slot meta/view.
+    if (slotId) {
+      // If we already have slot meta, update from it (no network).
+      if (slotMeta) {
+        setEngagement(normalizeEngagementFromSlotRow(slotMeta));
+        return;
+      }
+      // Otherwise fetch once.
+      await fetchSlotMeta();
+      return;
+    }
+
+    // Legacy quizzes: engagement tracked by quiz_id via RPC.
     if (!quizId) {
       setEngagement({ joined: 0, pre_joined: 0 });
       return;
@@ -242,7 +265,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     } catch (e) {
       console.warn('Engagement refresh failed', e);
     }
-  }, [quizId]);
+  }, [quizId, slotId, slotMeta, fetchSlotMeta, normalizeEngagementFromSlotRow]);
 
   const fetchQuizData = useCallback(async () => {
     try {

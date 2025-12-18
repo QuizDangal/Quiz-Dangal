@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { m } from '@/lib/motion-lite';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Play, Loader2, Users, Trophy } from 'lucide-react';
+import { Clock, Play, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import {
@@ -139,6 +139,7 @@ const MyQuizzes = () => {
   // tick state hata diya (countdown UI reactivity sufficient without forced re-render)
   // const [tick, setTick] = useState(0);
   const [counts, setCounts] = useState({}); // key (slot_id or quiz_id) -> joined (pre + joined, where joined includes completed)
+  const [_nowTick, setNowTick] = useState(0); // lightweight re-render driver for countdown/progress (prefixed to satisfy lint)
 
   // joinAndPlay removed
 
@@ -354,7 +355,7 @@ const MyQuizzes = () => {
       });
       if (hasLive) {
         tickId = setInterval(() => {
-          setCounts((c) => ({ ...c }));
+          setNowTick((t) => (t + 1) % 1_000_000);
         }, 1000);
       }
     } catch {
@@ -397,22 +398,46 @@ const MyQuizzes = () => {
           }
         }
 
-        // Slot-based quizzes: participants are tracked by slot_id, so read counts from quiz_slots_view
+        // Slot-based quizzes: participants are tracked by slot_id.
+        // NOTE: quiz_slots_view schema has historically varied (participants_* vs *_count),
+        // so we fetch `*` and normalize counts with fallbacks.
         if (slotIds.length) {
+          const normalizeTotal = (row) => {
+            const joined = Number(row?.participants_joined ?? row?.joined_count ?? row?.joined ?? 0);
+            const pre = Number(row?.participants_pre ?? row?.pre_joined_count ?? row?.pre_joined ?? 0);
+            const total = Number(row?.participants_total ?? (joined + pre));
+            return Number.isFinite(total) ? total : 0;
+          };
+
+          const keyOf = (row) => row?.id || row?.slot_id || null;
+
+          // Try primary filter by `id`, then fallback to `slot_id` if needed.
           try {
             const { data: slotRows, error: slotErr } = await supabase
               .from('quiz_slots_view')
-              .select('id, participants_pre, participants_joined, participants_total')
+              .select('*')
               .in('id', slotIds);
             if (slotErr) throw slotErr;
             for (const s of slotRows || []) {
-              const pre = Number(s.participants_pre ?? 0);
-              const joined = Number(s.participants_joined ?? 0);
-              const total = Number(s.participants_total ?? pre + joined);
-              map[s.id] = Number.isFinite(total) ? total : 0;
+              const key = keyOf(s);
+              if (!key) continue;
+              map[key] = normalizeTotal(s);
             }
           } catch {
-            // If view is missing, just leave slot counts as 0
+            try {
+              const { data: slotRows2, error: slotErr2 } = await supabase
+                .from('quiz_slots_view')
+                .select('*')
+                .in('slot_id', slotIds);
+              if (slotErr2) throw slotErr2;
+              for (const s of slotRows2 || []) {
+                const key = keyOf(s);
+                if (!key) continue;
+                map[key] = normalizeTotal(s);
+              }
+            } catch {
+              // If view/filter is missing, just leave slot counts as 0
+            }
           }
         }
 
@@ -426,8 +451,56 @@ const MyQuizzes = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-indigo-300" />
+      <div className="min-h-screen overflow-x-hidden">
+        <div className="container mx-auto px-4 py-4 pt-16 sm:pt-20">
+          {/* Skeleton Header */}
+          <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4 sm:p-6 mb-6 animate-pulse">
+            <div className="h-7 w-32 bg-slate-700 rounded mb-4"></div>
+            <div className="flex gap-2">
+              <div className="h-7 w-28 bg-slate-800 rounded-full"></div>
+            </div>
+          </div>
+          {/* Skeleton Cards */}
+          <div className="mb-4">
+            <div className="h-4 w-28 bg-slate-700 rounded mb-3"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 animate-pulse">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-5 flex-1 bg-slate-700 rounded"></div>
+                    <div className="h-5 w-16 bg-slate-800 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-2 mb-3">
+                    {[1,2,3].map(j => <div key={j} className="h-8 w-16 bg-slate-800 rounded-lg"></div>)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="h-12 bg-slate-800 rounded-md"></div>
+                    <div className="h-12 bg-slate-800 rounded-md"></div>
+                  </div>
+                  <div className="h-10 bg-gradient-to-r from-slate-700 to-slate-600 rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Skeleton Finished Section */}
+          <div className="h-4 w-20 bg-slate-700 rounded mb-3"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 animate-pulse">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-slate-700 rounded-2xl"></div>
+                  <div className="flex-1">
+                    <div className="h-4 w-32 bg-slate-700 rounded mb-2"></div>
+                    <div className="h-3 w-20 bg-slate-800 rounded"></div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1,2,3].map(j => <div key={j} className="h-14 bg-slate-800 rounded-xl"></div>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -595,11 +668,13 @@ const MyQuizzes = () => {
                   return (
                     <m.div
                       key={`lu-${quiz.slot_id || quiz.id}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: index * 0.06, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      whileHover={{ y: -4, scale: 1.01, transition: { duration: 0.2 } }}
+                      whileTap={{ scale: 0.99 }}
                       onClick={() => navigate(quizPath)}
-                      className={`relative overflow-hidden rounded-2xl border ${isActive ? 'border-emerald-700/50' : 'border-slate-800'} bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-900/60 shadow-xl cursor-pointer group hover:-translate-y-0.5 transition-transform qd-card p-4 sm:p-5`}
+                      className={`relative overflow-hidden rounded-2xl border ${isActive ? 'border-emerald-700/50' : 'border-slate-800'} bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-900/60 shadow-xl cursor-pointer group transition-shadow duration-300 qd-card p-4 sm:p-5`}
                     >
                       {/* Background accents to match Category */}
                       <div
@@ -752,11 +827,13 @@ const MyQuizzes = () => {
               return (
                 <m.div
                   key={quiz.slot_id || quiz.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.06 }}
+                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: index * 0.06, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`)}
-                  className="group relative overflow-hidden rounded-2xl p-[1px] cursor-pointer shadow-[0_14px_34px_-22px_rgba(99,102,241,0.55)] hover:-translate-y-1 transition-transform bg-gradient-to-r from-indigo-600/40 via-fuchsia-600/30 to-emerald-600/30"
+                  className="group relative overflow-hidden rounded-2xl p-[1px] cursor-pointer shadow-[0_14px_34px_-22px_rgba(99,102,241,0.55)] transition-shadow duration-300 bg-gradient-to-r from-indigo-600/40 via-fuchsia-600/30 to-emerald-600/30"
                 >
                   <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/80 p-4">
                     <div className="flex items-start justify-between gap-3">

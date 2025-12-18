@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
@@ -31,6 +31,7 @@ const Results = () => {
   const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [finalizing, setFinalizing] = useState(false);
   const [isParticipant, setIsParticipant] = useState(false);
   const [timeLeftMs, setTimeLeftMs] = useState(null);
   const [didRefetchAfterCountdown, setDidRefetchAfterCountdown] = useState(false);
@@ -41,28 +42,45 @@ const Results = () => {
   const [showQA, setShowQA] = useState(false);
   // no ShareSheet dialog anymore; direct share only
 
-  // Simple motion variants for smoother entrance
+  // Smooth motion variants for entrance animations
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+    hidden: { opacity: 0, y: 12, scale: 0.97 },
+    show: (i) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.25,
+        delay: i * 0.04,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      },
+    }),
   };
 
   // Resolve slotId to quizId if needed
   useEffect(() => {
     const resolveQuizId = async () => {
+      let cancelled = false;
       if (slotId && !quizIdParam) {
         // Slot route - need to get quiz_id from quiz_slots_view
-        const { data } = await supabase
-          .from('quiz_slots_view')
-          .select('quiz_id')
-          .eq('id', slotId)
-          .maybeSingle();
-        if (data?.quiz_id) {
-          setEffectiveQuizId(data.quiz_id);
+        try {
+          const { data } = await supabase
+            .from('quiz_slots_view')
+            .select('quiz_id')
+            .eq('id', slotId)
+            .maybeSingle();
+          if (!cancelled && data?.quiz_id) {
+            setEffectiveQuizId(data.quiz_id);
+          }
+        } catch {
+          // ignore
         }
       } else {
         setEffectiveQuizId(quizIdParam);
       }
+      return () => {
+        cancelled = true;
+      };
     };
     resolveQuizId();
   }, [slotId, quizIdParam]);
@@ -70,7 +88,13 @@ const Results = () => {
   // Use effectiveQuizId as quizId throughout
   const quizId = effectiveQuizId;
 
+  // Prevent stale async updates when navigating quickly (e.g., slot resolve -> quiz resolve)
+  const fetchSeqRef = useRef(0);
+
   const fetchResults = useCallback(async () => {
+    const seq = (fetchSeqRef.current += 1);
+    const isStale = () => fetchSeqRef.current !== seq;
+
     if (!hasSupabaseConfig || !supabase || !quizId) {
       if (!quizId && (slotId || quizIdParam)) return; // Still resolving
       setErrorMessage('Results are unavailable right now.');
@@ -78,7 +102,9 @@ const Results = () => {
       return;
     }
     try {
-      setErrorMessage('');
+      if (!isStale()) {
+        setErrorMessage('');
+      }
 
       // === ULTRA-FAST: Only fetch quiz + results first ===
       const [quizResult, resultsResult] = await Promise.all([
@@ -88,7 +114,9 @@ const Results = () => {
 
       if (quizResult.error) throw quizResult.error;
       const quizData = quizResult.data;
-      setQuiz(quizData || null);
+      if (!isStale()) {
+        setQuiz(quizData || null);
+      }
 
       let leaderboard = Array.isArray(resultsResult.data?.leaderboard) 
         ? resultsResult.data.leaderboard 
@@ -98,7 +126,9 @@ const Results = () => {
       if (quizData?.end_time) {
         const endTs = new Date(quizData.end_time).getTime();
         const diff = endTs - Date.now();
-        setTimeLeftMs(diff > 0 ? diff : 0);
+        if (!isStale()) {
+          setTimeLeftMs(diff > 0 ? diff : 0);
+        }
       }
 
       const normalized = Array.isArray(leaderboard)
@@ -107,12 +137,28 @@ const Results = () => {
             rank: row.rank ?? idx + 1,
           }))
         : [];
-      setResults(normalized);
-      setLoading(false); // Show results INSTANTLY!
+      if (!isStale()) {
+        setResults(normalized);
+        setLoading(false); // Show results INSTANTLY!
+      }
+
+      // If quiz ended but leaderboard empty, show "finalizing" state until computed/refetched
+      try {
+        const endTs = quizData?.end_time ? new Date(quizData.end_time).getTime() : null;
+        const ended = typeof endTs === 'number' && endTs <= Date.now();
+        if (!isStale()) {
+          setFinalizing(ended && normalized.length === 0);
+        }
+      } catch {
+        if (!isStale()) setFinalizing(false);
+      }
 
       // Find current user's rank immediately
       const me = normalized.find((p) => (p.user_id || p.userId) === user?.id);
-      if (me) setUserRank(me);
+      if (!isStale()) {
+        if (me) setUserRank(me);
+        else setUserRank(null);
+      }
 
       // === BACKGROUND: Fetch secondary data non-blocking ===
       // Participation check (for Q&A visibility)
@@ -126,39 +172,65 @@ const Results = () => {
             .maybeSingle()
         : Promise.resolve({ data: null });
 
-      // Engagement counts (for participant count display)
-      const engagementPromise = supabase.rpc('get_engagement_counts', { p_quiz_id: quizId }).catch(() => ({ data: null }));
+        // Engagement counts (for participant count display)
+        // Slot-based quizzes track participants by slot_id, so read from quiz_slots_view.
+        const engagementPromise = (async () => {
+          try {
+            if (slotId) {
+              return await supabase
+                .from('quiz_slots_view')
+                .select('*')
+                .eq('id', slotId)
+                .maybeSingle();
+            } else {
+              return await supabase.rpc('get_engagement_counts', { p_quiz_id: quizId });
+            }
+          } catch {
+            return { data: null };
+          }
+        })();
 
       // If no results and quiz ended, trigger compute in background
       if (leaderboard.length === 0 && quizData?.end_time) {
         const endTs = new Date(quizData.end_time).getTime();
         if (endTs <= Date.now()) {
-          safeComputeResultsIfDue(supabase, quizId, { throttleMs: 0 }).then(async (computed) => {
-            if (computed) {
+          safeComputeResultsIfDue(supabase, quizId, { throttleMs: 0 })
+            .then(async (computed) => {
+              if (!computed || isStale()) return;
               const { data: resRow2 } = await supabase
                 .from('quiz_results')
                 .select('leaderboard')
                 .eq('quiz_id', quizId)
                 .maybeSingle();
+              if (isStale()) return;
               const lb2 = Array.isArray(resRow2?.leaderboard) ? resRow2.leaderboard : [];
               if (lb2.length) {
                 setResults(lb2.map((row, idx) => ({ ...row, rank: row.rank ?? idx + 1 })));
+                setFinalizing(false);
               }
-            }
-          }).catch(() => {});
+            })
+            .catch(() => {});
         }
       }
 
       // Process participation and engagement in background
       Promise.all([participationPromise, engagementPromise]).then(([participationResult, engagementResult]) => {
+        if (isStale()) return;
         const amParticipant = !!participationResult.data;
         setIsParticipant(amParticipant);
 
         try {
           const rec = Array.isArray(engagementResult.data) ? engagementResult.data[0] : engagementResult.data;
-          const joined = Number(rec?.joined ?? 0);
-          const pre = Number(rec?.pre_joined ?? 0);
-          setParticipantsCount(joined + pre);
+          if (slotId) {
+            const joined = Number(rec?.participants_joined ?? rec?.joined_count ?? rec?.joined ?? 0);
+            const pre = Number(rec?.participants_pre ?? rec?.pre_joined_count ?? rec?.pre_joined ?? 0);
+            const total = Number(rec?.participants_total ?? (joined + pre));
+            setParticipantsCount(Number.isFinite(total) ? total : 0);
+          } else {
+            const joined = Number(rec?.joined ?? 0);
+            const pre = Number(rec?.pre_joined ?? 0);
+            setParticipantsCount(joined + pre);
+          }
         } catch {
           setParticipantsCount(0);
         }
@@ -180,6 +252,7 @@ const Results = () => {
             ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
             : Promise.resolve({ data: [] }),
         ]).then(async ([qaResult, profilesResult]) => {
+          if (isStale()) return;
           // Process Q&A
           try {
             if (shouldLoadQA && Array.isArray(qaResult.data) && qaResult.data.length) {
@@ -215,27 +288,30 @@ const Results = () => {
               const signedMap = await getSignedAvatarUrls(
                 profilesResult.data.map((p) => p.avatar_url).filter(Boolean),
               );
-              setResults((prev) =>
-                prev.map((item) => {
-                  const p = profileMap.get(item.user_id);
-                  if (!p) return item;
-                  const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
-                  return {
-                    ...item,
-                    profiles: {
-                      username: p.username,
-                      full_name: p.full_name,
-                      avatar_url: signedUrl,
-                    },
-                  };
-                }),
-              );
+              if (!isStale()) {
+                setResults((prev) =>
+                  prev.map((item) => {
+                    const p = profileMap.get(item.user_id);
+                    if (!p) return item;
+                    const signedUrl = p.avatar_url ? signedMap.get(p.avatar_url) || '' : '';
+                    return {
+                      ...item,
+                      profiles: {
+                        username: p.username,
+                        full_name: p.full_name,
+                        avatar_url: signedUrl,
+                      },
+                    };
+                  }),
+                );
+              }
             }
           } catch { /* ignore */ }
         }).catch(() => {});
       }).catch(() => {});
     } catch (error) {
       console.error('Error fetching results:', error);
+      setFinalizing(false);
       setErrorMessage(error?.message || 'Failed to load results.');
       setLoading(false);
     }
@@ -871,7 +947,7 @@ const Results = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen px-3 pt-16 sm:pt-20 pb-24">
         <SEO
           title="Results – Loading | Quiz Dangal"
           description="Loading quiz results."
@@ -882,7 +958,42 @@ const Results = () => {
           }
           robots="noindex, nofollow"
         />
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-accent-b"></div>
+        <div className="max-w-md mx-auto space-y-3">
+          {/* Skeleton Header */}
+          <div className="p-[1px] rounded-xl bg-gradient-to-r from-slate-700/60 via-slate-600/50 to-slate-700/60 animate-pulse">
+            <div className="rounded-xl bg-slate-900/95 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="h-5 w-24 bg-slate-700 rounded mb-2"></div>
+                  <div className="h-3 w-40 bg-slate-800 rounded"></div>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-slate-700"></div>
+              </div>
+            </div>
+          </div>
+          {/* Skeleton User Card */}
+          <div className="p-[1px] rounded-xl bg-gradient-to-r from-slate-700/50 via-slate-600/40 to-slate-700/50 animate-pulse">
+            <div className="rounded-xl bg-slate-900/95 p-3">
+              <div className="grid grid-cols-3 gap-2">
+                {[1,2,3].map(i => <div key={i} className="h-14 bg-slate-800 rounded-lg"></div>)}
+              </div>
+            </div>
+          </div>
+          {/* Skeleton Leaderboard */}
+          <div className="rounded-xl border border-slate-700/60 bg-slate-900/80 p-3 animate-pulse">
+            <div className="h-4 w-24 bg-slate-700 rounded mb-3"></div>
+            <div className="space-y-2">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                  <div className="w-7 h-7 rounded-md bg-slate-700"></div>
+                  <div className="w-6 h-6 rounded-full bg-slate-700"></div>
+                  <div className="flex-1 h-3 bg-slate-700 rounded"></div>
+                  <div className="w-10 h-3 bg-slate-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -963,6 +1074,37 @@ const Results = () => {
           >
             Back to Home
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Quiz ended but leaderboard still empty: keep UX stable (no blank/flicker)
+  if (!loading && (timeLeftMs ?? 0) === 0 && results.length === 0 && (finalizing || quiz?.end_time)) {
+    return (
+      <div className="min-h-screen p-4 flex items-center justify-center">
+        <SEO
+          title="Results – Finalizing | Quiz Dangal"
+          description="Finalizing quiz results."
+          robots="noindex, nofollow"
+        />
+        <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
+          <h2 className="text-xl font-bold mb-2 text-white">Finalizing results…</h2>
+          <p className="text-slate-300 mb-4">
+            {finalizing ? 'Please wait a moment.' : 'Results are being prepared.'}
+          </p>
+          <div className="flex items-center justify-center mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-b"></div>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Button variant="brand" onClick={handleRetry}>
+              Refresh
+            </Button>
+            <Button variant="white" onClick={() => navigate('/my-quizzes/')}
+            >
+              Back
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -1145,10 +1287,12 @@ const Results = () => {
               return (
                 <m.div
                   key={`${participant.id}-${index}`}
+                  custom={index}
                   variants={itemVariants}
                   initial="hidden"
                   animate="show"
-                  className={`flex items-center justify-between gap-2 p-2 rounded-lg border ${isMe ? 'bg-indigo-950/40 border-indigo-600/40' : isTop3 ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-800/30 border-slate-700/30'}`}
+                  whileHover={{ scale: 1.01, transition: { duration: 0.15 } }}
+                  className={`flex items-center justify-between gap-2 p-2 rounded-lg border transition-colors duration-200 ${isMe ? 'bg-indigo-950/40 border-indigo-600/40' : isTop3 ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-800/30 border-slate-700/30'}`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold ${isTop3 ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-400' : 'bg-slate-700/50 text-slate-400'}`}>
