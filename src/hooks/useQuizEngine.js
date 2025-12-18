@@ -92,17 +92,20 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   );
 
   // Finalize (partial submit) on route unmount if user leaves mid-quiz without submitting
-  // Only mark completed if user actually answered at least 1 question
+  // Only mark completed if user actually answered at least 1 question AND quiz is currently active
   const answersRef = useRef({});
+  const quizStateRef = useRef(quizState);
   useEffect(() => {
     answersRef.current = answers;
-  }, [answers]);
+    quizStateRef.current = quizState;
+  }, [answers, quizState]);
   
   useEffect(() => {
     return () => {
       try {
         const hasAnswers = Object.keys(answersRef.current).length > 0;
-        if (quiz && quizState === 'active' && participantStatus !== 'completed' && user?.id && hasAnswers) {
+        const wasActive = quizStateRef.current === 'active';
+        if (quiz && wasActive && participantStatus !== 'completed' && user?.id && hasAnswers) {
           // Mark completed with whatever answers were saved so far
           // Use slot_id for slots, quiz_id for legacy
           let query = supabase
@@ -126,7 +129,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         /* ignore */
       }
     };
-  }, [quiz, quizId, quizState, participantStatus, user?.id]);
+  }, [quiz, quizId, slotId, participantStatus, user?.id]);
 
   // Retry queue helpers
   const scheduleRetry = useCallback(() => {
@@ -510,20 +513,28 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   ]);
 
   // Auto-submit on finish (if the user answered anything and was actively participating)
+  const prevQuizStateRef = useRef(quizState);
   useEffect(() => {
+    // Only auto-submit when state TRANSITIONS to finished (not on initial load)
+    const prevState = prevQuizStateRef.current;
+    prevQuizStateRef.current = quizState;
+    
+    // Skip if not a transition to 'finished'
+    if (quizState !== 'finished' || prevState === 'finished') return;
+    
     // Only auto-submit if:
-    // 1. Quiz just finished
-    // 2. User has answered at least 1 question
-    // 3. User was in 'joined' status (actually playing)
-    // 4. Not already submitting
+    // 1. User has answered at least 1 question
+    // 2. User was in 'joined' status (actually playing)
+    // 3. Not already submitting
+    // 4. Not already completed
     const hasAnswers = Object.keys(answers).length > 0;
     const wasPlaying = participantStatus === 'joined';
-    if (quizState === 'finished' && hasAnswers && wasPlaying && !submitting) {
+    const notCompleted = participantStatus !== 'completed';
+    
+    if (hasAnswers && wasPlaying && notCompleted && !submitting) {
       handleSubmit();
     }
-    // Only react to quizState transitions; answers/submitting handled internally by handleSubmit side effects
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quizState]);
+  }, [quizState, answers, participantStatus, submitting, handleSubmit]);
 
   // After finish/completion: Wait for timer to complete, then redirect to Results
   useEffect(() => {

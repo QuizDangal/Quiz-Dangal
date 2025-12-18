@@ -354,34 +354,33 @@ export const ActiveQuizView = ({
               })}
             </div>
 
-            {/* Submit Button (only on last question when all answered) */}
-            {currentQuestionIndex === questions.length - 1 &&
-              Object.keys(answers).length === questions.length && (
-                <m.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-4"
+            {/* Submit Button - Show on last question after answering it OR if all questions answered */}
+            {(currentQuestionIndex === questions.length - 1 && answers[currentQuestion?.id]) && (
+              <m.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-4"
+              >
+                <Button
+                  onClick={onSubmit}
+                  disabled={submitting}
+                  className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
                 >
-                  <Button
-                    onClick={onSubmit}
-                    disabled={submitting}
-                    className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Submit Quiz
-                      </>
-                    )}
-                  </Button>
-                </m.div>
-              )}
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Submit Quiz ({Object.keys(answers).length}/{questions.length} answered)
+                    </>
+                  )}
+                </Button>
+              </m.div>
+            )}
           </m.div>
         </AnimatePresence>
       </div>

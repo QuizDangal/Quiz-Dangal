@@ -2,7 +2,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useQuizEngine } from '@/hooks/useQuizEngine';
-import { fetchSlotsForCategory } from '@/lib/slots';
 import {
   LoadingView,
   ErrorView,
@@ -84,31 +83,17 @@ const Quiz = () => {
     formatTime,
   } = useQuizEngine(isSlotQuiz ? slot?.id : quizId, navigate, isSlotQuiz ? { slotId } : undefined);
 
-  // Redirect finished slot to next slot in category
+  // Redirect finished slot to next slot in category (with delay to show completion)
   useEffect(() => {
     if (!isSlotQuiz) return;
     if (quizState !== 'finished' && quizState !== 'completed') return;
     if (!slot?.id || !slot?.category) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { slots: list } = await fetchSlotsForCategory(supabase, slot.category);
-        const endMs = slot.end_time ? new Date(slot.end_time).getTime() : Date.now();
-        const future = (list || [])
-          .filter((s) => {
-            if (!s.start_time) return false;
-            const st = new Date(s.start_time).getTime();
-            return st > endMs;
-          })
-          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-        if (!cancelled && future[0]) {
-          navigate('/quiz/slot/' + future[0].slotId);
-        }
-      } catch {
-        // ignore
-      }
-    })();
-    return () => { cancelled = true; };
+    
+    // Don't auto-redirect - let user see the result first
+    // Only redirect if user explicitly navigates or after viewing results
+    // Removed auto-redirect to prevent confusion
+    
+    return () => {};
   }, [isSlotQuiz, quizState, slot?.id, slot?.category, slot?.end_time, navigate]);
 
   // Close handler for modals
