@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
+import { getSupabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
 
 // Realtime channel hook with:
@@ -29,10 +29,11 @@ export function useRealtimeChannel({
   const retryTimerRef = useRef(null);
   const cleanupTimerRef = useRef(null);
   const channelRef = useRef(null);
+  const supabaseRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) return;
-    if (!hasSupabaseConfig || !supabase) return;
+    if (!hasSupabaseConfig) return;
     if (!channelName || !table) return;
     if (typeof window === 'undefined') return;
 
@@ -55,12 +56,23 @@ export function useRealtimeChannel({
 
     let cancelled = false;
 
+    const init = async () => {
+      try {
+        const sb = await getSupabase();
+        if (!sb || cancelled) return null;
+        supabaseRef.current = sb;
+        return sb;
+      } catch {
+        return null;
+      }
+    };
+
     const removeChannel = () => {
       try {
         if (channelRef.current && !removedRef.current) {
           removedRef.current = true;
           log('remove', channelName, 'attempt', attemptRef.current);
-          supabase.removeChannel(channelRef.current);
+          supabaseRef.current?.removeChannel?.(channelRef.current);
         }
       } catch {
         /* ignore */
@@ -85,13 +97,15 @@ export function useRealtimeChannel({
       }, delay);
     };
 
-    const subscribe = (attempt) => {
+    const subscribe = async (attempt) => {
       if (cancelled) return;
+      const sb = supabaseRef.current || (await init());
+      if (!sb || cancelled) return;
       attemptRef.current = attempt;
       removedRef.current = false; // reset removal for new channel instance
       if (channelRef.current) {
         try {
-          supabase.removeChannel(channelRef.current);
+          sb.removeChannel(channelRef.current);
         } catch {
           /* ignore */
         }
@@ -100,7 +114,7 @@ export function useRealtimeChannel({
       let ch;
       try {
         log('subscribe start', channelName, 'attempt', attempt);
-        ch = supabase
+        ch = sb
           .channel(channelName, { config: { broadcast: { ack: false } } })
           .on('postgres_changes', { event, schema, table, filter }, () => {
             try {
@@ -154,7 +168,7 @@ export function useRealtimeChannel({
     };
 
     // initial attempt
-    subscribe(1);
+    void subscribe(1);
 
     return () => {
       cancelled = true;
