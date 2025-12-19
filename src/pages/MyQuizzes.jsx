@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { m } from '@/lib/motion-lite';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Play, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
+import { getSupabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import {
   formatDateOnly,
   formatTimeOnly,
@@ -141,67 +141,139 @@ const MyQuizzes = () => {
   const [counts, setCounts] = useState({}); // key (slot_id or quiz_id) -> joined (pre + joined, where joined includes completed)
   const [_nowTick, setNowTick] = useState(0); // lightweight re-render driver for countdown/progress (prefixed to satisfy lint)
 
+  const computeAttemptedRef = useRef(new Set());
+
   // joinAndPlay removed
 
   const fetchMyQuizzes = useCallback(async () => {
     if (!user) return;
-    if (!hasSupabaseConfig || !supabase) {
+    if (!hasSupabaseConfig) {
+      setQuizzes([]);
+      return;
+    }
+    const sb = await getSupabase();
+    if (!sb) {
       setQuizzes([]);
       return;
     }
     try {
-      // **FIX**: अब हम सीधे 'my_quizzes_view' से डेटा लाएंगे।
-      // RLS अपने आप सही डेटा फ़िल्टर कर देगा।
-      const { data, error } = await supabase.from('my_quizzes_view').select('*');
+      // Minimize payload and DB work:
+      // - Query live/upcoming separately without heavy JSON columns (e.g., leaderboard)
+      // - Fetch only the latest few finished with leaderboard for rank display
+      const nowIso = new Date().toISOString();
 
-      if (error) {
-        console.error('Error fetching my quizzes view:', error);
-        setQuizzes([]);
-        return;
-      }
+      // Live/Upcoming: need only basic fields
+      const liveCols = 'id, slot_id, title, start_time, end_time, prize_type, prizes';
+      const { data: liveData, error: liveErr } = await sb
+        .from('my_quizzes_view')
+        .select(liveCols)
+        .gt('end_time', nowIso)
+        .order('start_time', { ascending: true })
+        .limit(20);
+      if (liveErr) throw liveErr;
 
-      // View returns combined info already
-      const combinedData = (data || []).map((s) => ({ ...s }));
+      // Finished: include leaderboard but cap to recent items
+      const finishedCols = 'id, slot_id, title, end_time, prize_type, prizes, leaderboard';
+      const { data: finishedData, error: finErr } = await sb
+        .from('my_quizzes_view')
+        .select(finishedCols)
+        .lte('end_time', nowIso)
+        .order('end_time', { ascending: false })
+        .limit(5);
+      if (finErr) throw finErr;
 
-      // JIT compute: if quiz has ended and leaderboard missing, compute and refetch once
-      const now = Date.now();
-      const needsCompute = (combinedData || []).filter(
-        (row) =>
-          row.end_time &&
-          new Date(row.end_time).getTime() <= now &&
-          (!Array.isArray(row.leaderboard) || row.leaderboard.length === 0),
-      );
-      // tick state hata diya (countdown UI reactivity sufficient without forced re-render)
-
-      const allowClientCompute =
-        shouldAllowClientCompute({ defaultValue: true }) || userProfile?.role === 'admin';
-
-      if (allowClientCompute && needsCompute.length) {
-        try {
-          // Safely attempt compute only if enabled and RPC exists; suppress 404 noise
-          await Promise.allSettled(
-            needsCompute.map((row) => safeComputeResultsIfDue(supabase, row.id)),
-          );
-          // refetch latest view data after compute
-          const { data: data2 } = await supabase.from('my_quizzes_view').select('*');
-          const combined2 = (data2 || []).map((s) => ({ ...s }));
-          setQuizzes(combined2);
-          return;
-        } catch (e) {
-          // even if compute fails, fall back to original data
-          if (import.meta.env.DEV) {
-            // Log only in development to keep production console clean
-            // This also satisfies ESLint no-empty rule
-            console.debug('compute_results_if_due failed; continuing with original data', e);
-          }
-        }
-      }
-
-      setQuizzes(combinedData);
+      // Merge for downstream UI which splits again by time; keeping shape consistent
+      setQuizzes([...(liveData || []), ...(finishedData || [])]);
     } catch (err) {
-      console.error(err);
+      console.error('fetchMyQuizzes failed', err);
+      setQuizzes([]);
     }
-  }, [user, userProfile?.role]);
+  }, [user]);
+
+  // Background compute for missing leaderboards (never blocks initial render)
+  useEffect(() => {
+    if (!user) return;
+    if (!hasSupabaseConfig) return;
+    if (!Array.isArray(quizzes) || quizzes.length === 0) return;
+
+    const now = Date.now();
+    const needsCompute = quizzes.filter((row) => {
+      try {
+        if (!row?.id) return false;
+        if (!row?.end_time) return false;
+        const ended = new Date(row.end_time).getTime() <= now;
+        if (!ended) return false;
+        const missing = !Array.isArray(row.leaderboard) || row.leaderboard.length === 0;
+        if (!missing) return false;
+        if (computeAttemptedRef.current.has(row.id)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    const allowClientCompute =
+      shouldAllowClientCompute({ defaultValue: true }) || userProfile?.role === 'admin';
+    if (!allowClientCompute || needsCompute.length === 0) return;
+
+    let cancelled = false;
+
+    const schedule = (fn, timeoutMs = 2500) => {
+      try {
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          window.requestIdleCallback(
+            () => {
+              try {
+                fn();
+              } catch {
+                /* ignore */
+              }
+            },
+            { timeout: timeoutMs },
+          );
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
+      setTimeout(() => {
+        try {
+          fn();
+        } catch {
+          /* ignore */
+        }
+      }, Math.max(0, timeoutMs));
+    };
+
+    // Mark as attempted up-front to avoid rescheduling loops.
+    for (const row of needsCompute) computeAttemptedRef.current.add(row.id);
+
+    schedule(async () => {
+      try {
+        const sb = await getSupabase();
+        if (!sb || cancelled) return;
+
+        const settled = await Promise.allSettled(
+          needsCompute.map((row) => safeComputeResultsIfDue(sb, row.id)),
+        );
+        const attempted = settled.some(
+          (r) => r.status === 'fulfilled' && r.value === true,
+        );
+        if (!attempted || cancelled) return;
+
+        // Best-effort refresh; UI already rendered.
+        const { data: data2 } = await sb.from('my_quizzes_view').select('*');
+        if (cancelled) return;
+        setQuizzes((data2 || []).map((s) => ({ ...s })));
+      } catch {
+        /* ignore */
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, userProfile?.role, quizzes]);
 
   useEffect(() => {
     // Auto-ask once on My Quizzes page (in addition to join-based prompt)
@@ -293,7 +365,7 @@ const MyQuizzes = () => {
     }
   })();
   
-  const realtimeActive = realtimeEnabled && realtimeConditionsOk && !!user && !!hasSupabaseConfig && !!supabase;
+  const realtimeActive = realtimeEnabled && realtimeConditionsOk && !!user && !!hasSupabaseConfig;
 
   // Subscribe to quiz_results INSERT (when results are computed)
   useRealtimeChannel({
@@ -371,7 +443,12 @@ const MyQuizzes = () => {
   useEffect(() => {
     const run = async () => {
       try {
-        if (!hasSupabaseConfig || !supabase) {
+        if (!hasSupabaseConfig) {
+          setCounts({});
+          return;
+        }
+        const sb = await getSupabase();
+        if (!sb) {
           setCounts({});
           return;
         }
@@ -387,7 +464,7 @@ const MyQuizzes = () => {
 
         // Legacy quizzes: use existing bulk RPC by quiz_id
         if (legacyQuizIds.length) {
-          const { data, error } = await supabase.rpc('get_engagement_counts_many', {
+          const { data, error } = await sb.rpc('get_engagement_counts_many', {
             p_quiz_ids: legacyQuizIds,
           });
           if (error) throw error;
@@ -413,7 +490,7 @@ const MyQuizzes = () => {
 
           // Try primary filter by `id`, then fallback to `slot_id` if needed.
           try {
-            const { data: slotRows, error: slotErr } = await supabase
+            const { data: slotRows, error: slotErr } = await sb
               .from('quiz_slots_view')
               .select('*')
               .in('id', slotIds);
@@ -425,7 +502,7 @@ const MyQuizzes = () => {
             }
           } catch {
             try {
-              const { data: slotRows2, error: slotErr2 } = await supabase
+              const { data: slotRows2, error: slotErr2 } = await sb
                 .from('quiz_slots_view')
                 .select('*')
                 .in('slot_id', slotIds);
