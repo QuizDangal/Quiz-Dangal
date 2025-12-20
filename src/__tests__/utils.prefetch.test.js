@@ -25,7 +25,7 @@ describe('utils: prefetchRoute', () => {
   it('falls back to setTimeout when requestIdleCallback missing', () => {
     // @ts-ignore
     delete window.requestIdleCallback;
-    expect(() => prefetchRoute('/login')).not.toThrow();
+    expect(() => prefetchRoute('/leaderboards')).not.toThrow();
     expect(timeoutSpy).toHaveBeenCalled();
   });
 

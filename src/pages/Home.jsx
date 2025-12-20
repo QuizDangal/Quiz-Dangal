@@ -185,7 +185,7 @@ const Home = () => {
 
       <div className="relative z-10 min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-2">
         <div className="w-full max-w-[420px]">
-          <div className="text-center mb-2 animate-fade-up" style={{ '--fade-delay': '60ms' }}>
+          <div className="text-center mb-2">
             <div className="hidden">
               <span className="inline-flex items-center justify-center px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-200/80 bg-indigo-500/15 border border-indigo-400/30 rounded-full">
                 Quiz Dangal Official
