@@ -6,8 +6,8 @@
 	<!-- Minimal preconnects for critical resources only -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<!-- Fonts loaded async to avoid render blocking -->
-	<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+	<!-- Fonts loaded async to avoid render blocking - use media print trick for non-blocking -->
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 	<noscript>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 	</noscript>
@@ -36,11 +36,14 @@
 	<!-- Permissions-Policy: allow notifications (for push), geolocation optional; block unused powerful features -->
 	<!-- Modern Permissions-Policy (Feature-Policy successor) -->
 	<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self), notifications=(self)" />
-	<meta name="theme-color" content="#6366f1" />
+	<meta name="theme-color" content="#0b1020" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 	<meta name="apple-mobile-web-app-title" content="Quiz Dangal" />
+	<!-- PWA iOS splash screen optimization - use dark background -->
+	<meta name="msapplication-TileColor" content="#0b1020" />
+	<meta name="msapplication-navbutton-color" content="#0b1020" />
 	<meta name="description" content="Play Hindi quizzes across multiple topics. Quick rounds, daily streaks, and rewards on Quiz Dangal." />
 	<meta name="keywords" content="Quiz Dangal, quizdangal, quiz, india quiz, indiaquiz, money quiz, moneyquiz, play and win, play & win, refer and earn, opinion based quiz, daily quiz India, online quiz contest, win rewards, leaderboards" />
 	<title>Hindi Quiz – Quiz Dangal</title>
@@ -67,10 +70,16 @@
 		@font-face { font-display: swap; }
 		/* Accessible, visually-hidden utility for SEO/a11y headings */
 		.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-		/* Loading animation for static loader */
-		@keyframes pulse{0%,100%{opacity:0.7;transform:scale(0.95)}50%{opacity:1;transform:scale(1)}}
+		/* Loading animation for static loader - optimized pulse */
+		@keyframes pulse{0%,100%{opacity:0.6;transform:scale(0.97)}50%{opacity:1;transform:scale(1)}}
+		/* Spinner animation */
+		@keyframes spin{to{transform:rotate(360deg)}}
 		/* Hide static loader when React has rendered content */
-		#static-loader{transition:opacity 0.3s ease-out}
+		#static-loader{transition:opacity 0.2s ease-out}
+		/* Critical dark background to prevent white flash */
+		html,body,#root{background:#1b2342;margin:0;padding:0;min-height:100vh;min-height:100dvh}
+		/* PWA splash screen consistency */
+		:root{color-scheme:dark}
 	</style>
 	<!-- Google tag (gtag.js) - deferred for better performance -->
 	<script>
@@ -131,12 +140,12 @@
 	    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
 	  }
 	</script>
-  <script type="module" crossorigin src="/assets/index-b52a2ac4.js"></script>
+  <script type="module" crossorigin src="/assets/index-7850a40f.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/react-63c462fe.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-24c2e735.js">
   <link rel="modulepreload" crossorigin href="/assets/router-d6d570a4.js">
   <link rel="modulepreload" crossorigin href="/assets/icons-2bdec3f2.js">
-  <link rel="stylesheet" href="/assets/index-c095dd2e.css">
+  <link rel="stylesheet" href="/assets/index-a8dc40d7.css">
   <link rel="canonical" href="https://quizdangal.com/hindi-quiz/" />
 </head>
 
@@ -148,20 +157,17 @@
 	<div id="root">
 		<div
 			id="static-loader"
-			style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b1020;color:#fff;"
+			style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(145deg,#1b2342 0%,#2a2f4a 55%,#342a44 100%);color:#fff;"
 		>
 			<main id="app-main" tabindex="-1" role="main" aria-label="Quiz Dangal">
 				<div style="max-width:680px;text-align:center;">
-					<div style="width:72px;height:72px;margin:0 auto 16px;border-radius:9999px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.35);">
-						<img src="/android-chrome-192x192.png" alt="Quiz Dangal" width="72" height="72" decoding="async" fetchpriority="high" style="display:block;width:72px;height:72px;object-fit:cover;" />
+					<div style="width:80px;height:80px;margin:0 auto 20px;border-radius:9999px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+						<img src="/android-chrome-192x192.png" alt="Quiz Dangal" width="80" height="80" decoding="async" fetchpriority="high" style="display:block;width:80px;height:80px;object-fit:cover;" />
 					</div>
-					<h1 data-prerender-title style="margin:0 0 10px;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-0.02em;">Hindi Quiz – Quiz Dangal</h1>
-					<p data-prerender-desc style="margin:0 0 16px;opacity:0.88;line-height:1.6;">Play Hindi quizzes across multiple topics. Quick rounds, daily streaks, and rewards on Quiz Dangal.</p>
-					<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-						<a href="/" style="display:inline-block;padding:12px 20px;border-radius:14px;background:linear-gradient(90deg, rgba(99,102,241,0.95), rgba(168,85,247,0.95), rgba(236,72,153,0.95));border:1px solid rgba(255,255,255,0.22);color:#fff;text-decoration:none;font-weight:900;font-size:18px;">Play Now</a>
-					</div>
-					<div style="margin-top:18px;opacity:0.75;">
-						<span style="display:inline-block;animation:pulse 1.2s ease-in-out infinite;">Loading…</span>
+					<h1 data-prerender-title style="margin:0 0 8px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;color:#fff;">Hindi Quiz – Quiz Dangal</h1>
+					<p data-prerender-desc style="margin:0 0 20px;opacity:0.85;line-height:1.5;font-size:15px;">Play Hindi quizzes across multiple topics. Quick rounds, daily streaks, and rewards on Quiz Dangal.</p>
+					<div style="display:flex;justify-content:center;">
+						<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
 					</div>
 				</div>
 			</main>

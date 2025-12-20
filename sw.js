@@ -1,7 +1,10 @@
-const CACHE_NAME = 'qd-cache-v4';
+const CACHE_NAME = 'qd-cache-v5';
 const PRECACHE_URLS = [
+  './',
   './index.html',
   './site.webmanifest',
+  './env-config.js',
+  './url-migrate.js',
   './android-chrome-192x192.png',
   './android-chrome-512x512.png',
   './apple-touch-icon.png',
@@ -10,10 +13,19 @@ const PRECACHE_URLS = [
   './favicon.ico'
 ];
 
+// Immediate activation for faster PWA startup
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) => {
+      // Use addAll for critical resources, ignore failures for non-critical
+      return cache.addAll(PRECACHE_URLS).catch((err) => {
+        console.warn('Precache partial failure:', err);
+        // Continue even if some resources fail
+        return Promise.resolve();
+      });
+    })
   );
+  // Skip waiting to activate immediately
   self.skipWaiting();
 });
 
