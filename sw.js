@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qd-cache-v5';
+const CACHE_NAME = 'qd-cache-v6';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -13,19 +13,26 @@ const PRECACHE_URLS = [
   './favicon.ico'
 ];
 
+// Check if running in standalone PWA mode
+function isStandalonePWA() {
+  return self.clients.matchAll({ type: 'window' }).then(clients => {
+    return clients.some(client => {
+      // Check if any client is in standalone mode
+      return client.url && !client.url.includes('?source=browser');
+    });
+  });
+}
+
 // Immediate activation for faster PWA startup
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Use addAll for critical resources, ignore failures for non-critical
       return cache.addAll(PRECACHE_URLS).catch((err) => {
         console.warn('Precache partial failure:', err);
-        // Continue even if some resources fail
         return Promise.resolve();
       });
     })
   );
-  // Skip waiting to activate immediately
   self.skipWaiting();
 });
 
@@ -41,39 +48,69 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
-  // Do NOT intercept non-GETs (e.g., Supabase auth POST, GA POST) or cross-origin requests
+  // Do NOT intercept non-GETs or cross-origin requests
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
   const isNavigate = req.mode === 'navigate' || (req.method === 'GET' && req.headers.get('accept')?.includes('text/html'));
 
+  // For navigation requests - use stale-while-revalidate for instant load
   if (isNavigate) {
     event.respondWith(
-      fetch(req).catch(() => caches.match('./index.html'))
+      caches.match('./index.html').then((cached) => {
+        // Return cached immediately, fetch in background
+        const fetchPromise = fetch(req).then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy)).catch(() => {});
+          }
+          return response;
+        }).catch(() => cached);
+        
+        // Return cached version immediately if available, otherwise wait for network
+        return cached || fetchPromise;
+      })
     );
     return;
   }
 
-  // For app assets like CSS/JS/Fonts, prefer network-first so new deployments reflect immediately.
+  // For CSS/JS/Fonts - CACHE-FIRST with background update (stale-while-revalidate)
+  // This makes PWA load INSTANTLY from cache
   const dest = req.destination;
   if (dest === 'style' || dest === 'script' || dest === 'font') {
     event.respondWith(
-      fetch(req)
-        .then((resp) => {
-          // Optionally update cache for offline support
-          const copy = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
-          return resp;
-        })
-        .catch(() => caches.match(req))
+      caches.match(req).then((cached) => {
+        // Always try to update cache in background
+        const fetchPromise = fetch(req).then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+          }
+          return response;
+        }).catch(() => null);
+        
+        // Return cached IMMEDIATELY if available, otherwise wait for network
+        if (cached) {
+          // Update cache in background (don't wait)
+          fetchPromise.catch(() => {});
+          return cached;
+        }
+        return fetchPromise || caches.match(req);
+      })
     );
     return;
   }
 
-  // Default: cache-first for icons/images and other GETs
+  // Default: cache-first for icons/images
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
+    caches.match(req).then((cached) => cached || fetch(req).then((resp) => {
+      if (resp.ok) {
+        const copy = resp.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+      }
+      return resp;
+    }))
   );
 });
 
