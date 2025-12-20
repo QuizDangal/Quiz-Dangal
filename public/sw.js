@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qd-cache-v8';
+const CACHE_NAME = 'qd-cache-v10';
 const PRECACHE_URLS = [
   './',
   './index.html',
