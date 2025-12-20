@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Header from '@/components/Header';
+import PWAInstallButton from '@/components/PWAInstallButton';
 // OnboardingFlow removed (unused)
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { prefetch } from '@/lib/prefetch';
@@ -52,7 +53,6 @@ const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
 const GeneralKnowledgeQuiz = lazy(() => import('@/pages/seo/GeneralKnowledgeQuiz'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
-const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
 const NotificationPermissionPrompt = lazy(
   () => import('@/components/NotificationPermissionPrompt'),
 );
@@ -400,9 +400,7 @@ const PublicLayout = () => {
           </Routes>
         </Suspense>
       </main>
-      <Suspense fallback={null}>
-        <PWAInstallButton />
-      </Suspense>
+      <PWAInstallButton />
     </>
   );
 };
@@ -650,9 +648,7 @@ const MainLayout = () => {
       <Suspense fallback={null}>
         <Footer />
       </Suspense>
-      <Suspense fallback={null}>
-        <PWAInstallButton />
-      </Suspense>
+      <PWAInstallButton />
       <Suspense fallback={null}>
         <NotificationPermissionPrompt />
       </Suspense>

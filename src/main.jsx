@@ -6,6 +6,42 @@ import '@/index.css';
 import { HelmetProvider } from 'react-helmet-async';
 import { SoundProvider } from './contexts/SoundContext';
 
+// Capture the install prompt event globally.
+// `beforeinstallprompt` can fire once before React/lazy components mount.
+if (typeof window !== 'undefined') {
+  try {
+    if (!window.__qdBipListenerAdded) {
+      window.__qdBipListenerAdded = true;
+      window.__qdDeferredPrompt = window.__qdDeferredPrompt || null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        try {
+          e.preventDefault();
+        } catch {
+          /* ignore */
+        }
+        window.__qdDeferredPrompt = e;
+        try {
+          window.dispatchEvent(new Event('qd:beforeinstallprompt'));
+        } catch {
+          /* ignore */
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        window.__qdDeferredPrompt = null;
+        try {
+          window.dispatchEvent(new Event('qd:appinstalled'));
+        } catch {
+          /* ignore */
+        }
+      });
+    }
+  } catch {
+    // ignore
+  }
+}
+
 const rootEl = document.getElementById('root');
 
 if (!rootEl) {
