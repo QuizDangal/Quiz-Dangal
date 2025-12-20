@@ -18,14 +18,14 @@ describe('utils: prefetchRoute', () => {
     const cbSpy = vi.fn((cb) => cb());
     // @ts-ignore
     window.requestIdleCallback = cbSpy;
-    expect(() => prefetchRoute('/')).not.toThrow();
+    expect(() => prefetchRoute('/login')).not.toThrow();
     expect(cbSpy).toHaveBeenCalled();
   });
 
   it('falls back to setTimeout when requestIdleCallback missing', () => {
     // @ts-ignore
     delete window.requestIdleCallback;
-    expect(() => prefetchRoute('/home')).not.toThrow();
+    expect(() => prefetchRoute('/login')).not.toThrow();
     expect(timeoutSpy).toHaveBeenCalled();
   });
 

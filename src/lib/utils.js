@@ -62,8 +62,6 @@ export function formatTimeOnly(value, opts = {}) {
 // --- Route Prefetch Helper (dynamic import warming) ---
 // Map route paths to lazy page importers so we can prefetch on hover/focus.
 const routePrefetchMap = {
-  '/': () => import('@/pages/Home'),
-  '/home': () => import('@/pages/Home'),
   '/quiz': () => import('@/pages/Quiz'),
   '/wallet': () => import('@/pages/Wallet'),
   '/profile': () => import('@/pages/Profile'),
