@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qd-cache-v7';
+const CACHE_NAME = 'qd-cache-v8';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const PRECACHE_URLS = [
   './url-migrate.js',
   './android-chrome-192x192.png',
   './android-chrome-512x512.png',
+  './maskable-icon-192.png',
+  './maskable-icon-512.png',
   './apple-touch-icon.png',
   './favicon-16x16.png',
   './favicon-32x32.png',
