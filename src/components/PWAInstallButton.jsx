@@ -60,11 +60,72 @@ const PWAInstallButton = () => {
     };
   }, []);
 
+  const waitForInstallPrompt = (timeoutMs = 2500) => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve(null);
+      let settled = false;
+      const done = (value) => {
+        if (settled) return;
+        settled = true;
+        try {
+          window.removeEventListener('beforeinstallprompt', onBip, { capture: false });
+        } catch {
+          // ignore
+        }
+        resolve(value);
+      };
+
+      const onBip = (e) => {
+        try {
+          e.preventDefault();
+        } catch {
+          // ignore
+        }
+        setDeferredPrompt(e);
+        done(e);
+      };
+
+      try {
+        window.addEventListener('beforeinstallprompt', onBip, { once: true });
+      } catch {
+        window.addEventListener('beforeinstallprompt', onBip);
+      }
+      window.setTimeout(() => done(null), Math.max(0, timeoutMs));
+    });
+  };
+
   const handleClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
+    try {
+      // If we already captured the prompt, use it.
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        setDeferredPrompt(null);
+        return;
+      }
+
+      // On some loads the beforeinstallprompt fires only after SW registration.
+      // Force SW registration on user click (won't affect Lighthouse/PSI runs).
+      try {
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.isSecureContext) {
+          await navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+            updateViaCache: 'none',
+          });
+        }
+      } catch {
+        // ignore
+      }
+
+      // Wait briefly for the prompt to become available, then show it.
+      const bipEvent = await waitForInstallPrompt(2500);
+      if (bipEvent) {
+        bipEvent.prompt();
+        await bipEvent.userChoice;
+        setDeferredPrompt(null);
+      }
+    } catch {
+      // ignore
     }
   };
 
