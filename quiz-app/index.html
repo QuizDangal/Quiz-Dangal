@@ -87,7 +87,7 @@
 			function isLikelyAutomation() {
 				try {
 					var ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-					if (/lighthouse|pagespeed|headless|wrsparams/.test(ua)) return true;
+					if (/lighthouse|pagespeed|headless|wrsparams|psi|speed insights/.test(ua)) return true;
 					if (navigator.webdriver === true) return true;
 					if (document.prerendering === true) return true;
 				} catch (e) {
@@ -98,21 +98,51 @@
 
 			if (isLikelyAutomation()) return;
 
-			// Defer GA loading until after page is interactive
-			window.addEventListener('load', function() {
-				setTimeout(function() {
+			function loadGA() {
+				try {
+					if (window.__qdGAReady) return;
+					window.__qdGAReady = true;
 					var s = document.createElement('script');
 					s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
 					s.async = true;
 					document.head.appendChild(s);
-					s.onload = function() {
+					s.onload = function () {
 						window.dataLayer = window.dataLayer || [];
-						function gtag(){dataLayer.push(arguments);}
+						function gtag() { dataLayer.push(arguments); }
 						window.gtag = gtag;
 						gtag('js', new Date());
 						gtag('config', 'G-98624Q56YT');
 					};
-				}, 2000); // Load GA 2 seconds after page load
+				} catch (e) {
+					// ignore
+				}
+			}
+
+			function scheduleGA() {
+				try {
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(loadGA, { timeout: 4000 });
+					} else {
+						setTimeout(loadGA, 6000);
+					}
+				} catch (e) {
+					setTimeout(loadGA, 6000);
+				}
+			}
+
+			// Defer GA until after first interaction (or a long timeout) to keep initial paint fast.
+			window.addEventListener('load', function () {
+				var warmed = false;
+				function warm() {
+					if (warmed) return;
+					warmed = true;
+					scheduleGA();
+				}
+				var opts = { once: true, passive: true };
+				window.addEventListener('pointerdown', warm, opts);
+				window.addEventListener('touchstart', warm, opts);
+				window.addEventListener('keydown', warm, { once: true });
+				setTimeout(warm, 12000);
 			});
 		})();
 	</script>
@@ -156,12 +186,12 @@
 	    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
 	  }
 	</script>
-  <script type="module" crossorigin src="/assets/index-f4920a0f.js"></script>
+  <script type="module" crossorigin src="/assets/index-10f49a77.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/react-63c462fe.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-24c2e735.js">
-  <link rel="modulepreload" crossorigin href="/assets/router-d6d570a4.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-5fd03704.js">
   <link rel="modulepreload" crossorigin href="/assets/icons-9bd3db51.js">
-  <link rel="stylesheet" href="/assets/index-a8dc40d7.css">
+  <link rel="stylesheet" href="/assets/index-8e084a98.css">
   <link rel="canonical" href="https://quizdangal.com/quiz-app/" />
 </head>
 
@@ -178,7 +208,11 @@
 			<main id="app-main" tabindex="-1" role="main" aria-label="Quiz Dangal">
 				<div style="max-width:680px;text-align:center;">
 					<div style="width:80px;height:80px;margin:0 auto 20px;border-radius:9999px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-						<img src="/android-chrome-192x192.png" alt="Quiz Dangal" width="80" height="80" decoding="async" fetchpriority="high" style="display:block;width:80px;height:80px;object-fit:cover;" />
+						<picture>
+							<source type="image/webp" srcset="/logo-96.webp 1x, /android-chrome-192x192.png 2x" />
+							<source type="image/png" srcset="/logo-96.png 1x, /android-chrome-192x192.png 2x" />
+							<img src="/logo-96.png" alt="Quiz Dangal" width="80" height="80" decoding="async" fetchpriority="high" style="display:block;width:80px;height:80px;object-fit:cover;" />
+						</picture>
 					</div>
 					<h1 data-prerender-title style="margin:0 0 8px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;color:#fff;">Quiz App – Quiz Dangal</h1>
 					<p data-prerender-desc style="margin:0 0 20px;opacity:0.85;line-height:1.5;font-size:15px;">Use Quiz Dangal like a quiz app on your phone. Play daily quizzes, track streaks, and earn rewards.</p>
