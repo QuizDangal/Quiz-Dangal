@@ -118,7 +118,8 @@ const Fallback = () => (
     aria-label="Loading content"
   >
     <div
-      className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600"
+      className="rounded-full h-8 w-8 border-3 border-white/20 border-t-indigo-500"
+      style={{ animation: 'spin 0.7s linear infinite' }}
       aria-hidden="true"
     ></div>
   </div>
@@ -166,23 +167,25 @@ function App() {
   const { user: authUser, loading, isRecoveryFlow } = useAuth();
   // We only need focus management once layout is rendered; apply inside Router tree via helper component
 
+  // Remove static loader only when app is fully ready
+  useEffect(() => {
+    if (!loading) {
+      // App is ready, remove static loader with smooth transition
+      requestAnimationFrame(() => {
+        const staticLoader = document.getElementById('static-loader');
+        if (staticLoader) {
+          staticLoader.style.opacity = '0';
+          setTimeout(() => {
+            staticLoader.remove();
+          }, 150);
+        }
+      });
+    }
+  }, [loading]);
+
+  // While loading, keep static loader visible (don't render anything else)
   if (loading) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading application"
-      >
-        <div className="flex flex-col items-center space-y-4">
-          <div
-            className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600"
-            aria-hidden="true"
-          ></div>
-          <div className="text-indigo-600 font-medium animate-pulse">Loading Quiz Dangal...</div>
-        </div>
-      </div>
-    );
+    return null; // Static loader from index.html stays visible
   }
 
   return (

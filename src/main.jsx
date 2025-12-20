@@ -12,7 +12,7 @@ if (!rootEl) {
   // eslint-disable-next-line no-console
   console.error('Root element #root not found in index.html');
 } else {
-  // Start React render
+  // Start React render immediately
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
       <AuthProvider>
@@ -25,17 +25,8 @@ if (!rootEl) {
     </React.StrictMode>,
   );
   
-  // Smoothly fade out static loader after React starts rendering
-  // Using requestAnimationFrame ensures DOM is updated before we fade out
-  requestAnimationFrame(() => {
-    const staticLoader = document.getElementById('static-loader');
-    if (staticLoader) {
-      staticLoader.style.opacity = '0';
-      setTimeout(() => {
-        staticLoader.remove();
-      }, 300); // Match the CSS transition duration
-    }
-  });
+  // Static loader will be removed by App.jsx when fully loaded
+  // This ensures single smooth transition instead of double loading
 }
 
 // Defer vitals collection until after initial paint.
