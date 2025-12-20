@@ -47,6 +47,35 @@ async function generateOne({ src, out, size }) {
   await fs.writeFile(out, composed);
 }
 
+async function generateLogoAssets() {
+  const src = path.join(PUBLIC_DIR, 'android-chrome-192x192.png');
+  if (!(await exists(src))) return;
+
+  const variants = [
+    { size: 48, name: 'logo-48' },
+    { size: 96, name: 'logo-96' },
+  ];
+
+  await Promise.all(
+    variants.flatMap(({ size, name }) => {
+      const pngOut = path.join(PUBLIC_DIR, `${name}.png`);
+      const webpOut = path.join(PUBLIC_DIR, `${name}.webp`);
+
+      const pngJob = sharp(src)
+        .resize(size, size, { fit: 'contain' })
+        .png({ compressionLevel: 9, adaptiveFiltering: true })
+        .toFile(pngOut);
+
+      const webpJob = sharp(src)
+        .resize(size, size, { fit: 'contain' })
+        .webp({ quality: 82, effort: 6 })
+        .toFile(webpOut);
+
+      return [pngJob, webpJob];
+    }),
+  );
+}
+
 async function main() {
   const targets = [
     {
@@ -61,9 +90,11 @@ async function main() {
     },
   ];
 
-  await Promise.all(targets.map((t) => generateOne(t)));
+  await Promise.all([Promise.all(targets.map((t) => generateOne(t))), generateLogoAssets()]);
   // eslint-disable-next-line no-console
   console.log(`maskable icons generated (bg=${BG}, safeRatio=${SAFE_RATIO})`);
+  // eslint-disable-next-line no-console
+  console.log('logo assets generated (logo-48/96.{png,webp})');
 }
 
 main().catch((err) => {

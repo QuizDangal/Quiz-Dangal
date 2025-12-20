@@ -105,16 +105,26 @@ const Header = () => {
                 onFocus={() => prefetchRoute('/')}
                 aria-label="Go to home page"
               >
-                <img
-                  src="/android-chrome-192x192.png"
-                  alt="Quiz Dangal Logo"
-                  width="48"
-                  height="48"
-                  decoding="async"
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none shrink-0"
-                  draggable="false"
-                  style={{ imageRendering: 'auto' }}
-                />
+                <picture className="shrink-0">
+                  <source
+                    type="image/webp"
+                    srcSet="/logo-48.webp 1x, /logo-96.webp 2x"
+                  />
+                  <source
+                    type="image/png"
+                    srcSet="/logo-48.png 1x, /logo-96.png 2x"
+                  />
+                  <img
+                    src="/logo-48.png"
+                    alt="Quiz Dangal Logo"
+                    width="48"
+                    height="48"
+                    decoding="async"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none shrink-0"
+                    draggable="false"
+                    style={{ imageRendering: 'auto' }}
+                  />
+                </picture>
                 <div className="leading-tight select-none min-w-0">
                   <div
                     className="text-base sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight truncate"

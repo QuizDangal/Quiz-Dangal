@@ -6,11 +6,11 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Header from '@/components/Header';
 import PWAInstallButton from '@/components/PWAInstallButton';
+import Home from '@/pages/Home';
 // OnboardingFlow removed (unused)
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { prefetch } from '@/lib/prefetch';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-const Home = lazy(() => import('@/pages/Home'));
 const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
 const Profile = lazy(() => import('@/pages/Profile'));

@@ -304,15 +304,19 @@ const Login = () => {
       <LoginHead />
       <div className="qd-card rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-slate-100 flex flex-col">
         <div className="text-center mb-6 sm:mb-8">
-          <img
-            src="/android-chrome-192x192.png"
-            alt="Quiz Dangal Logo"
-            className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full shadow-lg"
-            loading="eager"
-            decoding="async"
-            width="80"
-            height="80"
-          />
+          <picture>
+            <source type="image/webp" srcSet="/logo-96.webp 1x, /android-chrome-192x192.png 2x" />
+            <source type="image/png" srcSet="/logo-96.png 1x, /android-chrome-192x192.png 2x" />
+            <img
+              src="/logo-96.png"
+              alt="Quiz Dangal Logo"
+              className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full shadow-lg"
+              loading="eager"
+              decoding="async"
+              width="80"
+              height="80"
+            />
+          </picture>
           <h1 className="text-3xl font-bold text-white text-shadow mb-2">Quiz Dangal</h1>
           {/* <p className="text-slate-300">Where Minds Clash</p> */}
         </div>
