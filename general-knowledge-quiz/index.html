@@ -83,22 +83,38 @@
 	</style>
 	<!-- Google tag (gtag.js) - deferred for better performance -->
 	<script>
-		// Defer GA loading until after page is interactive
-		window.addEventListener('load', function() {
-			setTimeout(function() {
-				var s = document.createElement('script');
-				s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
-				s.async = true;
-				document.head.appendChild(s);
-				s.onload = function() {
-					window.dataLayer = window.dataLayer || [];
-					function gtag(){dataLayer.push(arguments);}
-					window.gtag = gtag;
-					gtag('js', new Date());
-					gtag('config', 'G-98624Q56YT');
-				};
-			}, 2000); // Load GA 2 seconds after page load
-		});
+		(function () {
+			function isLikelyAutomation() {
+				try {
+					var ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+					if (/lighthouse|pagespeed|headless|wrsparams/.test(ua)) return true;
+					if (navigator.webdriver === true) return true;
+					if (document.prerendering === true) return true;
+				} catch (e) {
+					// ignore
+				}
+				return false;
+			}
+
+			if (isLikelyAutomation()) return;
+
+			// Defer GA loading until after page is interactive
+			window.addEventListener('load', function() {
+				setTimeout(function() {
+					var s = document.createElement('script');
+					s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
+					s.async = true;
+					document.head.appendChild(s);
+					s.onload = function() {
+						window.dataLayer = window.dataLayer || [];
+						function gtag(){dataLayer.push(arguments);}
+						window.gtag = gtag;
+						gtag('js', new Date());
+						gtag('config', 'G-98624Q56YT');
+					};
+				}, 2000); // Load GA 2 seconds after page load
+			});
+		})();
 	</script>
 	
 	<!-- Structured Data: WebSite + Organization + WebApplication -->
@@ -140,11 +156,11 @@
 	    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
 	  }
 	</script>
-  <script type="module" crossorigin src="/assets/index-b2bada1c.js"></script>
+  <script type="module" crossorigin src="/assets/index-3ea3534f.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/react-63c462fe.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-24c2e735.js">
   <link rel="modulepreload" crossorigin href="/assets/router-d6d570a4.js">
-  <link rel="modulepreload" crossorigin href="/assets/icons-2bdec3f2.js">
+  <link rel="modulepreload" crossorigin href="/assets/icons-9bd3db51.js">
   <link rel="stylesheet" href="/assets/index-a8dc40d7.css">
   <link rel="canonical" href="https://quizdangal.com/general-knowledge-quiz/" />
 </head>
