@@ -3,18 +3,20 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<!-- Google AdSense verification -->
+	<!-- Google AdSense - defer loading to improve FCP -->
 	<meta name="google-adsense-account" content="ca-pub-6769428019015455">
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6769428019015455" crossorigin="anonymous"></script>
-	<!-- Minimal preconnects for critical resources only -->
+	<!-- Preconnect to critical origins for faster resource loading -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="preconnect" href="https://nlexqxyxugifjyogqato.supabase.co" crossorigin>
+	<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
 	<!-- Fonts loaded async to avoid render blocking - use media print trick for non-blocking -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 	<noscript>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 	</noscript>
-	<!-- Avoid preconnecting to third-parties on first paint (helps Mobile PSI); they load later on demand. -->
+	<!-- AdSense loaded after page content for better performance -->
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6769428019015455" crossorigin="anonymous"></script>
 	<!-- Runtime env overrides (deferred; must run before app bundle) -->
 	<script defer src="/env-config.js"></script>
 	<!-- Must run before the app bundle to restore clean paths from 404 redirect -->
@@ -69,20 +71,21 @@
 	<meta name="twitter:description" content="Sharpen your general knowledge with live and upcoming GK quizzes on Quiz Dangal." />
 	<meta name="twitter:image" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
 	<style>
-		/* Ensure system UI fonts render fast; any web fonts should use swap */
+		/* Critical CSS - inlined to avoid render blocking */
 		@font-face { font-display: swap; }
-		/* Accessible, visually-hidden utility for SEO/a11y headings */
 		.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-		/* Loading animation for static loader - optimized pulse */
 		@keyframes pulse{0%,100%{opacity:0.6;transform:scale(0.97)}50%{opacity:1;transform:scale(1)}}
-		/* Spinner animation */
 		@keyframes spin{to{transform:rotate(360deg)}}
-		/* Hide static loader when React has rendered content */
 		#static-loader{transition:opacity 0.2s ease-out}
-		/* Critical dark background to prevent white flash */
+		/* Critical app background */
 		html,body,#root{background:#050508;margin:0;padding:0;min-height:100vh;min-height:100dvh}
-		/* PWA splash screen consistency */
-		:root{color-scheme:dark}
+		:root{color-scheme:dark;--bg-dark:#050508;--bg-mid:#0a0a12}
+		/* Critical layout - app container */
+		.app-bg{position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,#050508 0%,#0a0a12 50%,#08080f 100%)}
+		/* Critical header/footer placeholder */
+		.fixed{position:fixed}.bottom-0{bottom:0}.left-0{left:0}.right-0{right:0}.top-0{top:0}
+		.z-50{z-index:50}.flex{display:flex}.items-center{align-items:center}.justify-center{justify-content:center}
+		.bg-\[\#0a0a12\]{background-color:#0a0a12}
 	</style>
 	<!-- Google tag (gtag.js) - deferred for better performance -->
 	<script>
