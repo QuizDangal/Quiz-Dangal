@@ -1,0 +1,41 @@
+# Cache static assets for 1 year (immutable hashed filenames)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache images for 1 month
+/*.png
+  Cache-Control: public, max-age=2592000
+/*.webp
+  Cache-Control: public, max-age=2592000
+/*.ico
+  Cache-Control: public, max-age=2592000
+/*.svg
+  Cache-Control: public, max-age=2592000
+
+# Cache manifest for 1 day
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+
+# Cache service worker - short cache for updates
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# HTML pages - no cache (SPA routing)
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Sitemap and robots - 1 day
+/sitemap.xml
+  Cache-Control: public, max-age=86400
+/robots.txt
+  Cache-Control: public, max-age=86400
+
+# JS config files - short cache
+/env-config.js
+  Cache-Control: public, max-age=300
+/url-migrate.js
+  Cache-Control: public, max-age=86400
+/modulepreload-polyfill.js
+  Cache-Control: public, max-age=86400
+/sw-register.js
+  Cache-Control: public, max-age=86400
