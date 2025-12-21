@@ -187,7 +187,7 @@ Referral Link: ${referralLink}`,
         jsonLd={[faqSchema]}
       />
       
-      <div className="min-h-screen pt-14 pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      <div className="min-h-screen pt-14 pb-24">
         <motion.div 
           className="container mx-auto px-4 py-6 max-w-lg"
           variants={containerVariants}

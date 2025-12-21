@@ -53,9 +53,6 @@ const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
 const GeneralKnowledgeQuiz = lazy(() => import('@/pages/seo/GeneralKnowledgeQuiz'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
-const NotificationPermissionPrompt = lazy(
-  () => import('@/components/NotificationPermissionPrompt'),
-);
 
 // Reusable group of static public informational routes (as a fragment – not a component – so <Routes> accepts it)
 const policyRoutes = (
@@ -192,9 +189,16 @@ function App() {
     <ErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouteChangeTracker />
+        {/* Global Cyberpunk Background - Same as Home page */}
+        <div className="app-bg" aria-hidden="true">
+          <div className="app-bg-base" />
+          <div className="app-bg-scan" />
+          <div className="app-bg-grid" />
+          <div className="app-bg-vignette" />
+        </div>
         <div
-          className="min-h-screen flex flex-col relative text-gray-50 transition-all duration-300 ease-in-out"
-          style={{ margin: 0, padding: 0 }}
+          className="min-h-screen flex flex-col relative text-gray-50 transition-all duration-300 ease-in-out z-10"
+          style={{ margin: 0, padding: 0, background: 'transparent' }}
         >
           <Helmet>
             <title>Quiz Dangal – Play Quizzes & Win | Refer & Earn</title>
@@ -649,9 +653,6 @@ const MainLayout = () => {
         <Footer />
       </Suspense>
       <PWAInstallButton />
-      <Suspense fallback={null}>
-        <NotificationPermissionPrompt />
-      </Suspense>
       {hasSupabaseConfig && profileModalOpen && (
         <Suspense fallback={null}>
           <ProfileUpdateModal

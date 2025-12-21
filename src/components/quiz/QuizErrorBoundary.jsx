@@ -32,7 +32,7 @@ class QuizErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="min-h-screen flex items-center justify-center p-4">
           <div className="qd-card rounded-2xl p-8 max-w-md w-full text-center">
             <AlertTriangle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white mb-3">Oops! Something went wrong</h2>

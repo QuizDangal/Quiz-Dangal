@@ -78,11 +78,19 @@ const Quiz = () => {
     error,
     totalJoined,
     displayJoined,
+    setCurrentQuestionIndex,
     handleJoinOrPrejoin,
     handleAnswerSelect,
     handleSubmit,
     formatTime,
   } = useQuizEngine(isSlotQuiz ? slot?.id : quizId, navigate, isSlotQuiz ? { slotId } : undefined);
+
+  // Handle next question
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
 
   // Close handler for modals
   const handleClose = () => {
@@ -209,6 +217,7 @@ const Quiz = () => {
       participantStatus={participantStatus}
       formatTime={formatTime}
       onAnswerSelect={handleAnswerSelect}
+      onNext={handleNext}
       onSubmit={handleSubmit}
     />
   );

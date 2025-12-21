@@ -150,9 +150,6 @@ export default function Leaderboards() {
         ]}
       />
       
-      {/* Refined ambient background */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-50 [background-image:radial-gradient(ellipse_at_20%_20%,rgba(99,102,241,0.25),transparent_50%),radial-gradient(ellipse_at_80%_80%,rgba(139,92,246,0.2),transparent_50%),radial-gradient(ellipse_at_50%_50%,rgba(236,72,153,0.12),transparent_45%)]" />
-      
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         
         {/* Modern Header */}

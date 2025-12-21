@@ -459,63 +459,93 @@ const CategoryQuizzes = () => {
     return (
       <div
         key={slot.slotId}
-        className={`p-[1px] rounded-xl sm:rounded-2xl ${isActive ? 'bg-gradient-to-r from-emerald-500/60 to-green-500/60' : 'bg-gradient-to-r from-indigo-500/40 via-violet-500/30 to-fuchsia-500/40'}`}
+        className="quiz-slot-card"
       >
-        <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4 lg:p-5">
-          {/* Badge at top-right corner */}
-          <div className="flex justify-end mb-1.5 sm:mb-2">
-            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[11px] font-bold ${
-              badge === 'LIVE' ? 'bg-rose-600 text-white' :
-              badge === 'UPCOMING' ? 'bg-sky-600 text-white' :
-              badge === 'PAUSED' ? 'bg-amber-600 text-white' :
-              'bg-slate-700 text-slate-300'
+        <div className={`quiz-slot-card-inner ${isActive ? 'quiz-slot-card-live' : ''}`}>
+          {/* Top Row: Language + Badge */}
+          <div className="flex justify-between items-center mb-3">
+            <span className="quiz-slot-lang">
+              🌐 Hindi / English
+            </span>
+            <span className={`quiz-slot-badge ${
+              badge === 'LIVE' ? 'quiz-slot-badge-live' :
+              badge === 'UPCOMING' ? 'quiz-slot-badge-upcoming' :
+              badge === 'PAUSED' ? 'quiz-slot-badge-paused' :
+              'quiz-slot-badge-default'
             }`}>
+              {badge === 'LIVE' && <span className="quiz-slot-badge-dot" />}
               {badge}
             </span>
           </div>
-          {/* Title - full width, wraps if needed */}
-          <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3 line-clamp-2">
+          
+          {/* Title */}
+          <h3 className="text-sm sm:text-base font-bold text-white mb-3 line-clamp-2">
             {slot.quiz_title || slot.title || 'Quiz'}
           </h3>
-          <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-400 mb-2 sm:mb-3">
-            <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
-              <span className="text-[9px] sm:text-[10px] text-slate-500">Start</span> {slot.start_time ? formatTimeOnly(slot.start_time) : '—'}
-            </div>
-            <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
-              <span className="text-[9px] sm:text-[10px] text-slate-500">End</span> {slot.end_time ? formatTimeOnly(slot.end_time) : '—'}
-            </div>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs mb-2 sm:mb-3">
-            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-400/10 text-amber-200 border border-amber-500/30 shadow-sm">🥇 {formatPrize(p1)}</span>
-            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-sky-500/20 to-sky-400/10 text-sky-200 border border-sky-500/30 shadow-sm">🥈 {formatPrize(p2)}</span>
-            <span className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-violet-400/10 text-violet-200 border border-violet-500/30 shadow-sm">🥉 {formatPrize(p3)}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-            <div className="flex items-center gap-2 text-[10px] sm:text-xs">
-              <span className="px-2 py-1 rounded-md bg-slate-800/70 border border-slate-700/50 text-slate-300">
-                📝 {qCount} Questions
-              </span>
-              <span className="px-2 py-1 rounded-md bg-slate-800/70 border border-slate-700/50 text-slate-300">
-                👥 {participantsJoined} Joined
-              </span>
+          
+          {/* Time Section - Start & End with Timer */}
+          <div className="quiz-slot-time-section">
+            <div className="quiz-slot-time-row">
+              <div className="quiz-slot-time-box">
+                <span className="quiz-slot-time-label">START</span>
+                <span className="quiz-slot-time-value">{slot.start_time ? formatTimeOnly(slot.start_time) : '—'}</span>
+              </div>
+              <div className="quiz-slot-time-divider">→</div>
+              <div className="quiz-slot-time-box">
+                <span className="quiz-slot-time-label">END</span>
+                <span className="quiz-slot-time-value">{slot.end_time ? formatTimeOnly(slot.end_time) : '—'}</span>
+              </div>
             </div>
             {secs !== null && (
-              <div className="text-xs sm:text-sm font-semibold text-indigo-300">
-                {upcoming ? 'In' : 'Ends'} {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
+              <div className={`quiz-slot-timer ${isActive ? 'quiz-slot-timer-live' : ''}`}>
+                <Clock className="w-3.5 h-3.5" />
+                <span>{upcoming ? 'Starts in' : 'Ends in'}</span>
+                <span className="quiz-slot-timer-value">
+                  {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
+                </span>
               </div>
             )}
           </div>
+          
+          {/* Prize Section */}
+          <div className="quiz-slot-prize-section">
+            <div className="quiz-slot-prize-title">🏆 Prizes</div>
+            <div className="quiz-slot-prize-row">
+              <div className="quiz-slot-prize-item quiz-slot-prize-gold">
+                <span className="quiz-slot-prize-rank">1st</span>
+                <span className="quiz-slot-prize-value">{formatPrize(p1)}</span>
+              </div>
+              <div className="quiz-slot-prize-item quiz-slot-prize-silver">
+                <span className="quiz-slot-prize-rank">2nd</span>
+                <span className="quiz-slot-prize-value">{formatPrize(p2)}</span>
+              </div>
+              <div className="quiz-slot-prize-item quiz-slot-prize-bronze">
+                <span className="quiz-slot-prize-rank">3rd</span>
+                <span className="quiz-slot-prize-value">{formatPrize(p3)}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Stats Row */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="quiz-slot-stat">
+              📝 {qCount} Questions
+            </span>
+            <span className="quiz-slot-stat">
+              <Users className="w-3 h-3" /> {participantsJoined} Joined
+            </span>
+          </div>
+          
+          {/* CTA Button */}
           <button
             type="button"
             disabled={isJoining || (hasJoined && upcoming)}
             onClick={handleClick}
             onMouseEnter={() => prefetchRoute(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`)}
-            className={`w-full h-9 sm:h-10 lg:h-11 rounded-lg text-xs sm:text-sm font-bold text-white transition ${
+            className={`quiz-slot-btn ${
               isJoining ? 'opacity-50 cursor-wait' :
-              hasJoined && upcoming ? 'bg-gradient-to-r from-emerald-700 to-green-600 cursor-default' :
-              isActive
-                ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90'
-                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90'
+              hasJoined && upcoming ? 'quiz-slot-btn-joined' :
+              isActive ? 'quiz-slot-btn-live' : 'quiz-slot-btn-default'
             }`}
           >
             {isJoining ? 'Joining...' : cta}

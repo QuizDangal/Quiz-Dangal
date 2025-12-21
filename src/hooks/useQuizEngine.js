@@ -83,6 +83,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const retryQueueRef = useRef([]); // { questionId, optionId, attempt }
   const retryTimerRef = useRef(null);
   const handleSubmitRef = useRef(null);
+  const joinAttemptedRef = useRef(false); // Prevent repeated join attempts on effect re-runs
+  const questionsLoadAttemptedRef = useRef(null); // Track quiz ID for which questions were already attempted
 
   useEffect(
     () => () => {
@@ -166,10 +168,14 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     return totalJoined;
   })();
 
-  const loadQuestions = useCallback(async (actualQuizId = null) => {
+  const loadQuestions = useCallback(async (actualQuizId = null, forceReload = false) => {
     // Use passed actualQuizId, or fall back to quiz state, or URL params
     const effectiveId = actualQuizId || quiz?.id || quizId || slotId;
     if (!effectiveId) return;
+    
+    // Prevent repeated load attempts for the same quiz (unless forced)
+    if (!forceReload && questionsLoadAttemptedRef.current === effectiveId) return;
+    questionsLoadAttemptedRef.current = effectiveId;
     
     try {
       // Always fetch from questions table (tick_quiz_slots populates it before quiz starts)
@@ -342,6 +348,12 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     }
   }, [quizId, slotId, user, navigate, toast, loadQuestions, refreshEngagement]); // slotId included
 
+  // Reset attempt trackers when quiz/slot changes
+  useEffect(() => {
+    joinAttemptedRef.current = false;
+    questionsLoadAttemptedRef.current = null;
+  }, [quizId, slotId]);
+
   useEffect(() => {
     fetchQuizData();
   }, [fetchQuizData]);
@@ -412,9 +424,16 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       if (quizState !== 'active') return;
       if (!user) return;
       if (slotId && slotPaused) return;
+      
+      // Prevent repeated join attempts on effect re-runs (e.g., after 400 errors)
+      const joinKey = slotId || quizId;
+      if (joinAttemptedRef.current === joinKey && joined) return;
 
       try {
         if (!joined || participantStatus === 'pre_joined') {
+          // Mark that we're attempting join for this quiz/slot
+          joinAttemptedRef.current = joinKey;
+          
           let joinOk = false;
           let lastErr = null;
           for (let attempt = 0; attempt < 2 && !joinOk; attempt++) {
@@ -456,6 +475,9 @@ export function useQuizEngine(quizId, navigate, options = {}) {
               setJoined(true);
               setParticipantStatus('pre_joined');
             } else {
+              // Set joined to true anyway to prevent infinite retry loops
+              // The user can refresh if they want to try again
+              setJoined(true);
               throw lastErr;
             }
           }
@@ -630,13 +652,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
       // Optimistic UI update so selection + submit button are reliable even under flaky networks.
       setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-      if (currentQuestionIndex < questions.length - 1) {
-        if (typeof requestAnimationFrame === 'function') {
-          requestAnimationFrame(() => setCurrentQuestionIndex((prev) => prev + 1));
-        } else {
-          setTimeout(() => setCurrentQuestionIndex((prev) => prev + 1), 250);
-        }
-      }
+      // Removed auto-advance - user will click Next/Submit button manually
 
       try {
         const { error } = await supabase
@@ -668,8 +684,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       quizState,
       participantStatus,
       user?.id,
-      currentQuestionIndex,
-      questions.length,
       toast,
       scheduleRetry,
     ],

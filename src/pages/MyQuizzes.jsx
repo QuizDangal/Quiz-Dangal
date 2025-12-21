@@ -6,7 +6,6 @@ import { Clock, Play, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getSupabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import {
-  formatDateOnly,
   formatTimeOnly,
   getPrizeDisplay,
   shouldAllowClientCompute,
@@ -14,15 +13,6 @@ import {
   prefetchRoute,
 } from '@/lib/utils';
 import SEO from '@/components/SEO';
-// Match Category status badge visuals
-function statusBadge(s) {
-  const base = 'px-2 py-0.5 rounded-full text-xs font-semibold';
-  if (s === 'active') return base + ' bg-green-600/15 text-green-400 border border-green-700/40';
-  if (s === 'upcoming') return base + ' bg-blue-600/15 text-blue-300 border border-blue-700/40';
-  if (s === 'finished' || s === 'completed')
-    return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
-  return base + ' bg-slate-600/20 text-slate-300 border border-slate-700/40';
-}
 // LeaderboardDisplay removed (unused)
 
 const GoldTrophy = ({ size = 72, centered = false, fitParent = false }) => {
@@ -528,8 +518,8 @@ const MyQuizzes = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen overflow-x-hidden">
-        <div className="container mx-auto px-4 py-4 pt-16 sm:pt-20">
+      <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
+        <div className="container mx-auto px-4 py-6 max-w-lg">
           {/* Skeleton Header */}
           <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4 sm:p-6 mb-6 animate-pulse">
             <div className="h-7 w-32 bg-slate-700 rounded mb-4"></div>
@@ -584,10 +574,9 @@ const MyQuizzes = () => {
 
   if (quizzes.length === 0) {
     return (
-      <div className="min-h-screen overflow-x-hidden">
-        <div className="fixed inset-0 overflow-hidden">
-          <div className="container mx-auto h-full px-4">
-            <div className="h-full flex items-start justify-center pt-20">
+      <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
+        <div className="container mx-auto px-4 py-6 max-w-lg">
+          <div className="flex items-start justify-center pt-8">
               <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -641,7 +630,6 @@ const MyQuizzes = () => {
             </div>
           </div>
         </div>
-      </div>
     );
   }
 
@@ -670,14 +658,14 @@ const MyQuizzes = () => {
   });
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
       <SEO
         title="My Quizzes – Quiz Dangal"
         description="Track the quizzes you have joined, monitor live rounds, and revisit completed contests on Quiz Dangal."
         canonical="https://quizdangal.com/my-quizzes/"
         robots="noindex, nofollow"
       />
-      <div className="container mx-auto px-4 py-4 pt-16 sm:pt-20">
+      <div className="container mx-auto px-4 py-6 max-w-lg">
         <m.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -748,123 +736,89 @@ const MyQuizzes = () => {
                       initial={{ opacity: 0, y: 16, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: index * 0.06, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      whileHover={{ y: -4, scale: 1.01, transition: { duration: 0.2 } }}
-                      whileTap={{ scale: 0.99 }}
+                      className="quiz-slot-card cursor-pointer"
                       onClick={() => navigate(quizPath)}
-                      className={`relative overflow-hidden rounded-2xl border ${isActive ? 'border-emerald-700/50' : 'border-slate-800'} bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-900/60 shadow-xl cursor-pointer group transition-shadow duration-300 qd-card p-4 sm:p-5`}
                     >
-                      {/* Background accents to match Category */}
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                          background:
-                            'radial-gradient(1200px 300px at -10% -10%, rgba(99,102,241,0.06), transparent), radial-gradient(900px 200px at 110% 20%, rgba(16,185,129,0.05), transparent)',
-                        }}
-                      />
-
-                      {/* Status chips (top-right, consistent with Category) */}
-                      <div className="absolute top-3 right-3 z-10 flex gap-2">
-                        {isActive && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-widest bg-rose-600 text-white ring-1 ring-rose-300/50 shadow">
-                            LIVE
+                      <div className={`quiz-slot-card-inner ${isActive ? 'quiz-slot-card-live' : ''}`}>
+                        {/* Top Row: Language + Badge */}
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="quiz-slot-lang">🌐 Hindi / English</span>
+                          <span className={`quiz-slot-badge ${isActive ? 'quiz-slot-badge-live' : 'quiz-slot-badge-upcoming'}`}>
+                            {isActive && <span className="quiz-slot-badge-dot" />}
+                            {isActive ? 'LIVE' : 'UPCOMING'}
                           </span>
-                        )}
-                        {!isActive && st && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-widest bg-sky-600 text-white ring-1 ring-sky-300/50 shadow">
-                            SOON
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="truncate font-semibold text-slate-100 text-base sm:text-lg">
-                              {quiz.title}
+                        </div>
+                        
+                        {/* Title */}
+                        <h3 className="text-sm sm:text-base font-bold text-white mb-3 line-clamp-2">
+                          {quiz.title}
+                        </h3>
+                        
+                        {/* Time Section */}
+                        <div className="quiz-slot-time-section">
+                          <div className="quiz-slot-time-row">
+                            <div className="quiz-slot-time-box">
+                              <span className="quiz-slot-time-label">START</span>
+                              <span className="quiz-slot-time-value">{quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'}</span>
                             </div>
-                            <span className={statusBadge(isActive ? 'active' : 'upcoming')}>
-                              {isActive ? 'active' : 'upcoming'}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${isActive ? 'bg-emerald-500/15 text-emerald-300 border-emerald-700/40' : 'bg-indigo-500/15 text-indigo-300 border-indigo-700/40'}`}
-                            >
-                              Joined
-                            </span>
-                          </div>
-
-                          {/* Prize Chips (mirror Category) */}
-                          <div className="mt-2 flex items-center gap-2 text-xs">
-                            <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-400/10 text-amber-200 border border-amber-500/30 shadow-sm">
-                              🥇 {formatPrize(p1)}
-                            </span>
-                            <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500/20 to-sky-400/10 text-sky-200 border border-sky-500/30 shadow-sm">
-                              🥈 {formatPrize(p2)}
-                            </span>
-                            <span className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-violet-400/10 text-violet-200 border border-violet-500/30 shadow-sm">
-                              🥉 {formatPrize(p3)}
-                            </span>
-                          </div>
-
-                          {/* Date + time chips */}
-                          <div className="mt-2">
-                            <div className="text-[11px] text-slate-400">
-                              {quiz.start_time ? formatDateOnly(quiz.start_time) : '—'}
-                            </div>
-                            <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-300">
-                              <div className="bg-slate-800/50 border border-slate-700 rounded-md px-2 py-1">
-                                <span className="uppercase text-[9px] text-slate-400">Start</span>
-                                <div>{quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'}</div>
-                              </div>
-                              <div className="bg-slate-800/50 border border-slate-700 rounded-md px-2 py-1">
-                                <span className="uppercase text-[9px] text-slate-400">End</span>
-                                <div>{quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}</div>
-                              </div>
+                            <div className="quiz-slot-time-divider">→</div>
+                            <div className="quiz-slot-time-box">
+                              <span className="quiz-slot-time-label">END</span>
+                              <span className="quiz-slot-time-value">{quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}</span>
                             </div>
                           </div>
-
-                          {/* Countdown */}
                           {secs !== null && (
-                            <div className="mt-2 text-sm font-semibold text-indigo-300">
-                              {isActive ? 'Ends in' : 'Starts in'}{' '}
-                              {String(Math.floor(secs / 60)).padStart(2, '0')}:
-                              {String(secs % 60).padStart(2, '0')}
-                            </div>
-                          )}
-
-                          {/* Engagement summary: show combined joined number like Category */}
-                          <div className="mt-1 flex items-center gap-4 text-xs text-slate-400">
-                            <span className="inline-flex items-center">
-                              <Users className="w-3.5 h-3.5 mr-1" />
-                              {joined} joined
-                            </span>
-                          </div>
-
-                          {/* Progress bar when active */}
-                          {progressed !== null && (
-                            <div className="mt-2 w-full bg-slate-800/50 border border-slate-700/70 rounded-full h-1 overflow-hidden">
-                              <div
-                                className="h-1 bg-emerald-500/80"
-                                style={{ width: `${progressed}%` }}
-                              />
+                            <div className={`quiz-slot-timer ${isActive ? 'quiz-slot-timer-live' : ''}`}>
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{isActive ? 'Ends in' : 'Starts in'}</span>
+                              <span className="quiz-slot-timer-value">
+                                {String(Math.floor(secs / 60)).padStart(2, '0')}:{String(secs % 60).padStart(2, '0')}
+                              </span>
                             </div>
                           )}
                         </div>
-                      </div>
-                      {/* Bottom action: big JOIN/JOINED or PLAY button */}
-                      <div className="mt-3 flex">
+                        
+                        {/* Prize Section */}
+                        <div className="quiz-slot-prize-section">
+                          <div className="quiz-slot-prize-title">🏆 Prizes</div>
+                          <div className="quiz-slot-prize-row">
+                            <div className="quiz-slot-prize-item quiz-slot-prize-gold">
+                              <span className="quiz-slot-prize-rank">1st</span>
+                              <span className="quiz-slot-prize-value">{formatPrize(p1)}</span>
+                            </div>
+                            <div className="quiz-slot-prize-item quiz-slot-prize-silver">
+                              <span className="quiz-slot-prize-rank">2nd</span>
+                              <span className="quiz-slot-prize-value">{formatPrize(p2)}</span>
+                            </div>
+                            <div className="quiz-slot-prize-item quiz-slot-prize-bronze">
+                              <span className="quiz-slot-prize-rank">3rd</span>
+                              <span className="quiz-slot-prize-value">{formatPrize(p3)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Stats + Progress */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="quiz-slot-stat">
+                            <Users className="w-3 h-3" /> {joined} Joined
+                          </span>
+                          <span className="quiz-slot-stat quiz-slot-stat-joined">✓ You&apos;re In</span>
+                        </div>
+                        
+                        {progressed !== null && (
+                          <div className="w-full bg-slate-800/50 rounded-full h-1.5 mb-3 overflow-hidden">
+                            <div className="h-1.5 bg-emerald-500/80 rounded-full" style={{ width: `${progressed}%` }} />
+                          </div>
+                        )}
+                        
+                        {/* CTA Button */}
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(quizPath);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); navigate(quizPath); }}
                           onMouseEnter={() => prefetchRoute('/quiz')}
-                          onFocus={() => prefetchRoute('/quiz')}
-                          className="relative z-20 pointer-events-auto w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-extrabold border border-violet-500/40 text-white shadow-[0_8px_18px_rgba(139,92,246,0.4)] hover:shadow-[0_12px_24px_rgba(139,92,246,0.55)] hover:scale-[1.015] active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-300 bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#9333ea,#c026d3)] overflow-hidden"
+                          className={`quiz-slot-btn ${isActive ? 'quiz-slot-btn-live' : 'quiz-slot-btn-default'}`}
                         >
-                          <span className="inline-flex items-center justify-center gap-2">
-                            <Play className="w-5 h-5" /> PLAY
-                          </span>
+                          <Play className="w-4 h-4 mr-1" /> PLAY
                         </button>
                       </div>
                     </m.div>
@@ -907,83 +861,60 @@ const MyQuizzes = () => {
                   initial={{ opacity: 0, y: 16, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: index * 0.06, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
-                  whileTap={{ scale: 0.99 }}
                   onClick={() => navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`)}
-                  className="group relative overflow-hidden rounded-2xl p-[1px] cursor-pointer shadow-[0_14px_34px_-22px_rgba(99,102,241,0.55)] transition-shadow duration-300 bg-gradient-to-r from-indigo-600/40 via-fuchsia-600/30 to-emerald-600/30"
+                  className="quiz-slot-card cursor-pointer"
                 >
-                  <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/80 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <span className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700/70 bg-slate-900/60 text-slate-100">
-                          {isResultOut ? (
-                            <Trophy className="w-5 h-5 text-amber-200" strokeWidth={2.2} />
-                          ) : (
-                            <Clock className="w-5 h-5 text-indigo-200" strokeWidth={2.2} />
-                          )}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm sm:text-base font-semibold text-white break-words line-clamp-2">
-                              {quiz.title}
-                            </h3>
-                            {isResultOut ? (
-                              <span className="inline-flex items-center rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                Result out
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full border border-slate-700/60 bg-slate-800/30 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
-                                Processing
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-1 text-[11px] text-slate-400">Ended {endedAtLabel}</div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`);
-                        }}
-                        className="shrink-0 rounded-full border border-violet-500/40 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-white transition hover:scale-[1.03] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-fuchsia-300/60"
-                      >
-                        Result
-                      </button>
+                  <div className="quiz-slot-card-inner">
+                    {/* Top Row: Language & Ended Date */}
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="quiz-slot-lang">🌐 Hindi / English</span>
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {endedAtLabel}
+                      </span>
                     </div>
-
+                    
+                    {/* Title */}
+                    <h3 className="text-sm sm:text-base font-bold text-white mb-3 line-clamp-2">
+                      {quiz.title}
+                    </h3>
+                    
+                    {/* Result Stats */}
                     {isResultOut ? (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        <div className="rounded-xl border border-indigo-500/35 bg-gradient-to-br from-indigo-500/14 to-slate-950/30 px-3 py-2">
-                          <div className="min-w-0">
-                            <div className="text-[9px] uppercase tracking-wider text-slate-400">Rank</div>
-                            <div className="mt-0.5 text-sm sm:text-base font-extrabold text-white">
-                              #{userRank?.rank ?? '-'}
-                            </div>
+                      <div className="quiz-slot-prize-section mb-3">
+                        <div className="quiz-slot-prize-title">📊 Your Result</div>
+                        <div className="quiz-slot-prize-row">
+                          <div className="quiz-slot-prize-item quiz-slot-prize-gold">
+                            <span className="quiz-slot-prize-rank">Rank</span>
+                            <span className="quiz-slot-prize-value">#{userRank?.rank ?? '-'}</span>
                           </div>
-                        </div>
-                        <div className="rounded-xl border border-sky-500/35 bg-gradient-to-br from-sky-500/14 to-slate-950/30 px-3 py-2">
-                          <div className="min-w-0">
-                            <div className="text-[9px] uppercase tracking-wider text-slate-400">Score</div>
-                            <div className="mt-0.5 text-sm sm:text-base font-extrabold text-white">
-                              {userRank?.score ?? '-'}
-                            </div>
+                          <div className="quiz-slot-prize-item quiz-slot-prize-silver">
+                            <span className="quiz-slot-prize-rank">Score</span>
+                            <span className="quiz-slot-prize-value">{userRank?.score ?? '-'}</span>
                           </div>
-                        </div>
-                        <div className="rounded-xl border border-fuchsia-500/40 bg-gradient-to-br from-fuchsia-500/14 to-slate-950/30 px-3 py-2">
-                          <div className="min-w-0">
-                            <div className="text-[9px] uppercase tracking-wider text-slate-400">Prize</div>
-                            <div className="mt-0.5 text-sm sm:text-base font-extrabold text-white">
-                              {prizeDisplay}
-                            </div>
+                          <div className="quiz-slot-prize-item quiz-slot-prize-bronze">
+                            <span className="quiz-slot-prize-rank">Prize</span>
+                            <span className="quiz-slot-prize-value">{prizeDisplay}</span>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-3 rounded-xl border border-slate-800/70 bg-slate-900/65 px-3 py-2 text-[11px] sm:text-xs text-slate-300">
-                        Results are being processed. Please check again soon.
+                      <div className="text-center text-xs text-slate-400 mb-3 py-2">
+                        Results are being processed...
                       </div>
                     )}
+                    
+                    {/* CTA Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`);
+                      }}
+                      className="quiz-slot-btn quiz-slot-btn-default"
+                    >
+                      <Trophy className="w-4 h-4" /> VIEW RESULT
+                    </button>
                   </div>
                 </m.div>
               );

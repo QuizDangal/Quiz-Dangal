@@ -2,7 +2,7 @@ import React from 'react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { Button } from '@/components/ui/button';
 import { formatDateOnly, formatTimeOnly, getPrizeDisplay } from '@/lib/utils';
-import { Loader2, CheckCircle, Clock, Users, X } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Users, X, ChevronRight, Send } from 'lucide-react';
 import SEO from '@/components/SEO';
 
 /**
@@ -266,10 +266,16 @@ export const ActiveQuizView = ({
   participantStatus,
   formatTime,
   onAnswerSelect,
+  onNext,
   onSubmit,
 }) => {
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const currentAnswered = answers[currentQuestion?.id] !== undefined;
+  const answeredCount = Object.keys(answers).length;
+  const total = questions.length;
+  const canProceed = currentAnswered && quizState === 'active' && participantStatus !== 'completed';
 
   return (
     <div className="min-h-screen px-3 pt-16 pb-6">
@@ -283,30 +289,32 @@ export const ActiveQuizView = ({
         }
         robots="noindex, nofollow"
       />
-      <div className="max-w-md mx-auto space-y-3">
+      <div className="max-w-md mx-auto space-y-4">
         {/* Compact Header */}
-        <div className="p-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
-          <div className="rounded-xl bg-slate-900/95 p-3">
+        <div className="quiz-header-card">
+          <div className="quiz-header-glow" />
+          <div className="quiz-header-content">
             <div className="flex justify-between items-center gap-3">
               <div className="min-w-0 flex-1">
                 <h1 className="text-sm font-bold text-white truncate">{title}</h1>
-                <p className="text-[10px] text-slate-400">
-                  Q{currentQuestionIndex + 1} of {questions.length}
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Question {currentQuestionIndex + 1} of {questions.length}
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-lg font-bold text-rose-400 tabular-nums">
-                  {formatTime(timeLeft)}
+                <div className="quiz-timer">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{formatTime(timeLeft)}</span>
                 </div>
-                <div className="text-[9px] text-slate-500 uppercase">Time Left</div>
               </div>
             </div>
             {/* Progress Bar */}
-            <div className="mt-2 w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div className="mt-3 w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
               <m.div
-                className="h-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500"
-                style={{ width: `${progress}%` }}
-                transition={{ duration: 0.3 }}
+                className="h-2 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500"
+                initial={false}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
               />
             </div>
           </div>
@@ -316,17 +324,22 @@ export const ActiveQuizView = ({
         <AnimatePresence mode="wait">
           <m.div
             key={currentQuestion?.id || currentQuestionIndex}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="rounded-xl border border-slate-700/60 bg-slate-900/90 p-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="quiz-question-card"
           >
-            <h2 className="text-sm font-bold text-center text-white mb-4 leading-relaxed">
+            {/* Question Number Badge */}
+            <div className="quiz-question-badge">
+              Q{currentQuestionIndex + 1}
+            </div>
+            
+            <h2 className="text-base font-semibold text-center text-white mb-5 leading-relaxed px-2">
               {currentQuestion?.question_text}
             </h2>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(currentQuestion?.options || []).map((option, index) => {
                 const selected = answers[currentQuestion?.id] === option.id;
                 return (
@@ -337,42 +350,39 @@ export const ActiveQuizView = ({
                       submitting || quizState !== 'active' || participantStatus === 'completed'
                     }
                     whileTap={{ scale: 0.98 }}
-                    className={`w-full p-3 rounded-lg text-left text-sm font-medium transition-all border ${
-                      selected
-                        ? 'bg-emerald-600/90 text-white border-emerald-500 shadow-lg'
-                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-200 border-slate-700/60'
-                    }`}
+                    className={`quiz-option ${selected ? 'quiz-option-selected' : ''}`}
                   >
-                    <span
-                      className={`font-bold mr-2 ${selected ? 'text-white' : 'text-indigo-400'}`}
-                    >
-                      {String.fromCharCode(65 + index)}.
+                    <span className={`quiz-option-letter ${selected ? 'quiz-option-letter-selected' : ''}`}>
+                      {String.fromCharCode(65 + index)}
                     </span>
-                    {option.option_text}
+                    <span className="flex-1 text-left">{option.option_text}</span>
+                    {selected && (
+                      <m.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="quiz-option-check"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </m.div>
+                    )}
                   </m.button>
                 );
               })}
             </div>
 
-            {/* Submit Button (show on last question once user has answered at least 1) */}
-            {(() => {
-              const isLast = currentQuestionIndex === questions.length - 1;
-              const answeredCount = Object.keys(answers).length;
-              const total = questions.length;
-              if (!isLast) return null;
-              if (answeredCount === 0) return null;
-              if (quizState !== 'active' || participantStatus === 'completed') return null;
-              return (
-                <m.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-4"
-                >
+            {/* Next / Submit Button */}
+            {canProceed && (
+              <m.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="mt-5"
+              >
+                {isLastQuestion ? (
                   <Button
                     onClick={onSubmit}
                     disabled={submitting}
-                    className="w-full h-11 text-sm font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90"
+                    className="quiz-submit-btn"
                   >
                     {submitting ? (
                       <>
@@ -381,16 +391,29 @@ export const ActiveQuizView = ({
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
+                        <Send className="mr-2 h-4 w-4" />
                         Submit Quiz ({answeredCount}/{total})
                       </>
                     )}
                   </Button>
-                </m.div>
-              );
-            })()}
+                ) : (
+                  <Button
+                    onClick={onNext}
+                    className="quiz-next-btn"
+                  >
+                    <span>Next Question</span>
+                    <ChevronRight className="ml-1 h-5 w-5" />
+                  </Button>
+                )}
+              </m.div>
+            )}
           </m.div>
         </AnimatePresence>
+        
+        {/* Answer Progress Indicator */}
+        <div className="quiz-progress-indicator">
+          <span>{answeredCount} of {total} answered</span>
+        </div>
       </div>
     </div>
   );

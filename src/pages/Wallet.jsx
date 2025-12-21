@@ -132,8 +132,6 @@ const Wallet = () => {
         canonical="https://quizdangal.com/wallet/"
         robots="noindex, nofollow"
       />
-      {/* Soft gradient mesh backdrop */}
-      <div className="absolute inset-0 -z-10 opacity-70 mix-blend-screen [background-image:radial-gradient(circle_at_18%_28%,rgba(56,189,248,0.25),rgba(0,0,0,0)60%),radial-gradient(circle_at_82%_72%,rgba(192,132,252,0.22),rgba(0,0,0,0)65%),radial-gradient(circle_at_50%_50%,rgba(244,114,182,0.15),rgba(0,0,0,0)55%)]" />
       
       <m.div
         className="container mx-auto px-4 py-6 max-w-lg"

@@ -3,7 +3,6 @@
 // NOTE: Optimized for Supabase free tier (reduced polling = less API calls & bandwidth)
 
 export const STREAK_CLAIM_DELAY_MS = 1500; // Header daily streak claim delay
-export const NOTIFICATION_PROMPT_DELAY_MS = 10000; // NotificationPermissionPrompt delay
 export const QUIZ_ENGAGEMENT_POLL_INTERVAL_MS = 30000; // Quiz engagement refresh (was 15s, now 30s for free tier)
 export const QUIZ_IDLE_PREFETCH_DELAY_MS = 1500; // Idle route prefetch fallback delay
 export const SESSION_VALIDATION_INTERVAL_MS = 120000; // Auth session periodic validation (was 60s, now 2min)
