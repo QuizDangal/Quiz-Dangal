@@ -134,7 +134,7 @@ const Wallet = () => {
       />
       
       <m.div
-        className="px-4 py-4"
+        className="px-4 py-4 mx-auto w-full max-w-md sm:max-w-lg"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

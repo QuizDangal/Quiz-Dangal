@@ -94,9 +94,6 @@ const CategoryCard = ({ cat, index, onPlay }) => {
       
       {/* Content */}
       <div className="qdh-card-inner">
-        {/* Emoji floating */}
-        <span className="qdh-card-emoji">{cat.emoji}</span>
-        
         {/* Icon container */}
         <div className={`qdh-card-icon-box bg-gradient-to-br ${cat.gradient}`}>
           <Icon className="qdh-card-icon" strokeWidth={2.5} />
@@ -122,18 +119,16 @@ const CategoryCard = ({ cat, index, onPlay }) => {
   );
 };
 
-// Stats Badge - Premium Design
-const StatBadge = ({ icon: Icon, value, label, delay, gradient }) => (
-  <div className="qdh-stat" style={{ '--stat-delay': delay }}>
-    <div className="qdh-stat-glow" />
-    <div className={`qdh-stat-icon-wrap bg-gradient-to-br ${gradient}`}>
-      <Icon className="qdh-stat-icon-inner" strokeWidth={2.5} />
+// Stats Counter - Minimal Clean Design
+const StatCounter = ({ icon: Icon, value, label, gradient }) => (
+  <div className="qdh-counter">
+    <div className={`qdh-counter-icon bg-gradient-to-br ${gradient}`}>
+      <Icon className="w-4 h-4 text-white" strokeWidth={2.5} />
     </div>
-    <div className="qdh-stat-content">
-      <span className="qdh-stat-value">{value}</span>
-      <span className="qdh-stat-label">{label}</span>
+    <div className="qdh-counter-text">
+      <span className="qdh-counter-value">{value}</span>
+      <span className="qdh-counter-label">{label}</span>
     </div>
-    <div className="qdh-stat-shine" />
   </div>
 );
 
@@ -208,28 +203,27 @@ const Home = () => {
           ))}
         </section>
 
-        {/* Stats Row - Premium */}
-        <section className="qdh-stats">
-          <StatBadge 
+        {/* Stats Row - Minimal */}
+        <section className="qdh-counters">
+          <StatCounter 
             icon={Crown} 
             value="50K+" 
             label="Players" 
-            delay="0.6s" 
-            gradient="from-amber-400 via-yellow-500 to-orange-500"
+            gradient="from-amber-400 to-orange-500"
           />
-          <StatBadge 
+          <div className="qdh-counter-divider" />
+          <StatCounter 
             icon={Target} 
             value="1000+" 
             label="Quizzes" 
-            delay="0.7s" 
-            gradient="from-violet-500 via-purple-500 to-fuchsia-500"
+            gradient="from-violet-500 to-fuchsia-500"
           />
-          <StatBadge 
+          <div className="qdh-counter-divider" />
+          <StatCounter 
             icon={Flame} 
             value="Daily" 
             label="Rewards" 
-            delay="0.8s" 
-            gradient="from-pink-500 via-rose-500 to-red-500"
+            gradient="from-rose-500 to-pink-500"
           />
         </section>
 

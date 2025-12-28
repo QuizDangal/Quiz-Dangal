@@ -778,7 +778,7 @@ const MyQuizzes = () => {
   });
 
   return (
-    <div className="relative pt-16 pb-8 px-3 mx-auto max-w-md min-h-screen">
+    <div className="relative pt-16 pb-8 px-3 sm:px-4 mx-auto w-full max-w-md sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl min-h-screen">
       {/* Animated Background Orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <m.div 
@@ -849,7 +849,7 @@ const MyQuizzes = () => {
                 </div>
                 <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">{liveUpcoming.length} quizzes</span>
               </m.div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {liveUpcoming.map((quiz, index) => {
                   const st = quiz.start_time ? new Date(quiz.start_time) : null;
                   const et = quiz.end_time ? new Date(quiz.end_time) : null;
@@ -1000,7 +1000,7 @@ const MyQuizzes = () => {
             </div>
             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300">Recent {finished.length}</span>
           </m.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {finished.map((quiz, index) => {
               const now = new Date();
               const endTime = new Date(quiz.end_time);
@@ -1063,17 +1063,17 @@ const MyQuizzes = () => {
                         />
                         
                         {/* Stats Row */}
-                        <div className="relative flex items-stretch gap-1.5">
+                        <div className="relative flex items-stretch gap-1.5 min-w-0">
                           {/* Rank */}
                           <m.div 
-                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-400/30 relative overflow-hidden"
+                            className="flex-1 min-w-0 text-center py-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-400/30 relative overflow-hidden"
                             whileHover={{ scale: 1.03, y: -1 }}
                           >
                             <m.div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent" />
                             <div className="relative">
                               <div className="text-[8px] text-amber-300/70 font-semibold uppercase tracking-wide mb-0.5">Rank</div>
                               <m.div 
-                                className="text-base font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]"
+                                className="text-base font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)] w-full truncate"
                                 animate={{ scale: userRank?.rank <= 3 ? [1, 1.05, 1] : 1 }}
                                 transition={{ duration: 2, repeat: Infinity }}
                               >
@@ -1093,13 +1093,13 @@ const MyQuizzes = () => {
                           
                           {/* Score */}
                           <m.div 
-                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/10 border border-violet-400/30 relative overflow-hidden"
+                            className="flex-1 min-w-0 text-center py-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/10 border border-violet-400/30 relative overflow-hidden"
                             whileHover={{ scale: 1.03, y: -1 }}
                           >
                             <m.div className="absolute inset-0 bg-gradient-to-t from-violet-500/10 to-transparent" />
                             <div className="relative">
                               <div className="text-[8px] text-violet-300/70 font-semibold uppercase tracking-wide mb-0.5">Score</div>
-                              <div className="text-base font-black text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.4)]">
+                              <div className="text-base font-black text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.4)] w-full truncate">
                                 {userRank?.score ?? '-'}
                               </div>
                             </div>
@@ -1107,14 +1107,14 @@ const MyQuizzes = () => {
                           
                           {/* Prize */}
                           <m.div 
-                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/10 border border-emerald-400/30 relative overflow-hidden"
+                            className="flex-1 min-w-0 text-center py-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/10 border border-emerald-400/30 relative overflow-hidden"
                             whileHover={{ scale: 1.03, y: -1 }}
                           >
                             <m.div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent" />
                             <div className="relative">
                               <div className="text-[8px] text-emerald-300/70 font-semibold uppercase tracking-wide mb-0.5">Won</div>
                               <m.div 
-                                className="text-base font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]"
+                                className="text-base font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)] w-full truncate"
                                 animate={prizeDisplay !== '-' ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                               >

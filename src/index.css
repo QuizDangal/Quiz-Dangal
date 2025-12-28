@@ -369,6 +369,14 @@ select:focus {
   border-color: rgb(99, 102, 241);
 }
 
+/* Remove focus outline from buttons */
+button:focus,
+button:focus-visible,
+a:focus,
+a:focus-visible {
+  outline: none;
+}
+
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -2049,7 +2057,8 @@ select:focus {
   align-items: center;
   justify-content: center;
   padding: 3vh 16px 4vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Background Effects */
@@ -2154,7 +2163,7 @@ select:focus {
   z-index: 10;
   width: 100%;
   max-width: min(400px, 90vw);
-  max-height: 90vh;
+  max-height: none;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -2326,146 +2335,62 @@ select:focus {
   50% { transform: scale(1.2); opacity: 1; }
 }
 
-/* Stats Row - Premium Design */
-.qdh-stats {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
-  margin-bottom: 0;
-}
-
-.qdh-stat {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  overflow: hidden;
-  animation: statPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  animation-delay: var(--stat-delay);
-  transition: all 0.3s ease;
-  cursor: default;
-}
-
-.qdh-stat:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-4px) scale(1.05);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
-}
-
-.qdh-stat-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.qdh-stat:hover .qdh-stat-glow {
-  opacity: 1;
-}
-
-@keyframes statPop {
-  from { opacity: 0; transform: scale(0.5) translateY(20px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.qdh-stat-icon-wrap {
-  position: relative;
-  width: 36px;
-  height: 36px;
+/* Stats Counters - Minimal Clean Design */
+.qdh-counters {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  gap: 0;
+  margin-top: 20px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qdh-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.qdh-counter-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
-  animation: iconBounce 2s ease-in-out infinite;
-  animation-delay: var(--stat-delay);
 }
 
-@keyframes iconBounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
-.qdh-stat-icon-inner {
-  width: 18px;
-  height: 18px;
-  color: white;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  z-index: 2;
-}
-
-.qdh-stat-emoji {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  font-size: 12px;
-  animation: emojiPop 2s ease-in-out infinite;
-  animation-delay: calc(var(--stat-delay) + 0.5s);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes emojiPop {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  25% { transform: scale(1.2) rotate(-10deg); }
-  75% { transform: scale(1.2) rotate(10deg); }
-}
-
-.qdh-stat-content {
+.qdh-counter-text {
   display: flex;
   flex-direction: column;
+  line-height: 1.1;
 }
 
-.qdh-stat-value {
-  font-size: 15px;
+.qdh-counter-value {
+  font-size: 14px;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  line-height: 1.2;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  color: white;
+  letter-spacing: -0.02em;
 }
 
-.qdh-stat-label {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
+.qdh-counter-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   font-weight: 600;
 }
 
-.qdh-stat-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
-  pointer-events: none;
-}
-
-.qdh-stat:hover .qdh-stat-shine {
-  left: 150%;
+.qdh-counter-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Section Title */
@@ -2502,6 +2427,13 @@ select:focus {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   animation: cardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   animation-delay: calc(var(--card-index) * 100ms + 0.5s);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qdh-card:focus,
+.qdh-card:focus-visible {
+  outline: none;
 }
 
 @keyframes cardPop {
@@ -2813,28 +2745,6 @@ select:focus {
     font-size: 11px;
   }
   
-  .qdh-stats {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  
-  .qdh-stat {
-    padding: 6px 8px;
-  }
-  
-  .qdh-stat-value {
-    font-size: 12px;
-  }
-  
-  .qdh-stat-label {
-    font-size: 8px;
-  }
-  
-  .qdh-stat-icon {
-    width: 22px;
-    height: 22px;
-  }
-  
   .qdh-grid {
     gap: 8px;
   }
@@ -2997,137 +2907,133 @@ select:focus {
   .qdh-grid {
     gap: 18px;
   }
-  
-  .qdh-stat {
-    padding: 12px 18px;
-  }
-  
-  .qdh-stat-value {
-    font-size: 16px;
-  }
 }
 
 /* Desktop / Large screens */
 @media (min-width: 1024px) {
   .qdh-container {
-    padding: 2vh 32px 2vh;
+    /* Home is position:fixed; add safe space for fixed header + bottom nav on PC */
+    --qdh-top: 88px;
+    --qdh-bottom: 112px;
+
+    padding-top: var(--qdh-top);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: var(--qdh-bottom);
+    justify-content: flex-start;
   }
   
   .qdh-main {
-    max-width: min(420px, 35vw);
-    max-height: 94vh;
+    max-width: min(42vh, 380px, 50vw);
+    max-height: calc(100dvh - var(--qdh-top) - var(--qdh-bottom));
   }
   
   .qdh-title-text {
-    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-size: clamp(1.2rem, 2.5vh, 1.65rem);
   }
   
   .qdh-crown {
-    width: clamp(36px, 4vh, 48px);
-    height: clamp(36px, 4vh, 48px);
+    width: clamp(26px, 3.5vh, 38px);
+    height: clamp(26px, 3.5vh, 38px);
   }
   
   .qdh-crown-container {
-    width: clamp(52px, 6vh, 70px);
-    height: clamp(52px, 6vh, 70px);
-    margin-bottom: -15px;
+    width: clamp(40px, 5.5vh, 56px);
+    height: clamp(40px, 5.5vh, 56px);
+    margin-bottom: -12px;
   }
   
   .qdh-subtitle {
-    font-size: clamp(10px, 1.2vw, 12px);
+    font-size: clamp(9px, 1.4vh, 12px);
   }
   
   .qdh-grid {
-    gap: clamp(8px, 1vh, 12px);
+    gap: clamp(6px, 1vh, 10px);
   }
   
   .qdh-card {
-    border-radius: 16px;
-    aspect-ratio: 1.15;
+    border-radius: clamp(10px, 1.5vh, 16px);
+    aspect-ratio: 1;
   }
   
   .qdh-card-inner {
-    padding: clamp(10px, 1.5vh, 14px);
+    padding: clamp(6px, 1vh, 10px);
   }
   
   .qdh-card-icon-box {
-    width: clamp(32px, 4vh, 44px);
-    height: clamp(32px, 4vh, 44px);
-    border-radius: 10px;
-    margin-bottom: 6px;
+    width: clamp(30px, 4.2vh, 44px);
+    height: clamp(30px, 4.2vh, 44px);
+    border-radius: clamp(8px, 1vh, 12px);
+    margin-bottom: clamp(5px, 0.8vh, 8px);
   }
   
   .qdh-card-icon {
-    width: clamp(16px, 2vh, 22px);
-    height: clamp(16px, 2vh, 22px);
+    width: clamp(18px, 2.5vh, 26px);
+    height: clamp(18px, 2.5vh, 26px);
   }
   
   .qdh-card-label {
-    font-size: clamp(11px, 1.3vw, 14px);
-    margin-bottom: 4px;
+    font-size: clamp(11px, 1.5vh, 15px);
+    margin-bottom: clamp(4px, 0.5vh, 6px);
   }
   
   .qdh-card-play {
-    padding: 4px 10px;
-    font-size: clamp(8px, 0.9vw, 10px);
+    padding: clamp(4px, 0.6vh, 7px) clamp(10px, 1.3vh, 16px);
+    font-size: clamp(8px, 1.1vh, 11px);
   }
   
   .qdh-card-emoji {
-    font-size: clamp(14px, 1.8vh, 18px);
-    top: 6px;
-    right: 6px;
-  }
-  
-  .qdh-stat {
-    padding: clamp(6px, 1vh, 10px) clamp(8px, 1.2vw, 14px);
-  }
-  
-  .qdh-stat-value {
-    font-size: clamp(11px, 1.2vw, 14px);
-  }
-  
-  .qdh-stat-label {
-    font-size: clamp(8px, 0.8vw, 10px);
-  }
-  
-  .qdh-stat-icon-wrap {
-    width: clamp(24px, 3vh, 32px);
-    height: clamp(24px, 3vh, 32px);
+    font-size: clamp(12px, 1.6vh, 18px);
+    top: clamp(4px, 0.6vh, 7px);
+    right: clamp(4px, 0.6vh, 7px);
   }
   
   .qdh-hero {
-    margin-bottom: clamp(8px, 1.2vh, 14px);
+    margin-bottom: clamp(6px, 1vh, 12px);
   }
   
-  .qdh-stats {
-    margin-top: clamp(8px, 1.2vh, 14px);
-    gap: clamp(6px, 1vw, 10px);
+  .qdh-counters {
+    margin-top: clamp(6px, 1vh, 12px);
+    padding: clamp(6px, 0.8vh, 10px) clamp(10px, 1.2vh, 16px);
+  }
+  
+  .qdh-counter-icon {
+    width: clamp(22px, 3vh, 30px);
+    height: clamp(22px, 3vh, 30px);
+  }
+  
+  .qdh-counter-value {
+    font-size: clamp(12px, 1.6vh, 18px);
+  }
+  
+  .qdh-counter-label {
+    font-size: clamp(8px, 1vh, 11px);
   }
 }
 
 /* Large Desktop */
 @media (min-width: 1280px) {
   .qdh-main {
-    max-width: min(480px, 32vw);
+    max-width: min(46vh, 440px, 42vw);
   }
   
   .qdh-title-text {
-    font-size: clamp(2rem, 2.5vw, 2.8rem);
+    font-size: clamp(1.4rem, 2.8vh, 1.9rem);
   }
   
   .qdh-card {
-    border-radius: 18px;
+    border-radius: clamp(12px, 1.6vh, 18px);
   }
 }
 
 /* Extra Large Desktop */
 @media (min-width: 1536px) {
   .qdh-main {
-    max-width: min(520px, 28vw);
+    max-width: min(48vh, 480px, 38vw);
   }
   
   .qdh-title-text {
-    font-size: clamp(2.2rem, 2.2vw, 3rem);
+    font-size: clamp(1.5rem, 3vh, 2.1rem);
   }
 }
 
@@ -3135,7 +3041,7 @@ select:focus {
 @media (prefers-reduced-motion: reduce) {
   .qdh-main,
   .qdh-card,
-  .qdh-stat,
+  .qdh-counter,
   .qdh-glow,
   .qdh-star {
     animation: none !important;
@@ -3152,5 +3058,70 @@ select:focus {
   .qdh-card-border,
   .qdh-title-dangal {
     animation: none !important;
+  }
+}
+
+/* Desktop resized windows (short height): shrink UI instead of clipping */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .qdh-container {
+    --qdh-top: 76px;
+    --qdh-bottom: 104px;
+
+    padding-top: var(--qdh-top);
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: var(--qdh-bottom);
+  }
+
+  .qdh-main {
+    max-height: calc(100dvh - var(--qdh-top) - var(--qdh-bottom));
+  }
+
+  .qdh-hero {
+    margin-bottom: 10px;
+  }
+
+  .qdh-crown-container {
+    margin-top: 6px;
+    margin-bottom: -10px;
+    width: clamp(46px, 7vh, 64px);
+    height: clamp(46px, 7vh, 64px);
+  }
+
+  .qdh-crown {
+    width: clamp(28px, 4.5vh, 40px);
+    height: clamp(28px, 4.5vh, 40px);
+  }
+
+  .qdh-title-text {
+    font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+  }
+
+  .qdh-grid {
+    gap: 8px;
+  }
+
+  .qdh-card {
+    aspect-ratio: 1;
+  }
+
+  .qdh-card-inner {
+    padding: 10px;
+  }
+
+  .qdh-card-icon-box {
+    width: clamp(30px, 4.8vh, 40px);
+    height: clamp(30px, 4.8vh, 40px);
+    margin-bottom: 6px;
+  }
+
+  .qdh-card-label {
+    font-size: clamp(11px, 1.2vw, 13px);
+    margin-bottom: 4px;
+  }
+
+  .qdh-counters {
+    margin-top: 12px;
+    padding: 8px 14px;
   }
 }
