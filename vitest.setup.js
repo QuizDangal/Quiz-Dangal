@@ -1,2 +1,7 @@
-// Placeholder for future custom matchers or global mocks.
-// Keeping minimal to avoid any side effects.
+// Vitest setup file for global test configuration
+import { afterEach, vi } from 'vitest';
+
+// Clean up env stubs after each test
+afterEach(() => {
+  vi.unstubAllEnvs();
+});

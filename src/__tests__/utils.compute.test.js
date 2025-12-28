@@ -4,8 +4,8 @@ import { shouldAllowClientCompute, safeComputeResultsIfDue } from '@/lib/utils';
 describe('utils: client compute flags and RPC', () => {
   beforeEach(() => {
     // Reset flag before each
-    import.meta.env.VITE_ALLOW_CLIENT_COMPUTE = undefined;
-    import.meta.env.VITE_ENABLE_CLIENT_COMPUTE = '0';
+    vi.stubEnv('VITE_ALLOW_CLIENT_COMPUTE', undefined);
+    vi.stubEnv('VITE_ENABLE_CLIENT_COMPUTE', '0');
     sessionStorage.clear();
   });
 
@@ -13,13 +13,13 @@ describe('utils: client compute flags and RPC', () => {
     expect(shouldAllowClientCompute({ defaultValue: true })).toBe(true);
     expect(shouldAllowClientCompute({ defaultValue: false })).toBe(false);
 
-    import.meta.env.VITE_ALLOW_CLIENT_COMPUTE = 'yes';
+    vi.stubEnv('VITE_ALLOW_CLIENT_COMPUTE', 'yes');
     expect(shouldAllowClientCompute({ defaultValue: false })).toBe(true);
 
-    import.meta.env.VITE_ALLOW_CLIENT_COMPUTE = 'off';
+    vi.stubEnv('VITE_ALLOW_CLIENT_COMPUTE', 'off');
     expect(shouldAllowClientCompute({ defaultValue: true })).toBe(false);
 
-    import.meta.env.VITE_ALLOW_CLIENT_COMPUTE = 'unknown';
+    vi.stubEnv('VITE_ALLOW_CLIENT_COMPUTE', 'unknown');
     expect(shouldAllowClientCompute({ defaultValue: true })).toBe(true);
   });
 
@@ -31,7 +31,7 @@ describe('utils: client compute flags and RPC', () => {
   });
 
   it('safeComputeResultsIfDue calls RPC once when enabled and sets session flag', async () => {
-    import.meta.env.VITE_ENABLE_CLIENT_COMPUTE = '1';
+    vi.stubEnv('VITE_ENABLE_CLIENT_COMPUTE', '1');
     const rpc = vi.fn().mockResolvedValue({ error: null });
     const mockSb = { rpc };
 
@@ -49,7 +49,7 @@ describe('utils: client compute flags and RPC', () => {
   });
 
   it('safeComputeResultsIfDue suppresses 404-like errors and returns false', async () => {
-    import.meta.env.VITE_ENABLE_CLIENT_COMPUTE = 'true';
+    vi.stubEnv('VITE_ENABLE_CLIENT_COMPUTE', 'true');
     const rpc = vi
       .fn()
       .mockResolvedValue({ error: { message: 'function compute_results_if_due does not exist' } });
