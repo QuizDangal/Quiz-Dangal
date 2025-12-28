@@ -42,6 +42,40 @@
     var canSW = 'serviceWorker' in navigator && window.isSecureContext;
     var isAutomation = isLikelyAutomation();
     var shouldRegister = canSW && (!isLocal || forceDevSW) && !isAutomation;
+
+    // On local/dev, proactively unregister any existing SW and clear caches.
+    // This avoids stale UI when a SW was previously registered (e.g., via install button).
+    if (canSW && isLocal && !forceDevSW && !isAutomation) {
+      try {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          registrations.forEach(function (reg) {
+            try {
+              reg.unregister();
+            } catch (e) {
+              // ignore
+            }
+          });
+        });
+      } catch (e) {
+        // ignore
+      }
+      try {
+        if ('caches' in window && window.caches && typeof window.caches.keys === 'function') {
+          window.caches.keys().then(function (keys) {
+            keys.forEach(function (k) {
+              try {
+                window.caches.delete(k);
+              } catch (e) {
+                // ignore
+              }
+            });
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+      return;
+    }
     
     // If automation detected (Lighthouse/PSI), unregister any existing SW to prevent interference
     if (canSW && isAutomation) {
@@ -76,8 +110,22 @@
                   } catch (e) {
                     // ignore
                   }
-                  // Never force a reload here. Auto-reloads can interrupt Lighthouse/PSI runs
-                  // and can cause reload loops on some mobile browsers.
+                  // Ensure updated UI becomes visible quickly.
+                  // Guard with sessionStorage so it can only reload once per tab/session.
+                  try {
+                    if (!sessionStorage.getItem('qd_sw_reloaded')) {
+                      sessionStorage.setItem('qd_sw_reloaded', '1');
+                      setTimeout(function () {
+                        try {
+                          window.location.reload();
+                        } catch (e) {
+                          // ignore
+                        }
+                      }, 900);
+                    }
+                  } catch (e) {
+                    // ignore
+                  }
                 }
               });
             });
