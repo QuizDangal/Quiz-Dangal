@@ -53,16 +53,6 @@ export function rateLimit(key, { max = 5, windowMs = 8000 } = {}) {
   return { allowed: true, remaining: max - bucket.count };
 }
 
-/** Reset the rate limit bucket for a given key (primarily for tests). */
-export function resetRateLimit(key) {
-  actionBuckets.delete(key);
-}
-
-/** Clear all rate limit buckets (primarily for tests / diagnostics). */
-export function resetAllRateLimits() {
-  actionBuckets.clear();
-}
-
 /**
  * Debounce a function (micro util used where needed – avoids pulling an external lib).
  */

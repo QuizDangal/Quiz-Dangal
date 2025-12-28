@@ -4,12 +4,3 @@
 
 export const STREAK_CLAIM_DELAY_MS = 1500; // Header daily streak claim delay
 export const QUIZ_ENGAGEMENT_POLL_INTERVAL_MS = 30000; // Quiz engagement refresh (was 15s, now 30s for free tier)
-export const QUIZ_IDLE_PREFETCH_DELAY_MS = 1500; // Idle route prefetch fallback delay
-export const SESSION_VALIDATION_INTERVAL_MS = 120000; // Auth session periodic validation (was 60s, now 2min)
-
-// Grace period for auto redirect after quiz completion
-export const QUIZ_COMPLETION_REDIRECT_DELAY_MS = 3000;
-
-// Grace period to still show recently finished quizzes in listings (e.g., category pages)
-// Helps users discover fresh results even if they open a bit late.
-export const RECENT_COMPLETED_GRACE_MIN = 20;

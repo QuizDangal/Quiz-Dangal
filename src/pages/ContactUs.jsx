@@ -1,137 +1,174 @@
-import React from 'react';
-// Removed framer-motion for lighter public page
+import React, { useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
-import { Mail, Phone, Instagram, Facebook, Twitter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getBrandGradient } from '@/lib/brand';
+import { Mail, Phone, MapPin, Send, Instagram, Facebook, Twitter } from 'lucide-react';
+import { m, AnimatePresence } from '@/lib/motion-lite';
 
 const ContactUs = () => {
-  const contactMethods = [
-    {
-      icon: Mail,
-      title: 'Email Support',
-      description: 'For general inquiries, technical assistance, or gameplay questions.',
-      contact: 'support@quizdangal.com',
-      action: () => window.open('mailto:support@quizdangal.com'),
-    },
-    {
-      icon: Phone,
-      title: 'Phone Support',
-      description: 'For urgent matters or quick assistance.',
-      contact: '+91 9587803557',
-      action: () => window.open('tel:+919587803557'),
-    },
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSending(true);
+    
+    // Pre-fill email with all form data
+    const subject = encodeURIComponent(`Quiz Dangal - Message from ${formData.name}`);
+    const body = encodeURIComponent(
+`Hi Quiz Dangal Team,
+
+${formData.message}
+
+---
+Name: ${formData.name}
+Email: ${formData.email}
+Sent via Quiz Dangal Contact Form`
+    );
+    
+    // Open default email app with pre-filled content
+    window.location.href = `mailto:support@quizdangal.com?subject=${subject}&body=${body}`;
+    
+    setTimeout(() => {
+      setSending(false);
+      setFormData({ name: '', email: '', message: '' });
+    }, 1500);
+  };
+
+  const contactInfo = [
+    { icon: Phone, label: '+91 9587803557', href: 'tel:+919587803557', color: 'from-emerald-500 to-green-600', shadow: 'shadow-emerald-500/40' },
+    { icon: Mail, label: 'support@quizdangal.com', href: 'mailto:support@quizdangal.com', color: 'from-violet-500 to-purple-600', shadow: 'shadow-violet-500/40' },
+    { icon: MapPin, label: 'Jaipur, Rajasthan, India', href: null, color: 'from-orange-500 to-amber-600', shadow: 'shadow-orange-500/40' },
   ];
 
-  const socialMedia = [
-    {
-      icon: Instagram,
-      name: 'Instagram',
-      color: 'from-fuchsia-600 to-rose-500',
-      href: 'https://www.instagram.com/quizdangal?igsh=eGF1OGE4NGgzY2Ry',
-    },
-    {
-      icon: Facebook,
-      name: 'Facebook',
-      color: 'from-indigo-600 to-blue-600',
-      href: 'https://www.facebook.com/profile.php?id=61576614092243',
-    },
-    {
-      icon: Twitter,
-      name: 'Twitter (X)',
-      color: 'from-slate-600 to-black',
-      href: 'https://x.com/quizdangal?t=6XBXmd0n87YTF8JstqrKVQ&s=09',
-    },
+  const socialLinks = [
+    { icon: Instagram, href: 'https://www.instagram.com/quizdangal', gradient: 'from-pink-500 via-fuchsia-500 to-purple-600', shadow: 'shadow-pink-500/50' },
+    { icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61576614092243', gradient: 'from-blue-500 via-blue-600 to-indigo-700', shadow: 'shadow-blue-500/50' },
+    { icon: Twitter, href: 'https://x.com/quizdangal', gradient: 'from-sky-400 via-cyan-500 to-blue-600', shadow: 'shadow-cyan-500/50' },
   ];
 
   return (
-    <div className="min-h-screen text-slate-100">
-      <div className="container mx-auto px-4 py-6 space-y-8">
-        <SEO
-          title="Contact Us – Quiz Dangal"
-          description="Get in touch with the Quiz Dangal support team for help, partnerships, and media inquiries."
-          canonical="https://quizdangal.com/contact-us/"
-          alternateLocales={['hi_IN', 'en_US']}
-          keywords={[
-            'quiz dangal contact',
-            'quiz dangal support',
-            'quiz dangal phone',
-            'quiz dangal email',
-          ]}
-        />
+    <div className="fixed inset-0 overflow-hidden flex flex-col items-center justify-center">
+      <SEO
+        title="Contact Us – Quiz Dangal"
+        description="Get in touch with the Quiz Dangal support team for help, partnerships, and media inquiries."
+        canonical="https://quizdangal.com/contact-us/"
+        alternateLocales={['hi_IN', 'en_US']}
+        keywords={['quiz dangal contact', 'quiz dangal support', 'quiz dangal phone', 'quiz dangal email']}
+      />
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-4 pt-14">
-            Contact Us
-          </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            We value your feedback and are here to assist you. If you have any questions, concerns,
-            or suggestions, please don&apos;t hesitate to reach out.
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent text-center mb-6">
-            Get in Touch Directly
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {contactMethods.map((method, index) => (
-              <div
-                key={index}
-                className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 shadow-lg"
+      <div className="w-full px-4 max-w-md relative">
+        <AnimatePresence>
+          {mounted && (
+            <>
+              {/* Header */}
+              <m.h1 
+                className="text-center text-4xl font-black bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-4"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, type: 'spring' }}
               >
-                <div className="text-center space-y-4">
-                  <div
-                    className={`bg-gradient-to-r ${getBrandGradient(index)} p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center ring-4 ring-white/10`}
-                  >
-                    <method.icon className="w-8 h-8 text-white" />
-                  </div>
+                Contact Us
+              </m.h1>
 
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{method.title}</h3>
-                    <p className="text-slate-300 text-sm leading-relaxed mb-4">
-                      {method.description}
-                    </p>
-
-                    <div className="bg-slate-800/60 rounded-lg p-3 mb-4 border border-slate-700/60">
-                      <p className="text-slate-200 font-medium">{method.contact}</p>
-                    </div>
-
-                    <Button
-                      onClick={method.action}
-                      className={`w-full bg-gradient-to-r ${getBrandGradient(index)} hover:brightness-110 text-white font-semibold py-2 rounded-lg`}
+              {/* Contact Card */}
+              <m.div 
+                className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5"
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2, type: 'spring' }}
+              >
+                {/* Contact Info */}
+                <div className="space-y-3 mb-4">
+                  {contactInfo.map((item, i) => (
+                    <m.div 
+                      key={i} 
+                      className="flex items-center gap-3 group"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + i * 0.08 }}
                     >
-                      <method.icon className="w-4 h-4 mr-2" />
-                      Contact Now
-                    </Button>
-                  </div>
+                      <div 
+                        className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0`}
+                      >
+                        <item.icon className="w-5 h-5 text-white" />
+                      </div>
+                      {item.href ? (
+                        <a 
+                          href={item.href} 
+                          className="text-slate-200 hover:text-white transition-all text-sm font-medium group-hover:translate-x-2 duration-300"
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span className="text-slate-200 text-sm font-medium">{item.label}</span>
+                      )}
+                    </m.div>
+                  ))}
                 </div>
+
+                {/* Divider */}
+                <div className="h-px bg-slate-800 mb-4" />
+
+                {/* Contact Form */}
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Your Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-violet-500 transition-colors"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Your Email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-violet-500 transition-colors"
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Write your message..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    required
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-violet-500 transition-colors resize-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+                  >
+                    <Send className="w-4 h-4" />
+                    {sending ? 'Opening Email...' : 'Send Message'}
+                  </button>
+                </form>
+              </m.div>
+
+              {/* Social Links */}
+              <div className="mt-4 flex justify-center gap-5">
+                  {socialLinks.map((social, i) => (
+                    <a
+                      key={i}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-14 h-14 rounded-full bg-gradient-to-br ${social.gradient} flex items-center justify-center`}
+                    >
+                      <social.icon className="w-6 h-6 text-white" />
+                    </a>
+                  ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent text-center mb-6">
-            Connect with Us on Social Media
-          </h2>
-
-          <div className="flex justify-center items-center space-x-4 sm:space-x-6">
-            {socialMedia.map((platform, index) => (
-              <a
-                key={index}
-                href={platform.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`p-4 rounded-full cursor-pointer bg-gradient-to-r ${platform.color} hover:scale-110 transition-transform duration-300 ring-4 ring-white/10 shadow-lg`}
-                aria-label={`Visit our ${platform.name} page`}
-              >
-                <platform.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </a>
-            ))}
-          </div>
-        </div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

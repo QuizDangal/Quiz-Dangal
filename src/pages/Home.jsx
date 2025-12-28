@@ -1,15 +1,46 @@
-// 🎰 HEXAGON HUB - Futuristic Gaming Style
+// 🔥 QUIZ DANGAL - Ultimate Gaming Home
 import React, { useCallback, useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Brain, Trophy, Clapperboard, Zap } from 'lucide-react';
+import { 
+  MessageSquare, Brain, Trophy, Clapperboard, 
+  Crown, Target, Flame, ArrowRight, Star
+} from 'lucide-react';
 import { getSupabase } from '@/lib/customSupabaseClient';
 
 const CATEGORIES = [
-  { id: 'opinion', label: 'OPINION', icon: MessageSquare, color: '#FF6B2C' },
-  { id: 'gk', label: 'G.K', icon: Brain, color: '#A855F7' },
-  { id: 'sports', label: 'SPORTS', icon: Trophy, color: '#22D3EE' },
-  { id: 'movies', label: 'MOVIES', icon: Clapperboard, color: '#EC4899' },
+  { 
+    id: 'opinion', 
+    label: 'Opinion',
+    emoji: '💭',
+    icon: MessageSquare, 
+    gradient: 'from-amber-500 via-orange-500 to-red-500',
+    shadowColor: 'rgba(249, 115, 22, 0.5)',
+  },
+  { 
+    id: 'gk', 
+    label: 'GK',
+    emoji: '🧠',
+    icon: Brain, 
+    gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
+    shadowColor: 'rgba(168, 85, 247, 0.5)',
+  },
+  { 
+    id: 'sports', 
+    label: 'Sports',
+    emoji: '🏆',
+    icon: Trophy, 
+    gradient: 'from-emerald-400 via-cyan-500 to-blue-500',
+    shadowColor: 'rgba(6, 182, 212, 0.5)',
+  },
+  { 
+    id: 'movies', 
+    label: 'Movies',
+    emoji: '🎬',
+    icon: Clapperboard, 
+    gradient: 'from-pink-500 via-rose-500 to-red-500',
+    shadowColor: 'rgba(236, 72, 153, 0.5)',
+  },
 ];
 
 const HOME_FAQ_ENTRIES = [
@@ -35,48 +66,84 @@ const HOME_JSON_LD = [
   HOME_FAQ_SCHEMA,
 ];
 
-// Hexagon Button Component
-const HexButton = ({ cat, index, onPlay }) => {
+// Category Card with 3D effect
+const CategoryCard = ({ cat, index, onPlay }) => {
   const Icon = cat.icon;
-  const row = Math.floor(index / 2);
-  const col = index % 2;
   
   return (
     <button
       onClick={() => onPlay(cat.id)}
-      className="hex-btn"
-      style={{ 
-        '--hex-color': cat.color,
-        '--hex-row': row,
-        '--hex-col': col,
-        '--hex-index': index,
-      }}
+      className="qdh-card group"
+      style={{ '--card-index': index, '--shadow-color': cat.shadowColor }}
       aria-label={`Play ${cat.label}`}
     >
-      <div className="hex-btn-bg" />
-      <div className="hex-btn-border" />
-      <div className="hex-btn-shine" />
-      <div className="hex-btn-content">
-        <div className="hex-btn-icon-ring">
-          <Icon className="hex-btn-icon" strokeWidth={2.5} />
+      {/* Animated border */}
+      <div className="qdh-card-border" />
+      
+      {/* Glass background */}
+      <div className="qdh-card-glass" />
+      
+      {/* Gradient overlay */}
+      <div className={`qdh-card-gradient bg-gradient-to-br ${cat.gradient}`} />
+      
+      {/* Animated rings */}
+      <div className="qdh-card-rings">
+        <div className="qdh-ring qdh-ring-1" />
+        <div className="qdh-ring qdh-ring-2" />
+      </div>
+      
+      {/* Content */}
+      <div className="qdh-card-inner">
+        {/* Emoji floating */}
+        <span className="qdh-card-emoji">{cat.emoji}</span>
+        
+        {/* Icon container */}
+        <div className={`qdh-card-icon-box bg-gradient-to-br ${cat.gradient}`}>
+          <Icon className="qdh-card-icon" strokeWidth={2.5} />
+          <div className="qdh-icon-pulse" />
         </div>
-        <span className="hex-btn-label">{cat.label}</span>
-        <div className="hex-btn-play">
-          <Zap className="w-3 h-3" fill="currentColor" />
+        
+        {/* Label */}
+        <h3 className="qdh-card-label">{cat.label}</h3>
+        
+        {/* Play indicator */}
+        <div className="qdh-card-play">
           <span>PLAY</span>
+          <ArrowRight className="w-4 h-4" />
         </div>
       </div>
-      <div className="hex-btn-glow" />
+      
+      {/* Shine effect */}
+      <div className="qdh-card-shine" />
+      
+      {/* Corner glow */}
+      <div className="qdh-card-corner-glow" />
     </button>
   );
 };
+
+// Stats Badge - Premium Design
+const StatBadge = ({ icon: Icon, value, label, delay, gradient }) => (
+  <div className="qdh-stat" style={{ '--stat-delay': delay }}>
+    <div className="qdh-stat-glow" />
+    <div className={`qdh-stat-icon-wrap bg-gradient-to-br ${gradient}`}>
+      <Icon className="qdh-stat-icon-inner" strokeWidth={2.5} />
+    </div>
+    <div className="qdh-stat-content">
+      <span className="qdh-stat-value">{value}</span>
+      <span className="qdh-stat-label">{label}</span>
+    </div>
+    <div className="qdh-stat-shine" />
+  </div>
+);
 
 const Home = () => {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handlePlay = useCallback(async (id) => {
@@ -85,7 +152,7 @@ const Home = () => {
   }, [navigate]);
 
   return (
-    <div className="hex-home">
+    <div className="qdh-container">
       <SEO
         title="Quiz Dangal – Play Quiz & Win Rewards | Opinion, GK, Sports, Movies"
         description="Quiz Dangal is India's play-and-win quiz arena. Take opinion and GK quizzes daily, grow streaks, invite friends, and redeem coins for rewards."
@@ -95,35 +162,84 @@ const Home = () => {
         jsonLd={HOME_JSON_LD}
       />
 
-      {/* Cyberpunk Background */}
-      <div className="hex-bg" aria-hidden="true">
-        <div className="hex-bg-base" />
-        <div className="hex-bg-scan" />
-        <div className="hex-bg-grid" />
-        <div className="hex-bg-vignette" />
+      {/* Animated background elements */}
+      <div className="qdh-bg-effects" aria-hidden="true">
+        <div className="qdh-glow qdh-glow-1" />
+        <div className="qdh-glow qdh-glow-2" />
+        <div className="qdh-glow qdh-glow-3" />
+        <div className="qdh-stars">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="qdh-star" style={{ '--star-i': i }} />
+          ))}
+        </div>
       </div>
 
       {/* Main Content */}
-      <main className={`hex-main ${mounted ? 'hex-main-visible' : ''}`}>
+      <main className={`qdh-main ${mounted ? 'qdh-visible' : ''}`}>
+        
+        {/* Hero Section */}
+        <section className="qdh-hero">
+          {/* Floating Crown */}
+          <div className="qdh-crown-container">
+            <div className="qdh-crown-glow" />
+            <Crown className="qdh-crown" />
+            <div className="qdh-crown-sparkle qdh-sparkle-1" />
+            <div className="qdh-crown-sparkle qdh-sparkle-2" />
+            <div className="qdh-crown-sparkle qdh-sparkle-3" />
+          </div>
+          
+          {/* Main title - Single Line */}
+          <h1 className="qdh-title">
+            <span className="qdh-title-text">Quiz Dangal</span>
+          </h1>
+          
+          {/* Animated subtitle */}
+          <div className="qdh-subtitle">
+            <Star className="qdh-subtitle-star" />
+            <span>India&apos;s #1 Quiz Arena</span>
+            <Star className="qdh-subtitle-star" />
+          </div>
+        </section>
 
-        {/* Title */}
-        <h1 className="hex-title">
-          SELECT <span className="hex-title-glow">ARENA</span>
-        </h1>
-
-        {/* Hexagon Grid */}
-        <div className="hex-grid">
+        {/* Category Grid */}
+        <section className="qdh-grid">
           {CATEGORIES.map((cat, i) => (
-            <HexButton key={cat.id} cat={cat} index={i} onPlay={handlePlay} />
+            <CategoryCard key={cat.id} cat={cat} index={i} onPlay={handlePlay} />
           ))}
+        </section>
+
+        {/* Stats Row - Premium */}
+        <section className="qdh-stats">
+          <StatBadge 
+            icon={Crown} 
+            value="50K+" 
+            label="Players" 
+            delay="0.6s" 
+            gradient="from-amber-400 via-yellow-500 to-orange-500"
+          />
+          <StatBadge 
+            icon={Target} 
+            value="1000+" 
+            label="Quizzes" 
+            delay="0.7s" 
+            gradient="from-violet-500 via-purple-500 to-fuchsia-500"
+          />
+          <StatBadge 
+            icon={Flame} 
+            value="Daily" 
+            label="Rewards" 
+            delay="0.8s" 
+            gradient="from-pink-500 via-rose-500 to-red-500"
+          />
+        </section>
+
+        {/* Bottom animated line */}
+        <div className="qdh-bottom-decor">
+          <div className="qdh-decor-line" />
+          <div className="qdh-decor-dot" />
+          <div className="qdh-decor-line" />
         </div>
 
-        {/* Footer */}
-        <footer className="hex-footer">
-          <div className="hex-footer-line" />
-          <p className="hex-footer-text">TAP TO ENTER ARENA</p>
-          <div className="hex-footer-line" />
-        </footer>
       </main>
 
       {/* Hidden SEO Content */}

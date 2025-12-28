@@ -154,10 +154,3 @@ export async function smartJoinQuiz({ supabase, quiz, user }) {
     return { status: 'error', error: e };
   }
 }
-
-export function cancelScheduledSmartJoin(quizId) {
-  if (scheduledMap.has(quizId)) {
-    clearTimeout(scheduledMap.get(quizId));
-    scheduledMap.delete(quizId);
-  }
-}

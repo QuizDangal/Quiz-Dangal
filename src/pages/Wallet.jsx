@@ -125,7 +125,7 @@ const Wallet = () => {
   };
 
   return (
-    <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
+    <div className="relative pt-14 pb-4">
       <SEO
         title="Wallet – Quiz Dangal"
         description="View your Quiz Dangal wallet balance, recent transactions, and referral earnings."
@@ -134,7 +134,7 @@ const Wallet = () => {
       />
       
       <m.div
-        className="container mx-auto px-4 py-6 max-w-lg"
+        className="px-4 py-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

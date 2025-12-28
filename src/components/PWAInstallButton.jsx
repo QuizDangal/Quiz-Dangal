@@ -188,10 +188,27 @@ const PWAInstallButton = () => {
       // Force SW registration on user click (won't affect Lighthouse/PSI runs).
       try {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.isSecureContext) {
-          await navigator.serviceWorker.register('/sw.js', {
-            scope: '/',
-            updateViaCache: 'none',
-          });
+          let isLocal = false;
+          let forceDevSW = false;
+          try {
+            const h = window.location.hostname;
+            isLocal = /(^localhost$)|(^127\.)|(^0\.0\.0\.0$)|(^192\.168\.)|(^10\.)|(^172\.(1[6-9]|2[0-9]|3[0-1])\.)|(\.local$)/.test(h);
+          } catch {
+            isLocal = false;
+          }
+          try {
+            forceDevSW = localStorage.getItem('qd_sw_dev') === '1';
+          } catch {
+            forceDevSW = false;
+          }
+
+          // Avoid registering SW on localhost by default (prevents stale cached UI during dev).
+          if (!isLocal || forceDevSW) {
+            await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              updateViaCache: 'none',
+            });
+          }
         }
       } catch {
         // ignore
@@ -225,33 +242,24 @@ const PWAInstallButton = () => {
   return (
     <button
       onClick={handleClick}
-      className="w-14 h-14 rounded-full btn-fire transition-all duration-300 transform hover:scale-105 flex items-center justify-center group relative overflow-hidden shadow-lg"
-      style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 9999 }}
+      className="p-2 transition-all duration-300 transform hover:scale-125 flex items-center justify-center group relative"
+      style={{
+        position: 'fixed',
+        bottom: 'calc(var(--qd-footer-h, 56px) + env(safe-area-inset-bottom) + 4px)',
+        right: '14px',
+        zIndex: 9999,
+      }}
       aria-label="Install App"
       title="Install App"
     >
-      <svg
-        className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-6 opacity-70"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path
-          d="M12 2c1.5 2 2 3.5 2 5 0 1.5-.5 3-2 4-1.5-1-2-2.5-2-4 0-1.5.5-3 2-5Z"
-          fill="url(#flameGrad)"
-        />
-        <defs>
-          <linearGradient id="flameGrad" x1="12" y1="2" x2="12" y2="11" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#fde047" />
-            <stop offset="1" stopColor="#f97316" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <div className="absolute inset-0" />
-      <Download className="w-5 h-5 relative z-10 drop-shadow text-white" />
-      <span className="hidden group-hover:block absolute right-16 bg-gray-900/90 backdrop-blur text-white px-2 py-1 rounded text-xs whitespace-nowrap border border-white/10 shadow">
+      <Download 
+        className="w-8 h-8 text-amber-400 animate-bounce" 
+        style={{ 
+          filter: 'drop-shadow(0 0 10px rgba(251, 191, 36, 0.9)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.5))',
+          animationDuration: '1.5s'
+        }} 
+      />
+      <span className="hidden group-hover:block absolute right-12 bg-gray-900/90 backdrop-blur text-white px-2 py-1 rounded text-xs whitespace-nowrap border border-white/10 shadow">
         Install App
       </span>
     </button>

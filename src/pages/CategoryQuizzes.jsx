@@ -584,7 +584,7 @@ const CategoryQuizzes = () => {
       : `https://quizdangal.com/category/${slug}/`;
 
   return (
-    <div className="px-3 sm:px-4 pt-16 sm:pt-20 pb-6">
+    <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
       <SEO
         title={`${meta.title} – Quiz Dangal`}
         description={`Active and upcoming quizzes in ${meta.title}.`}

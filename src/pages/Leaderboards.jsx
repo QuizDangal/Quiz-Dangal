@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SEO from '@/components/SEO';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, ChevronDown, Zap, Trophy, Medal, Crown, Award } from 'lucide-react';
+import { Loader2, ChevronDown, Trophy, Crown } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -136,7 +136,33 @@ export default function Leaderboards() {
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
 
   return (
-    <div className="relative pt-14 min-h-screen">
+    <div className="relative pt-12 sm:pt-16 min-h-screen">
+      {/* Keep global site background (no extra page blobs) */}
+
+      {/* Floating Particles */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <m.div 
+          className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-purple-400/30"
+          animate={{ y: [0, -30, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <m.div 
+          className="absolute top-40 right-[15%] w-1.5 h-1.5 rounded-full bg-pink-400/30"
+          animate={{ y: [0, -25, 0], opacity: [0.2, 0.6, 0.2] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+        />
+        <m.div 
+          className="absolute top-60 left-[20%] w-1 h-1 rounded-full bg-amber-400/40"
+          animate={{ y: [0, -20, 0], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        />
+        <m.div 
+          className="absolute top-32 right-[25%] w-1.5 h-1.5 rounded-full bg-cyan-400/30"
+          animate={{ y: [0, -35, 0], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+        />
+      </div>
+
       <SEO
         title="Leaderboards – Quiz Dangal | Top Quiz Players"
         description="See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks."
@@ -150,157 +176,259 @@ export default function Leaderboards() {
         ]}
       />
       
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 py-4 space-y-2">
         
-        {/* Modern Header */}
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2.5">
+        {/* Animated Header */}
+        <m.div 
+          className="text-center mb-2"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <m.div 
+            className="inline-flex items-center gap-3 mb-3"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+          >
             <m.div
-              className="relative"
-              animate={{ rotate: [-2, 2, -2], y: [0, -1.5, 0] }}
-              transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
+              animate={{ rotate: [0, 10, -10, 0], y: [0, -4, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <Trophy className="w-7 h-7 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+              <Trophy className="w-9 h-9 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" />
             </m.div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-indigo-100 to-violet-200 bg-clip-text text-transparent tracking-tight">
-              Leaderboards
-            </h1>
-          </div>
-          <p className="text-slate-400 text-xs font-medium tracking-wide ml-0.5">Top players ranked by performance</p>
+            <m.h1 
+              className="text-4xl sm:text-5xl font-black tracking-tight relative"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <span className="bg-gradient-to-r from-amber-200 via-yellow-400 to-orange-400 bg-clip-text text-transparent drop-shadow-lg">
+                Leaderboard
+              </span>
+              {/* Shimmer effect */}
+              <m.span 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent bg-clip-text"
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 2 }}
+              />
+            </m.h1>
+          </m.div>
+        </m.div>
+
+        {/* Period Tabs - Underline Slider Style */}
+        <div className="flex justify-center gap-6 sm:gap-8">
+          {periods.map((p, i) => (
+            <m.button
+              key={p.key}
+              onClick={() => onTabClick(p.key)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ delay: i * 0.05 }}
+              className="relative py-2"
+            >
+              <span className={`text-sm font-semibold transition-all duration-300 ${
+                period === p.key 
+                  ? 'text-white' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}>{p.label}</span>
+            </m.button>
+          ))}
         </div>
 
-        {/* Period Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="inline-flex p-1 rounded-full bg-slate-800/60 backdrop-blur-sm border border-slate-700/50">
-            {periods.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => onTabClick(p.key)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                  period === p.key 
-                    ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/25' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Podium Section */}
+        {/* Top 3 Champions */}
         <AnimatePresence>
           {!loading && !error && rows.length >= 1 && (
             <m.div 
               layout 
-              className="grid grid-cols-3 gap-2 sm:gap-3 items-end"
+              className="relative py-2"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              {[2, 1, 3].map((pos) => {
-                const r = rows[pos - 1];
-                if (!r) return <div key={`podium-empty-${pos}`} className="h-32"></div>;
-                
-                const podiumConfig = {
-                  1: {
-                    height: 'h-44',
-                    icon: Crown,
-                    iconColor: 'text-amber-400',
-                    gradient: 'from-amber-500/20 via-yellow-500/10 to-amber-600/20',
-                    border: 'border-amber-500/30',
-                    badge: 'bg-gradient-to-br from-amber-400 to-yellow-500',
-                    glow: 'shadow-[0_0_20px_rgba(251,191,36,0.3)]',
-                    ring: 'ring-amber-400/40',
-                  },
-                  2: {
-                    height: 'h-36',
-                    icon: Medal,
-                    iconColor: 'text-slate-300',
-                    gradient: 'from-slate-400/15 via-slate-300/10 to-slate-500/15',
-                    border: 'border-slate-400/25',
-                    badge: 'bg-gradient-to-br from-slate-300 to-slate-400',
-                    glow: 'shadow-[0_0_15px_rgba(148,163,184,0.2)]',
-                    ring: 'ring-slate-400/30',
-                  },
-                  3: {
-                    height: 'h-32',
-                    icon: Award,
-                    iconColor: 'text-orange-400',
-                    gradient: 'from-orange-500/15 via-amber-500/10 to-orange-600/15',
-                    border: 'border-orange-500/25',
-                    badge: 'bg-gradient-to-br from-orange-400 to-amber-500',
-                    glow: 'shadow-[0_0_15px_rgba(251,146,60,0.25)]',
-                    ring: 'ring-orange-400/30',
-                  },
-                };
-                
-                const config = podiumConfig[pos];
-                
-                return (
+              {/* Animated Background Glow */}
+              <div className="absolute inset-0 flex justify-center">
+                <m.div 
+                  className="w-40 h-40 bg-amber-500/20 rounded-full blur-[80px]"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+              </div>
+              
+              <div className="relative flex items-end justify-center gap-1">
+                {/* 2nd Place */}
+                {rows[1] && (
                   <m.div
-                    key={pos}
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: pos === 1 ? 0.1 : pos === 2 ? 0.2 : 0.3 }}
-                    className={`relative flex flex-col items-center justify-end ${config.height} rounded-2xl overflow-hidden border ${config.border} bg-gradient-to-b ${config.gradient} backdrop-blur-md ${config.glow}`}
+                    initial={{ opacity: 0, x: -40, scale: 0.7 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ delay: 0.25, type: 'spring', stiffness: 100 }}
+                    className="flex flex-col items-center w-24 sm:w-28"
                   >
-                    {/* Subtle glass overlay */}
-                    <div className="absolute inset-0 bg-slate-900/40" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/5" />
-                    
-                    <div className="relative z-10 w-full p-3 flex flex-col items-center gap-1.5">
-                      {/* Premium Shield Badge */}
-                      <div className="relative">
-                        {/* Outer glow pulse */}
-                        <div className={`absolute -inset-3 rounded-full ${pos === 1 ? 'bg-amber-400' : pos === 2 ? 'bg-slate-300' : 'bg-orange-400'} opacity-20 blur-lg animate-pulse`} />
-                        
-                        {/* Shield shape container */}
-                        <div className="relative w-14 h-16 sm:w-16 sm:h-[4.5rem]">
-                          {/* Shield background */}
-                          <div 
-                            className={`absolute inset-0 ${pos === 1 ? 'bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-600' : pos === 2 ? 'bg-gradient-to-b from-slate-200 via-slate-300 to-slate-500' : 'bg-gradient-to-b from-orange-300 via-amber-400 to-orange-600'} shadow-xl`}
-                            style={{ clipPath: 'polygon(50% 0%, 100% 0%, 100% 65%, 50% 100%, 0% 65%, 0% 0%)' }}
-                          >
-                            {/* Inner shine */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent" style={{ clipPath: 'polygon(50% 0%, 100% 0%, 100% 65%, 50% 100%, 0% 65%, 0% 0%)' }} />
-                          </div>
-                          
-                          {/* Inner shield face */}
-                          <div 
-                            className={`absolute inset-[3px] ${pos === 1 ? 'bg-gradient-to-b from-amber-500 via-yellow-500 to-amber-700' : pos === 2 ? 'bg-gradient-to-b from-slate-300 via-gray-400 to-slate-600' : 'bg-gradient-to-b from-amber-500 via-orange-500 to-orange-700'}`}
-                            style={{ clipPath: 'polygon(50% 0%, 100% 0%, 100% 65%, 50% 100%, 0% 65%, 0% 0%)' }}
-                          >
-                            {/* Decorative stars */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                              {/* Top star */}
-                              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${pos === 1 ? 'text-yellow-200' : pos === 2 ? 'text-white/80' : 'text-orange-200'} drop-shadow-sm`} viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                              </svg>
-                              {/* Position number */}
-                              <span className={`text-lg sm:text-xl font-black ${pos === 1 ? 'text-amber-900' : pos === 2 ? 'text-slate-700' : 'text-orange-900'} drop-shadow-sm`}>
-                                {pos}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {/* Top decorative banner */}
-                          <div className={`absolute -top-1 left-1/2 -translate-x-1/2 w-10 h-2.5 ${pos === 1 ? 'bg-gradient-to-r from-red-500 via-red-400 to-red-500' : pos === 2 ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500' : 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500'} rounded-t-sm shadow-md`} />
+                    {/* Profile Badge */}
+                    <m.div className="relative" whileHover={{ scale: 1.05 }}>
+                      <m.div
+                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-slate-200 via-slate-400 to-slate-500 p-[2px]"
+                        animate={{
+                          boxShadow: [
+                            '0 0 16px rgba(148,163,184,0.25)',
+                            '0 0 26px rgba(148,163,184,0.45)',
+                            '0 0 16px rgba(148,163,184,0.25)',
+                          ],
+                        }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <div className="relative w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),transparent_60%)]" />
+                          <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_center,rgba(148,163,184,0.3),transparent_70%)]" />
+                          <m.div
+                            className="absolute inset-0 opacity-40 bg-[conic-gradient(from_0deg,transparent,rgba(148,163,184,0.5),transparent)]"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                          />
+                          <m.span 
+                            className="relative text-2xl sm:text-3xl font-black bg-gradient-to-b from-white via-slate-200 to-slate-400 bg-clip-text text-transparent drop-shadow-lg"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                          >2</m.span>
                         </div>
+                      </m.div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-slate-200 to-slate-500 flex items-center justify-center text-xs font-black text-slate-900 shadow-lg border-2 border-slate-900">
+                        2
                       </div>
-                      <span className="text-[10px] sm:text-xs font-semibold text-white/90 max-w-full truncate px-1 mt-1">
-                        {r.username ? `@${r.username}` : r.full_name || 'Anonymous'}
-                      </span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm sm:text-base font-bold bg-gradient-to-r from-white via-indigo-100 to-violet-200 bg-clip-text text-transparent">
-                          {(r.leaderboard_score ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-medium uppercase">pts</span>
-                      </div>
+                    </m.div>
+                    {/* Name */}
+                    <span className="mt-2 text-[10px] sm:text-xs font-semibold text-white/80 max-w-full truncate text-center px-1">
+                      {rows[1].username ? `@${rows[1].username}` : rows[1].full_name || 'Anonymous'}
+                    </span>
+                    {/* Score */}
+                    <span className="text-sm font-bold text-slate-300">{(rows[1].leaderboard_score ?? 0).toFixed(0)}</span>
+                    {/* Podium */}
+                    <div className="mt-2 w-full h-14 sm:h-16 rounded-t-lg bg-gradient-to-b from-slate-500 via-slate-600 to-slate-700 flex items-center justify-center border-t border-slate-400/40">
+                      <span className="text-xl font-black text-white/20">2</span>
                     </div>
                   </m.div>
-                );
-              })}
+                )}
+                
+                {/* 1st Place - Champion */}
+                {rows[0] && (
+                  <m.div
+                    initial={{ opacity: 0, y: -40, scale: 0.7 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 0.15, type: 'spring', stiffness: 100 }}
+                    className="flex flex-col items-center w-28 sm:w-32 -mt-6"
+                  >
+                    {/* Crown */}
+                    <m.div
+                      animate={{ y: [0, -6, 0], rotate: [-5, 5, -5] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      className="mb-1"
+                    >
+                      <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400 drop-shadow-[0_0_16px_rgba(251,191,36,0.8)]" />
+                    </m.div>
+                    {/* Profile Badge */}
+                    <m.div className="relative" whileHover={{ scale: 1.05 }}>
+                      <m.div
+                        className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500 p-[3px]"
+                        animate={{
+                          boxShadow: [
+                            '0 0 18px rgba(251,191,36,0.35)',
+                            '0 0 30px rgba(251,191,36,0.65)',
+                            '0 0 18px rgba(251,191,36,0.35)',
+                          ],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <div className="relative w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                          <div className="absolute inset-0 opacity-45 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_60%)]" />
+                          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.35),transparent_70%)]" />
+                          <m.div
+                            className="absolute inset-0 opacity-50 bg-[conic-gradient(from_0deg,transparent,rgba(251,191,36,0.6),transparent)]"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                          />
+                          <m.span 
+                            className="relative text-3xl sm:text-4xl font-black bg-gradient-to-b from-amber-200 via-yellow-400 to-orange-500 bg-clip-text text-transparent drop-shadow-lg"
+                            animate={{ scale: [1, 1.08, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                          >1</m.span>
+                        </div>
+                      </m.div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-sm font-black text-amber-950 shadow-lg border-2 border-slate-900">
+                        1
+                      </div>
+                    </m.div>
+                    {/* Name */}
+                    <span className="mt-2 text-xs sm:text-sm font-bold text-white max-w-full truncate text-center px-1">
+                      {rows[0].username ? `@${rows[0].username}` : rows[0].full_name || 'Anonymous'}
+                    </span>
+                    {/* Score */}
+                    <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent">{(rows[0].leaderboard_score ?? 0).toFixed(0)}</span>
+                    {/* Podium */}
+                    <div className="mt-2 w-full h-20 sm:h-24 rounded-t-lg bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 flex items-center justify-center border-t-2 border-amber-400/60 shadow-lg shadow-amber-600/40">
+                      <m.span 
+                        className="text-2xl sm:text-3xl font-black text-amber-300/30"
+                        animate={{ opacity: [0.3, 0.5, 0.3] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >1</m.span>
+                    </div>
+                  </m.div>
+                )}
+                
+                {/* 3rd Place */}
+                {rows[2] && (
+                  <m.div
+                    initial={{ opacity: 0, x: 40, scale: 0.7 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ delay: 0.35, type: 'spring', stiffness: 100 }}
+                    className="flex flex-col items-center w-24 sm:w-28"
+                  >
+                    {/* Profile Badge */}
+                    <m.div className="relative" whileHover={{ scale: 1.05 }}>
+                      <m.div
+                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600 p-[2px]"
+                        animate={{
+                          boxShadow: [
+                            '0 0 16px rgba(251,146,60,0.25)',
+                            '0 0 26px rgba(251,146,60,0.45)',
+                            '0 0 16px rgba(251,146,60,0.25)',
+                          ],
+                        }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <div className="relative w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),transparent_60%)]" />
+                          <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_center,rgba(251,146,60,0.3),transparent_70%)]" />
+                          <m.div
+                            className="absolute inset-0 opacity-40 bg-[conic-gradient(from_0deg,transparent,rgba(251,146,60,0.5),transparent)]"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                          />
+                          <m.span 
+                            className="relative text-2xl sm:text-3xl font-black bg-gradient-to-b from-orange-200 via-orange-400 to-amber-600 bg-clip-text text-transparent drop-shadow-lg"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                          >3</m.span>
+                        </div>
+                      </m.div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-xs font-black text-orange-950 shadow-lg border-2 border-slate-900">
+                        3
+                      </div>
+                    </m.div>
+                    {/* Name */}
+                    <span className="mt-2 text-[10px] sm:text-xs font-semibold text-white/80 max-w-full truncate text-center px-1">
+                      {rows[2].username ? `@${rows[2].username}` : rows[2].full_name || 'Anonymous'}
+                    </span>
+                    {/* Score */}
+                    <span className="text-sm font-bold text-orange-300">{(rows[2].leaderboard_score ?? 0).toFixed(0)}</span>
+                    {/* Podium */}
+                    <div className="mt-2 w-full h-10 sm:h-12 rounded-t-lg bg-gradient-to-b from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center border-t border-orange-400/40">
+                      <span className="text-xl font-black text-white/20">3</span>
+                    </div>
+                  </m.div>
+                )}
+              </div>
             </m.div>
           )}
         </AnimatePresence>
@@ -310,36 +438,34 @@ export default function Leaderboards() {
           <m.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-xl bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-fuchsia-500/10 border border-indigo-500/30 backdrop-blur-sm"
+            className="mt-0.5 p-3 rounded-xl bg-gradient-to-r from-violet-600/20 to-pink-600/20 border border-violet-500/40 backdrop-blur-sm"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white font-bold text-sm flex items-center justify-center shadow-md">
                   #{myRank}
                 </div>
                 <div>
                   <div className="font-semibold text-white text-sm">
                     {myRow.username ? `@${myRow.username}` : myRow.full_name || 'You'}
                   </div>
-                  <div className="text-[10px] text-indigo-300/80 font-medium uppercase tracking-wider">
-                    Your Ranking
+                  <div className="text-xs text-violet-400">
+                    Your Rank
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-lg font-bold bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">
-                  {Number(myRow.leaderboard_score ?? 0).toFixed(2)}
+                <div className="text-lg font-bold text-white">
+                  {Number(myRow.leaderboard_score ?? 0).toFixed(0)}
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
-                  Score
-                </div>
+                <div className="text-xs text-violet-400/70">points</div>
               </div>
             </div>
           </m.div>
         )}
 
         {/* Player List */}
-        <div className="rounded-xl bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
+        <div className="rounded-xl bg-slate-800/30 backdrop-blur-sm border border-slate-700/40 overflow-hidden">
           {loading ? (
             <div className="py-16 flex flex-col items-center text-slate-400">
               <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mb-2" />
@@ -376,7 +502,6 @@ export default function Leaderboards() {
                 const rank = r.rank || i + 1;
                 const highlight = myRank === rank;
                 const top3 = rank <= 3;
-                const win = Math.min(100, r.win_rate || 0);
                 const name = r.username ? `@${r.username}` : r.full_name || 'Anonymous';
                 
                 return (
@@ -385,47 +510,31 @@ export default function Leaderboards() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`group relative flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-slate-700/30 ${highlight ? 'bg-indigo-500/10' : ''}`}
+                    className={`group relative flex items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-700/30 ${highlight ? 'bg-indigo-500/10' : ''}`}
                   >
                     {/* Rank Badge */}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                       top3 
                         ? rank === 1 
-                          ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-900' 
+                          ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-900 shadow-lg shadow-amber-500/30' 
                           : rank === 2 
-                            ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700'
-                            : 'bg-gradient-to-br from-orange-400 to-amber-500 text-orange-900'
+                            ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700 shadow-lg shadow-slate-400/20'
+                            : 'bg-gradient-to-br from-orange-400 to-amber-500 text-orange-900 shadow-lg shadow-orange-500/20'
                         : 'bg-slate-700/80 text-slate-300'
                     } ${highlight ? 'ring-2 ring-indigo-400/50' : ''}`}>
                       {rank}
                     </div>
                     
-                    {/* Player Info */}
+                    {/* Player Name */}
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${highlight ? 'text-white' : 'text-slate-200'}`}>
+                      <div className={`text-sm font-semibold truncate ${highlight ? 'text-white' : 'text-slate-200'}`}>
                         {name}
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {Number(r.win_rate ?? 0).toFixed(0)}% win
-                        </span>
-                        <span className="flex items-center gap-0.5 text-[10px] text-slate-400 font-medium">
-                          <Zap className="w-2.5 h-2.5 text-violet-400" />
-                          {r.streak || 0}
-                        </span>
-                      </div>
-                      {/* Mini progress bar */}
-                      <div className="mt-1.5 h-1 w-full max-w-[120px] rounded-full bg-slate-700/60 overflow-hidden">
-                        <div
-                          style={{ width: `${win}%` }}
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500"
-                        />
                       </div>
                     </div>
                     
                     {/* Score */}
                     <div className="text-right shrink-0">
-                      <div className="text-sm font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
+                      <div className="text-base font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
                         {Number(r.leaderboard_score ?? 0).toFixed(1)}
                       </div>
                       <div className="text-[9px] text-slate-500 font-medium uppercase">pts</div>
@@ -445,7 +554,7 @@ export default function Leaderboards() {
                     {showAll ? (
                       <>Show less</>
                     ) : (
-                      <>Show all {rows.length} players <ChevronDown className="w-3 h-3" /></>
+                      <>Show All Players <ChevronDown className="w-3 h-3" /></>
                     )}
                   </button>
                 </div>

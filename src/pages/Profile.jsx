@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Button } from '@/components/ui/button';
 import {
   Loader2,
   Crown,
@@ -14,7 +13,7 @@ import {
   FileText,
   Shield,
   Share2,
-  Sparkles,
+  Zap,
   Coins,
 } from 'lucide-react';
 import ProfileUpdateModal from '@/components/ProfileUpdateModal';
@@ -264,13 +263,6 @@ export default function Profile() {
     }
   };
 
-  const getLevelRingClass = (lvl) => {
-    const n = Number(lvl || 0);
-    if (n >= 80) return 'ring-[#8b5cf6]'; // 80+ premium
-    if (n >= 50) return 'ring-[#f59e0b]'; // 50+
-    if (n >= 20) return 'ring-[#9ca3af]'; // 20+
-    return 'ring-[#cd7f32]'; // below 20
-  };
   const getLevelProgress = (totalCoins, level) => {
     const have = Number(totalCoins || 0);
     const curr = Math.max(0, Number(level || 0));
@@ -308,225 +300,211 @@ export default function Profile() {
     );
   }
 
-  const menuItems = [
-    { label: 'About Us', href: '/about-us', icon: Info },
-    { label: 'Contact Us', href: '/contact-us', icon: Mail },
-    { label: 'Terms & Conditions', href: '/terms-conditions', icon: FileText },
-    { label: 'Privacy Policy', href: '/privacy-policy', icon: Shield },
-    // Language page removed
-    { label: 'Refer & Earn', href: '/refer', icon: Share2 },
-  ];
+  const usernameLabel = profile?.username ? `@${profile.username}` : 'Username not set';
+  const emailLabel = profile?.email || sessionUser.email;
+  const totalCoins = Number(profile?.total_coins ?? 0);
+  const progressPct = getLevelProgress(totalCoins, derivedLevel);
 
-  // Counters removed from UI as requested; backend maintains these fields
+  // Gradient colors for level ring animation
+  const levelGradient = derivedLevel >= 80
+    ? 'from-violet-500 via-fuchsia-500 to-pink-500'
+    : derivedLevel >= 50
+      ? 'from-amber-400 via-orange-500 to-red-500'
+      : derivedLevel >= 20
+        ? 'from-cyan-400 via-blue-500 to-indigo-500'
+        : 'from-emerald-400 via-teal-500 to-cyan-500';
 
   return (
-    <div className="relative pt-20 overflow-x-hidden">
+    <div className="relative overflow-x-hidden">
       <SEO
         title="Your Quiz Dangal Profile"
         description="View and manage your Quiz Dangal profile details, quiz preferences, and account settings."
         canonical="https://quizdangal.com/profile/"
         robots="noindex, nofollow"
       />
-      <div className="mx-auto w-full px-3 sm:px-4 pt-3 pb-24 max-w-3xl space-y-3 overflow-x-hidden">
-        <div className="qd-card relative overflow-hidden rounded-3xl p-4 shadow-2xl">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-gradient-to-tr from-indigo-500/20 via-fuchsia-400/15 to-transparent blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-gradient-to-tr from-purple-500/15 via-pink-500/10 to-transparent blur-3xl"
-          />
-          <div className="flex flex-col gap-3 relative">
-            <div className="flex items-start gap-2">
-              <div className="flex flex-col items-center -ml-2">
-                <div className="relative w-[5.5rem] h-[5.5rem]">
-                  <div
-                    className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-400/20 via-fuchsia-400/20 to-transparent blur-[3px] animate-spin"
-                    style={{ animationDuration: '9s' }}
-                  />
-                  <div
-                    className={`relative w-[5.5rem] h-[5.5rem] rounded-full overflow-hidden flex items-center justify-center text-slate-100 font-bold ring-2 ring-offset-2 ring-offset-slate-900 ${getLevelRingClass(derivedLevel)} bg-gradient-to-br from-slate-800 to-slate-700 shadow-md`}
-                  >
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={
-                          profile?.full_name || profile?.username
-                            ? `${profile.full_name || profile.username} avatar`
-                            : 'User avatar'
-                        }
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-2xl">
-                          {(profile?.full_name || sessionUser?.email || 'U')
-                            .charAt(0)
-                            .toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={onChooseAvatar}
-                    disabled={uploading}
-                    className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 shadow-sm text-slate-200 hover:bg-slate-800 transition disabled:opacity-60"
-                    title={uploading ? 'Uploading...' : 'Change avatar'}
-                  >
-                    <Camera className="w-4 h-4" />
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={onAvatarSelected}
-                  />
-                </div>
-                <div className="mt-1.5 text-center max-w-[12rem] sm:max-w-none mx-auto">
-                  <div className="text-[11px] text-slate-400">Email</div>
-                  <div className="text-sm font-medium text-slate-100 truncate">
-                    {profile?.email || sessionUser.email}
-                  </div>
-                </div>
-              </div>
-              <div className="min-w-0 -mt-1">
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Sparkles className="w-4 h-4 text-indigo-300" />
-                  <span>Welcome back</span>
-                </div>
-                <div className="text-sm font-semibold text-white truncate">
-                  {profile?.username ? `@${profile.username}` : 'Username not set'}
-                </div>
-                <div className="mt-1.5 flex flex-wrap gap-2 text-xs">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-900/20 text-amber-200 border border-amber-500/20">
-                    <Coins className="w-3.5 h-3.5" />
-                    <span className="font-medium">
-                      {Number(profile?.wallet_balance ?? 0).toLocaleString()} Coins
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="w-full">
-              <div className="mt-1.5 inline-flex items-center gap-2 relative">
-                <button
-                  type="button"
-                  onClick={() => setShowLevelInfo((v) => !v)}
-                  className="px-2 py-0.5 rounded-full text-[11px] chip-accent-b focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                  title="Show next level info"
-                  aria-expanded={showLevelInfo}
-                >
-                  Level {derivedLevel}
-                </button>
-                {showLevelInfo && (
-                  <div className="absolute z-20 top-full left-0 mt-2 w-56 rounded-xl border border-slate-700/60 bg-slate-900/95 text-slate-100 shadow-xl p-3">
-                    <div className="text-xs font-semibold mb-1">Next Level Info</div>
-                    <div className="text-[11px] text-slate-300 space-y-1">
-                      <div className="flex justify-between">
-                        <span>Required</span>
-                        <span>{Number(derivedNext.nextReq).toLocaleString()} coins</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>You have</span>
-                        <span>{Number(profile?.total_coins || 0).toLocaleString()} coins</span>
-                      </div>
+
+      <div className="mx-auto w-full max-w-lg px-4 pt-14 pb-12 space-y-3">
+        
+        {/* Profile Hero Card */}
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 border border-white/10 shadow-2xl">
+          {/* Animated Glow Background */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+            <div className={`absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br ${levelGradient} opacity-25 blur-3xl`} />
+            <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 opacity-20 blur-3xl" />
+          </div>
+          
+          {/* Shimmer Line */}
+          <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${levelGradient}`} />
+
+          <div className="relative p-4">
+            {/* Avatar + Info Row */}
+            <div className="flex items-start gap-3">
+              {/* Avatar Container */}
+              <div className="relative shrink-0">
+                {/* Outer Glow Ring */}
+                <div className={`absolute -inset-1 rounded-full bg-gradient-to-tr ${levelGradient} blur-sm opacity-60`} />
+                
+                {/* Avatar */}
+                <div className="relative w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-white/20 ring-offset-2 ring-offset-slate-900 shadow-2xl">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={profile?.full_name || profile?.username ? `${profile.full_name || profile.username} avatar` : 'User avatar'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${levelGradient} flex items-center justify-center`}>
+                      <span className="text-2xl font-bold text-white">{(profile?.full_name || sessionUser?.email || 'U').charAt(0).toUpperCase()}</span>
                     </div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-1.5 relative h-2.5 bg-slate-800/70 rounded-full overflow-hidden">
-                <div className="absolute inset-0 bg-white/10" />
-                <div
-                  className="relative h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 shadow-[0_0_12px_rgba(99,102,241,0.35)]"
-                  style={{ width: `${getLevelProgress(profile?.total_coins, derivedLevel)}%` }}
-                />
-                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">
-                  {getLevelProgress(profile?.total_coins, derivedLevel)}%
-                </span>
-              </div>
-              <div className="mt-1 text-[11px] text-slate-400">to next level</div>
-            </div>
-            <div className="pt-2 mt-1 w-full border-t border-gray-100">
-              <Button
-                onClick={() => setEditingProfile(true)}
-                size="sm"
-                variant="brand"
-                className="rounded-xl"
-              >
-                Edit Profile
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Push Notifications controls removed per requirement. Notifications will be prompted during Join Quiz flow. */}
-
-        {/* Stats cards removed per requirement: Quizzes Played, Quizzes Won, Friends Referred */}
-
-        <div className="qd-card rounded-3xl p-3 shadow-xl">
-          <div className="flex flex-col gap-3">
-            {menuItems.map((item, idx) => {
-              const chipClass = [
-                'chip-accent-d',
-                'chip-accent-a',
-                'chip-accent-b',
-                'chip-accent-c',
-              ][idx % 4];
-              const content = (
-                <div className="group w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl border border-indigo-700/60 bg-indigo-900/40 hover:bg-indigo-900/60 transition shadow-sm hover:shadow-lg text-sm text-slate-100 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-9 h-9 rounded-xl ${chipClass} group-hover:scale-[1.03] transition`}
-                    >
-                      <item.icon className="w-4 h-4" />
-                    </span>
-                    <span className="font-semibold tracking-wide">{item.label}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition" />
+                  )}
                 </div>
-              );
-              return item.href ? (
-                <Link
-                  key={idx}
-                  to={item.href}
-                  tabIndex={0}
-                  className="focus:outline-none focus:ring-2 focus:ring-indigo-500/40 rounded-2xl"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <button
-                  key={idx}
-                  onClick={item.onClick}
-                  className="text-left w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/40 rounded-2xl"
-                >
-                  {content}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        <div className="qd-card rounded-3xl p-3 shadow-xl">
-          <button
-            onClick={handleSignOut}
-            className="w-full text-left focus:outline-none focus:ring-2 focus:ring-red-500/30 rounded-2xl"
-          >
-            <div className="group w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl border border-rose-700/40 bg-rose-900/10 hover:bg-rose-900/20 transition shadow-sm hover:shadow-md text-sm text-rose-300 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-rose-900/30 text-rose-300 flex items-center justify-center shadow-sm border border-rose-700/40 group-hover:scale-[1.03] transition">
-                  <LogOut className="w-4 h-4" />
-                </span>
-                <span className="font-semibold tracking-wide">Logout</span>
+                {/* Camera Button */}
+                <button
+                  onClick={onChooseAvatar}
+                  disabled={uploading}
+                  className="absolute -bottom-0.5 -right-0.5 p-1.5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-slate-900 shadow-lg text-white hover:scale-110 transition disabled:opacity-60"
+                  title={uploading ? 'Uploading...' : 'Change avatar'}
+                  aria-label={uploading ? 'Uploading avatar' : 'Change avatar'}
+                >
+                  <Camera className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onAvatarSelected} />
+                
+                {/* Level Badge */}
+                <div className={`absolute -top-1 -left-1 px-2 py-0.5 rounded-full bg-gradient-to-r ${levelGradient} shadow-lg`}>
+                  <span className="text-[10px] font-bold text-white">{derivedLevel}</span>
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-rose-400/70 group-hover:text-rose-300 transition" />
+
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-white truncate">{usernameLabel}</h2>
+                  {derivedLevel >= 50 && <Crown className="w-4 h-4 text-amber-400 shrink-0" />}
+                </div>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{emailLabel}</p>
+              </div>
             </div>
-          </button>
-        </div>
+
+            {/* Edit Profile Button - Below Avatar */}
+            <button
+              onClick={() => setEditingProfile(true)}
+              className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-semibold bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-105 transition"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              Edit Profile
+            </button>
+
+            {/* Level Progress - Clickable */}
+            <button
+              onClick={() => setShowLevelInfo(!showLevelInfo)}
+              className="mt-3 w-full p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-left"
+            >
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Zap className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-xs font-semibold text-white">Level {derivedLevel}</span>
+              </div>
+              <div className="relative h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                <div
+                  className={`h-full bg-gradient-to-r ${levelGradient} shadow-[0_0_12px_rgba(139,92,246,0.5)] transition-all duration-700`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              
+              {/* Coin Info Popup */}
+              {showLevelInfo && (
+                <div className="mt-2 p-2.5 rounded-lg bg-slate-800/90 border border-white/10 text-[11px]">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-slate-400">Current Coins</span>
+                    <span className="text-amber-400 font-bold">{totalCoins.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Next Level ({derivedLevel + 1})</span>
+                    <span className="text-emerald-400 font-bold">{derivedNext.nextReq.toLocaleString()}</span>
+                  </div>
+                  <div className="mt-1 pt-1 border-t border-white/10 flex justify-between items-center">
+                    <span className="text-slate-400">Need More</span>
+                    <span className="text-rose-400 font-bold">{derivedNext.remaining.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </button>
+          </div>
+        </section>
+
+        {/* Quick Actions */}
+        <section className="grid grid-cols-2 gap-3">
+          {/* Wallet Button */}
+          <Link
+            to="/wallet"
+            className="relative flex items-center gap-3 p-3 rounded-xl overflow-hidden group"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(20, 184, 166, 0.15) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 grid place-items-center shadow-md flex-shrink-0">
+              <Coins className="w-4.5 h-4.5 text-white" />
+            </div>
+            <p className="flex-1 text-sm font-bold text-white">Wallet</p>
+          </Link>
+          
+          {/* Refer & Earn Button */}
+          <Link
+            to="/refer"
+            className="relative flex items-center gap-3 p-3 rounded-xl overflow-hidden group"
+            style={{
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-400 to-violet-500 grid place-items-center shadow-md flex-shrink-0">
+              <Share2 className="w-4.5 h-4.5 text-white" />
+            </div>
+            <p className="flex-1 text-sm font-bold text-white">Refer & Earn</p>
+          </Link>
+        </section>
+
+        {/* Settings Menu */}
+        <section className="rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 border border-white/10 overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/5">
+            <p className="text-sm font-semibold text-slate-200">Settings & Info</p>
+          </div>
+          {[
+            { label: 'About Us', href: '/about-us', icon: Info, color: 'from-blue-500 to-cyan-500' },
+            { label: 'Contact Us', href: '/contact-us', icon: Mail, color: 'from-pink-500 to-rose-500' },
+            { label: 'Terms & Conditions', href: '/terms-conditions', icon: FileText, color: 'from-violet-500 to-purple-500' },
+            { label: 'Privacy Policy', href: '/privacy-policy', icon: Shield, color: 'from-amber-500 to-orange-500' },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              className="group flex items-center justify-between px-4 py-3 hover:bg-white/5 transition"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${item.color} grid place-items-center shadow group-hover:scale-105 transition`}>
+                  <item.icon className="w-4 h-4 text-white" />
+                </span>
+                <span className="text-sm font-medium text-white">{item.label}</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition" />
+            </Link>
+          ))}
+          
+          {/* Logout inside menu */}
+          <div className="px-4 py-3 border-t border-white/5">
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition text-xs text-rose-300 font-semibold"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Logout
+            </button>
+          </div>
+        </section>
 
         <ProfileUpdateModal
           isOpen={editingProfile}
@@ -536,8 +514,6 @@ export default function Profile() {
           }}
           isFirstTime={false}
         />
-
-        {/* Language selection removed */}
       </div>
     </div>
   );

@@ -35,8 +35,3 @@ export async function getSupabase() {
     // keep initPromise for dedupe; supabase becomes non-null after init
   }
 }
-
-// Optional: warm init without awaiting (best-effort)
-export function warmSupabase() {
-  void getSupabase();
-}

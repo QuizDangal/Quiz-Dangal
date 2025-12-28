@@ -2,6 +2,7 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useQuizEngine } from '@/hooks/useQuizEngine';
+import SEO from '@/components/SEO';
 import {
   LoadingView,
   ErrorView,
@@ -205,21 +206,28 @@ const Quiz = () => {
 
   // Active quiz with questions
   return (
-    <ActiveQuizView
-      title={quizTitle}
-      quizId={effectiveId}
-      questions={questions}
-      currentQuestionIndex={currentQuestionIndex}
-      answers={answers}
-      timeLeft={timeLeft}
-      submitting={submitting}
-      quizState={quizState}
-      participantStatus={participantStatus}
-      formatTime={formatTime}
-      onAnswerSelect={handleAnswerSelect}
-      onNext={handleNext}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <SEO
+        title={`${quizTitle} – Quiz Dangal`}
+        description="Play this quiz on Quiz Dangal and win rewards!"
+        robots="noindex, nofollow"
+      />
+      <ActiveQuizView
+        title={quizTitle}
+        quizId={effectiveId}
+        questions={questions}
+        currentQuestionIndex={currentQuestionIndex}
+        answers={answers}
+        timeLeft={timeLeft}
+        submitting={submitting}
+        quizState={quizState}
+        participantStatus={participantStatus}
+        formatTime={formatTime}
+        onAnswerSelect={handleAnswerSelect}
+        onNext={handleNext}
+        onSubmit={handleSubmit}
+      />
+    </>
   );
 };
 

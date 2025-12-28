@@ -26,7 +26,3 @@ export function getBrandText(index = 0) {
   const i = Number.isFinite(index) ? Math.abs(index) : 0;
   return textColors[i % textColors.length];
 }
-
-// Named exports for potential iteration or testing
-export const BRAND_GRADIENTS = gradients;
-export const BRAND_TEXT_COLORS = textColors;

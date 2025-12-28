@@ -88,14 +88,14 @@ const Header = () => {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-[60] px-2 pt-2 animate-slide-down"
+        className="fixed top-0 left-0 right-0 z-[60] animate-slide-down"
         data-mute-click-sound
         style={{ '--slide-delay': '40ms' }}
         role="banner"
         aria-label="Quiz Dangal site header"
       >
-        <div className="qd-card rounded-3xl overflow-hidden">
-          <div className="container mx-auto px-2 sm:px-5 py-3 sm:py-4">
+        <div className="qd-bar border-b border-white/10">
+          <div className="container mx-auto px-3 sm:px-5 py-2 sm:py-2.5">
             <div className="flex items-center justify-between gap-2 sm:gap-3">
               {/* Brand */}
               <Link
@@ -120,20 +120,17 @@ const Header = () => {
                     width="48"
                     height="48"
                     decoding="async"
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg object-contain select-none shrink-0"
+                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-full shadow-lg object-contain select-none shrink-0"
                     draggable="false"
                     style={{ imageRendering: 'auto' }}
                   />
                 </picture>
                 <div className="leading-tight select-none min-w-0">
                   <div
-                    className="text-base sm:text-2xl font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight truncate"
+                    className="text-2xl sm:text-[32px] font-extrabold qd-gradient-text drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] tracking-tight truncate -mt-2"
                     aria-hidden="true"
                   >
                     Quiz Dangal
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-white/70 -mt-0.5 font-medium truncate">
-                    Where Minds Clash
                   </div>
                 </div>
               </Link>
@@ -175,7 +172,7 @@ const Header = () => {
                       </div>
                       <div className="hd-badge-info select-none">
                         <span className="hd-badge-value tabular-nums">{walletLabel}</span>
-                        <span className="hd-badge-label">COINS</span>
+                        <span className="sr-only">Coins</span>
                       </div>
                     </div>
                     <button
@@ -206,7 +203,7 @@ const Header = () => {
                       </div>
                       <div className="hd-badge-info select-none">
                         <span className="hd-badge-value tabular-nums">{streak}</span>
-                        <span className="hd-badge-label">STREAK</span>
+                        <span className="sr-only">Streak</span>
                       </div>
                     </button>
                   </>

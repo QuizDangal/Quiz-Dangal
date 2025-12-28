@@ -574,56 +574,176 @@ const MyQuizzes = () => {
 
   if (quizzes.length === 0) {
     return (
-      <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
-        <div className="container mx-auto px-4 py-6 max-w-lg">
-          <div className="flex items-start justify-center pt-8">
+      <div className="relative pt-14 mx-auto max-w-5xl px-4 py-2">
+        {/* Animated Background */}
+        <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+          <m.div 
+            className="absolute top-10 -left-10 w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/25 via-pink-500/20 to-purple-600/25 blur-[80px]"
+            animate={{ x: [0, 40, 0], y: [0, 30, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <m.div 
+            className="absolute top-1/3 -right-10 w-72 h-72 rounded-full bg-gradient-to-br from-violet-600/25 via-blue-500/20 to-cyan-500/25 blur-[90px]"
+            animate={{ x: [0, -35, 0], y: [0, 40, 0], scale: [1.1, 1, 1.1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <m.div 
+            className="absolute bottom-20 left-1/3 w-56 h-56 rounded-full bg-gradient-to-br from-emerald-500/20 via-teal-500/15 to-cyan-500/20 blur-[70px]"
+            animate={{ x: [0, 25, 0], y: [0, -25, 0], scale: [1, 1.15, 1] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+        
+        <div className="container mx-auto px-4 py-2 max-w-lg relative z-10">
+          <div className="flex items-start justify-center pt-2">
               <m.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
                 className="relative text-center text-slate-100 p-2"
               >
-                {/* Keep outside clean: lighter, smaller, clipped blobs */}
-                <div className="pointer-events-none absolute -top-16 -left-16 w-44 h-44 rounded-full bg-indigo-600/10 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-fuchsia-600/10 blur-3xl" />
-
-                <h1 className="text-2xl font-bold heading-gradient text-shadow mb-4">My Quizzes</h1>
-
-                {/* Gradient bordered card (no slide animation) */}
-                <m.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.06 }}
-                  className="relative max-w-md mx-auto rounded-3xl p-[2px] bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-rose-500 shadow-[0_30px_80px_-20px_rgba(99,102,241,0.25)]"
+                {/* Animated Header */}
+                <m.div 
+                  className="mb-4"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  <div className="rounded-3xl bg-slate-950/80 backdrop-blur border border-white/10 px-6 py-9">
-                    {/* Trophy emblem */}
-                    <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full p-[2px] bg-gradient-to-b from-amber-400 to-amber-600">
-                      <div className="w-full h-full rounded-full grid place-items-center bg-slate-950/90 p-1 sm:p-1.5 md:p-2">
-                        <GoldTrophy centered fitParent />
+                  <div className="inline-flex items-center gap-3">
+                    <m.div
+                      animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <Trophy className="w-9 h-9 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.7)]" />
+                    </m.div>
+                    <h1 className="text-3xl font-black bg-gradient-to-r from-orange-300 via-pink-300 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+                      My Quizzes
+                    </h1>
+                  </div>
+                </m.div>
+
+                {/* Premium Empty State Card */}
+                <m.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="relative max-w-sm mx-auto"
+                >
+                  {/* Animated Floating Orbs */}
+                  <m.div 
+                    className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 opacity-25 blur-2xl"
+                    animate={{ scale: [1, 1.3, 1], x: [0, 10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <m.div 
+                    className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 opacity-25 blur-2xl"
+                    animate={{ scale: [1.2, 1, 1.2], x: [0, -10, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  
+                  <div className="relative rounded-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(251,146,60,0.15), rgba(236,72,153,0.15), rgba(168,85,247,0.15))', padding: '2px' }}>
+                    <div className="rounded-3xl bg-gradient-to-b from-slate-800/95 to-slate-900/98 backdrop-blur-xl px-6 py-10 overflow-hidden relative">
+                      {/* Animated border glow */}
+                      <m.div 
+                        className="absolute inset-0 rounded-3xl"
+                        style={{ background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.4), rgba(168,85,247,0.3), transparent)' }}
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+                      />
+                      
+                      {/* Sparkle particles */}
+                      <m.div 
+                        className="absolute top-4 right-8 w-2 h-2 rounded-full bg-orange-400"
+                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+                      />
+                      <m.div 
+                        className="absolute top-12 left-6 w-1.5 h-1.5 rounded-full bg-pink-400"
+                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      />
+                      <m.div 
+                        className="absolute bottom-16 right-6 w-1 h-1 rounded-full bg-violet-400"
+                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                      />
+                      <m.div 
+                        className="absolute top-1/2 left-4 w-1.5 h-1.5 rounded-full bg-cyan-400"
+                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+                      />
+                      
+                      {/* Trophy with animated ring */}
+                      <div className="relative mx-auto mb-6 w-24 h-24">
+                        <m.div 
+                          className="absolute inset-0 rounded-full"
+                          style={{ border: '2px dashed', borderImage: 'linear-gradient(135deg, #f97316, #ec4899, #8b5cf6) 1' }}
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                        />
+                        <m.div 
+                          className="absolute inset-2 rounded-full bg-gradient-to-br from-orange-400 via-pink-500 to-violet-500 p-[3px]"
+                          animate={{ scale: [1, 1.08, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <div className="w-full h-full rounded-full grid place-items-center bg-slate-900">
+                            <m.div
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                          >
+                            <GoldTrophy centered fitParent />
+                          </m.div>
+                        </div>
+                      </m.div>
+                    </div>
+
+                      <h3 className="text-2xl font-black bg-gradient-to-r from-orange-300 via-pink-300 to-violet-400 bg-clip-text text-transparent">
+                        No Quizzes Yet
+                      </h3>
+                      <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+                        Start your journey! Join your first quiz and climb the leaderboard.
+                      </p>
+
+                      {/* Animated Feature chips */}
+                      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                        {[
+                          { icon: '🎯', text: 'Daily Quizzes', gradient: 'from-orange-500/20 to-pink-500/10', border: 'border-orange-500/40', textColor: 'text-orange-300' },
+                          { icon: '🪙', text: 'Win Coins', gradient: 'from-amber-500/20 to-yellow-500/10', border: 'border-amber-500/40', textColor: 'text-amber-300' },
+                          { icon: '🏆', text: 'Leaderboards', gradient: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-500/40', textColor: 'text-emerald-300' },
+                        ].map((chip, i) => (
+                          <m.span 
+                            key={chip.text}
+                            className={`px-3 py-1.5 rounded-full border ${chip.border} bg-gradient-to-r ${chip.gradient} ${chip.textColor} text-xs font-semibold`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 + i * 0.1 }}
+                            whileHover={{ scale: 1.08, y: -2 }}
+                          >
+                            {chip.icon} {chip.text}
+                          </m.span>
+                        ))}
                       </div>
+
+                      {/* Premium Explore button */}
+                      <m.button
+                        onClick={() => navigate('/')}
+                        className="relative mt-6 w-full py-3.5 rounded-xl text-white font-bold text-sm overflow-hidden group"
+                        style={{ 
+                          background: 'linear-gradient(135deg, #f97316 0%, #ec4899 35%, #8b5cf6 65%, #6366f1 100%)',
+                          backgroundSize: '200% 100%',
+                          boxShadow: '0 4px 20px rgba(236, 72, 153, 0.35), 0 0 30px -5px rgba(139, 92, 246, 0.3)'
+                        }}
+                        whileHover={{ scale: 1.02, backgroundPosition: '100% 50%' }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <span className="relative z-10">🚀 Explore Quizzes</span>
+                        <m.div 
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                          animate={{ x: ['-100%', '100%'] }}
+                          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                        />
+                      </m.button>
                     </div>
-
-                    <h3 className="text-xl font-extrabold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
-                      No Quizzes Yet
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      Kickstart your journey—join your first quiz and build your streak!
-                    </p>
-
-                    {/* Value chips */}
-                    <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px]">
-                      <span className="px-2.5 py-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 text-indigo-200">
-                        Daily quizzes
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200">
-                        Win coins
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-200">
-                        Leaderboards
-                      </span>
-                    </div>
-
-                    {/* Explore button removed per request */}
                   </div>
                 </m.div>
               </m.div>
@@ -658,44 +778,78 @@ const MyQuizzes = () => {
   });
 
   return (
-    <div className="relative pt-14 mx-auto max-w-5xl px-4 py-4">
+    <div className="relative pt-16 pb-8 px-3 mx-auto max-w-md min-h-screen">
+      {/* Animated Background Orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <m.div 
+          className="absolute top-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/20 via-pink-500/15 to-purple-600/20 blur-[80px]"
+          animate={{ x: [0, 30, 0], y: [0, 20, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <m.div 
+          className="absolute top-1/3 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-violet-600/20 via-blue-500/15 to-cyan-500/20 blur-[90px]"
+          animate={{ x: [0, -25, 0], y: [0, 30, 0], scale: [1.1, 1, 1.1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <m.div 
+          className="absolute bottom-40 left-1/4 w-56 h-56 rounded-full bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-cyan-500/15 blur-[70px]"
+          animate={{ x: [0, 20, 0], y: [0, -20, 0], scale: [1, 1.15, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+      
       <SEO
         title="My Quizzes – Quiz Dangal"
         description="Track the quizzes you have joined, monitor live rounds, and revisit completed contests on Quiz Dangal."
         canonical="https://quizdangal.com/my-quizzes/"
         robots="noindex, nofollow"
       />
-      <div className="container mx-auto px-4 py-6 max-w-lg">
+      <div className="relative z-10">
         <m.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           className="overflow-hidden"
         >
           {/* Page Header */}
-          <div className="mb-6">
-            <div className="qd-card rounded-2xl border border-slate-800/70 bg-slate-950/70 p-4 sm:p-6 shadow-[0_16px_50px_-28px_rgba(99,102,241,0.55)]">
-              <h1 className="text-2xl font-bold heading-gradient text-shadow">My Quizzes</h1>
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700/40 bg-emerald-600/10 px-3 py-1 text-xs text-emerald-200">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15">
-                    <Clock className="w-3.5 h-3.5" />
-                  </span>
-                  {liveUpcoming.length} Live/Upcoming
-                </span>
-
-                {/* Explore button removed per request */}
-              </div>
+          <m.div 
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="inline-flex items-center gap-3">
+              <m.div
+                animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <Trophy className="w-9 h-9 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.7)]" />
+              </m.div>
+              <h1 className="text-3xl font-black bg-gradient-to-r from-orange-300 via-pink-300 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+                My Quizzes
+              </h1>
             </div>
-          </div>
+          </m.div>
 
           {liveUpcoming.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <h2 className="text-sm sm:text-base font-semibold text-white">Live & Upcoming</h2>
-                <span className="text-xs text-slate-400">{liveUpcoming.length} quizzes</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mb-8">
+              <m.div 
+                className="flex items-center justify-between gap-3 mb-4"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="flex items-center gap-2">
+                  <m.div
+                    className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 grid place-items-center"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Play className="w-4 h-4 text-white" />
+                  </m.div>
+                  <h2 className="text-base font-bold bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">Live & Upcoming</h2>
+                </div>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">{liveUpcoming.length} quizzes</span>
+              </m.div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {liveUpcoming.map((quiz, index) => {
                   const st = quiz.start_time ? new Date(quiz.start_time) : null;
                   const et = quiz.end_time ? new Date(quiz.end_time) : null;
@@ -828,11 +982,25 @@ const MyQuizzes = () => {
             </div>
           )}
 
-          <div className="mt-7 flex items-center justify-between gap-3 mb-2">
-            <h2 className="text-sm sm:text-base font-semibold text-white">Finished</h2>
-            <span className="text-xs text-slate-400">Recent {finished.length}</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <m.div 
+            className="mt-8 flex items-center justify-between gap-3 mb-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center gap-2">
+              <m.div
+                className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 grid place-items-center"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                <Trophy className="w-4 h-4 text-white" />
+              </m.div>
+              <h2 className="text-base font-bold bg-gradient-to-r from-violet-300 to-purple-300 bg-clip-text text-transparent">Finished</h2>
+            </div>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300">Recent {finished.length}</span>
+          </m.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {finished.map((quiz, index) => {
               const now = new Date();
               const endTime = new Date(quiz.end_time);
@@ -879,29 +1047,108 @@ const MyQuizzes = () => {
                       {quiz.title}
                     </h3>
                     
-                    {/* Result Stats */}
+                    {/* Result Stats - Beautiful Compact */}
                     {isResultOut ? (
-                      <div className="quiz-slot-prize-section mb-3">
-                        <div className="quiz-slot-prize-title">📊 Your Result</div>
-                        <div className="quiz-slot-prize-row">
-                          <div className="quiz-slot-prize-item quiz-slot-prize-gold">
-                            <span className="quiz-slot-prize-rank">Rank</span>
-                            <span className="quiz-slot-prize-value">#{userRank?.rank ?? '-'}</span>
-                          </div>
-                          <div className="quiz-slot-prize-item quiz-slot-prize-silver">
-                            <span className="quiz-slot-prize-rank">Score</span>
-                            <span className="quiz-slot-prize-value">{userRank?.score ?? '-'}</span>
-                          </div>
-                          <div className="quiz-slot-prize-item quiz-slot-prize-bronze">
-                            <span className="quiz-slot-prize-rank">Prize</span>
-                            <span className="quiz-slot-prize-value">{prizeDisplay}</span>
-                          </div>
+                      <m.div 
+                        className="mb-3 p-2.5 rounded-xl bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-white/10 overflow-hidden relative"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {/* Animated glow background */}
+                        <m.div 
+                          className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-violet-500/5 to-emerald-500/5"
+                          animate={{ opacity: [0.3, 0.6, 0.3] }}
+                          transition={{ duration: 3, repeat: Infinity }}
+                        />
+                        
+                        {/* Stats Row */}
+                        <div className="relative flex items-stretch gap-1.5">
+                          {/* Rank */}
+                          <m.div 
+                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-400/30 relative overflow-hidden"
+                            whileHover={{ scale: 1.03, y: -1 }}
+                          >
+                            <m.div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent" />
+                            <div className="relative">
+                              <div className="text-[8px] text-amber-300/70 font-semibold uppercase tracking-wide mb-0.5">Rank</div>
+                              <m.div 
+                                className="text-base font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]"
+                                animate={{ scale: userRank?.rank <= 3 ? [1, 1.05, 1] : 1 }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                #{userRank?.rank ?? '-'}
+                              </m.div>
+                            </div>
+                            {userRank?.rank <= 3 && (
+                              <m.div 
+                                className="absolute -top-0.5 -right-0.5 text-[10px]"
+                                animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                🏆
+                              </m.div>
+                            )}
+                          </m.div>
+                          
+                          {/* Score */}
+                          <m.div 
+                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/10 border border-violet-400/30 relative overflow-hidden"
+                            whileHover={{ scale: 1.03, y: -1 }}
+                          >
+                            <m.div className="absolute inset-0 bg-gradient-to-t from-violet-500/10 to-transparent" />
+                            <div className="relative">
+                              <div className="text-[8px] text-violet-300/70 font-semibold uppercase tracking-wide mb-0.5">Score</div>
+                              <div className="text-base font-black text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.4)]">
+                                {userRank?.score ?? '-'}
+                              </div>
+                            </div>
+                          </m.div>
+                          
+                          {/* Prize */}
+                          <m.div 
+                            className="flex-1 text-center py-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/10 border border-emerald-400/30 relative overflow-hidden"
+                            whileHover={{ scale: 1.03, y: -1 }}
+                          >
+                            <m.div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent" />
+                            <div className="relative">
+                              <div className="text-[8px] text-emerald-300/70 font-semibold uppercase tracking-wide mb-0.5">Won</div>
+                              <m.div 
+                                className="text-base font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]"
+                                animate={prizeDisplay !== '-' ? { scale: [1, 1.05, 1] } : {}}
+                                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                              >
+                                {prizeDisplay}
+                              </m.div>
+                            </div>
+                            {prizeDisplay !== '-' && prizeDisplay !== '0' && (
+                              <m.div 
+                                className="absolute -top-0.5 -right-0.5 text-[10px]"
+                                animate={{ y: [0, -2, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              >
+                                🪙
+                              </m.div>
+                            )}
+                          </m.div>
                         </div>
-                      </div>
+                      </m.div>
                     ) : (
-                      <div className="text-center text-xs text-slate-400 mb-3 py-2">
-                        Results are being processed...
-                      </div>
+                      <m.div 
+                        className="mb-3 py-3 rounded-xl bg-gradient-to-r from-slate-800/60 via-slate-700/40 to-slate-800/60 border border-white/5 text-center"
+                        animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        style={{ backgroundSize: '200% 100%' }}
+                      >
+                        <m.span 
+                          className="text-xs text-slate-400 inline-flex items-center gap-2"
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          <m.span animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>⏳</m.span>
+                          Calculating Results...
+                        </m.span>
+                      </m.div>
                     )}
                     
                     {/* CTA Button */}
