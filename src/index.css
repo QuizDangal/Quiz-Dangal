@@ -369,12 +369,29 @@ select:focus {
   border-color: rgb(99, 102, 241);
 }
 
+/* Remove ALL focus outlines globally - prevents white line on login */
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+}
+
 /* Remove focus outline from buttons */
 button:focus,
 button:focus-visible,
 a:focus,
-a:focus-visible {
-  outline: none;
+a:focus-visible,
+div:focus,
+div:focus-visible,
+main:focus,
+main:focus-visible,
+section:focus,
+section:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 /* Reduce motion for users who prefer it */
@@ -2169,6 +2186,9 @@ a:focus-visible {
   opacity: 0;
   transform: translateY(30px) scale(0.98);
   transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .qdh-visible {
