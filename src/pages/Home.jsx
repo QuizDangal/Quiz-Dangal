@@ -1,10 +1,12 @@
 // 🔥 QUIZ DANGAL - Ultimate Gaming Home
 import React, { useCallback, useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   MessageSquare, Brain, Trophy, Clapperboard, 
-  Crown, Target, Flame, ArrowRight, Star
+  Crown, ArrowRight, Star, 
+  UserPlus, Gamepad2, HelpCircle,
+  Sparkles, Zap
 } from 'lucide-react';
 import { getSupabase } from '@/lib/customSupabaseClient';
 
@@ -44,9 +46,13 @@ const CATEGORIES = [
 ];
 
 const HOME_FAQ_ENTRIES = [
-  { question: 'What is Quiz Dangal?', answer: "Quiz Dangal is India's daily quiz arena where you play opinion and knowledge rounds, earn coins, and climb leaderboards with friends." },
-  { question: 'How can new pages get indexed quickly?', answer: 'Submit https://quizdangal.com/sitemap.xml in Google Search Console.' },
-  { question: 'Does Quiz Dangal support Play & Win format?', answer: 'Yes. Our Play & Win quizzes run daily with live leaderboards and instant rewards.' },
+  { question: '🎯 What is Quiz Dangal?', answer: "Quiz Dangal is India's #1 daily quiz platform! Play opinion polls, GK, sports & movie quizzes to earn coins and compete on national leaderboards. 100% free, works on all devices - mobile, tablet & PC!" },
+  { question: '🎮 How do I start playing?', answer: 'Super easy! Just sign up (takes 10 seconds), pick a category you love, and start answering questions. Faster answers = more coins. No complicated rules!' },
+  { question: '💰 Is it really free? Any hidden charges?', answer: 'YES, 100% FREE forever! No entry fees, no subscriptions, no in-app purchases required. We believe knowledge should be rewarded, not charged. Play unlimited quizzes daily!' },
+  { question: '🏆 How do I earn coins & rewards?', answer: '4 ways to earn: 1) Correct answers = coins, 2) Speed bonus = extra coins, 3) Daily login streak = streak bonus, 4) Referrals = bonus coins. Redeem coins for exciting prizes in our Rewards section!' },
+  { question: '📱 Does it work on my phone?', answer: 'Absolutely! Quiz Dangal is a Progressive Web App (PWA) - works perfectly on any phone browser. Pro tip: Tap "Add to Home Screen" for app-like experience with offline support!' },
+  { question: '⚡ What is Play & Win format?', answer: 'Play & Win quizzes are timed competitions with LIVE leaderboards! Everyone plays the same questions, fastest correct answers win. Top 10 players get bonus rewards daily. Join now!' },
+  { question: '👥 Can I play with friends?', answer: 'Yes! Share your referral code to invite friends. When they join and play, BOTH of you earn bonus coins. Check the Refer & Earn section for your unique code!' },
 ];
 
 const HOME_FAQ_SCHEMA = {
@@ -119,15 +125,32 @@ const CategoryCard = ({ cat, index, onPlay }) => {
   );
 };
 
-// Stats Counter - Minimal Clean Design
-const StatCounter = ({ icon: Icon, value, label, gradient }) => (
-  <div className="qdh-counter">
-    <div className={`qdh-counter-icon bg-gradient-to-br ${gradient}`}>
-      <Icon className="w-4 h-4 text-white" strokeWidth={2.5} />
-    </div>
-    <div className="qdh-counter-text">
-      <span className="qdh-counter-value">{value}</span>
-      <span className="qdh-counter-label">{label}</span>
+// How It Works Steps
+const HOW_IT_WORKS = [
+  { step: 1, icon: UserPlus, title: '🚀 Sign Up Free', desc: 'Create your account in just 10 seconds - 100% free, no payment ever!', gradient: 'from-emerald-400 to-cyan-500', highlight: 'FREE' },
+  { step: 2, icon: Gamepad2, title: '🎮 Pick a Quiz', desc: 'Choose from 4 exciting categories - Opinion, GK, Sports & Movies', gradient: 'from-violet-500 to-purple-600', highlight: '4 CATEGORIES' },
+  { step: 3, icon: Zap, title: '⚡ Play & Score', desc: 'Answer fast & correctly to earn maximum coins. Speed = More Points!', gradient: 'from-amber-400 to-orange-500', highlight: 'SPEED BONUS' },
+  { step: 4, icon: Trophy, title: '🏆 Win Rewards', desc: 'Climb leaderboards, maintain streaks & redeem coins for real prizes!', gradient: 'from-pink-500 to-rose-500', highlight: 'REAL PRIZES' },
+];
+
+// FAQ Accordion Item
+const FAQItem = ({ question, answer, isOpen, onClick, index }) => (
+  <div className={`qdh-faq-item ${isOpen ? 'qdh-faq-open' : ''}`}>
+    <button 
+      className="qdh-faq-question" 
+      onClick={onClick}
+      aria-expanded={isOpen}
+    >
+      <div className="qdh-faq-q-content">
+        <span className="qdh-faq-number">{index + 1}</span>
+        <span className="qdh-faq-q-text">{question}</span>
+      </div>
+      <div className={`qdh-faq-chevron ${isOpen ? 'qdh-chevron-open' : ''}`}>
+        <ArrowRight className="w-4 h-4" />
+      </div>
+    </button>
+    <div className={`qdh-faq-answer ${isOpen ? 'qdh-answer-open' : ''}`}>
+      <p>{answer}</p>
     </div>
   </div>
 );
@@ -135,6 +158,7 @@ const StatCounter = ({ icon: Icon, value, label, gradient }) => (
 const Home = () => {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
+  const [openFAQ, setOpenFAQ] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 100);
@@ -203,36 +227,73 @@ const Home = () => {
           ))}
         </section>
 
-        {/* Stats Row - Minimal */}
-        <section className="qdh-counters">
-          <StatCounter 
-            icon={Crown} 
-            value="50K+" 
-            label="Players" 
-            gradient="from-amber-400 to-orange-500"
-          />
-          <div className="qdh-counter-divider" />
-          <StatCounter 
-            icon={Target} 
-            value="1000+" 
-            label="Quizzes" 
-            gradient="from-violet-500 to-fuchsia-500"
-          />
-          <div className="qdh-counter-divider" />
-          <StatCounter 
-            icon={Flame} 
-            value="Daily" 
-            label="Rewards" 
-            gradient="from-rose-500 to-pink-500"
-          />
-        </section>
-
         {/* Bottom animated line */}
         <div className="qdh-bottom-decor">
           <div className="qdh-decor-line" />
           <div className="qdh-decor-dot" />
           <div className="qdh-decor-line" />
         </div>
+
+        {/* How It Works Section */}
+        <section className="qdh-how-it-works">
+          <h2 className="qdh-section-title">
+            <div className="qdh-section-icon">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <span>How To Play & Win</span>
+          </h2>
+          <p className="qdh-section-subtitle">🎯 Start earning rewards in just 4 easy steps!</p>
+          <div className="qdh-steps-grid">
+            {HOW_IT_WORKS.map((item, idx) => {
+              const StepIcon = item.icon;
+              return (
+                <div key={item.step} className="qdh-step-card" style={{ '--step-delay': `${idx * 0.1}s` }}>
+                  {item.highlight && <div className="qdh-step-badge">{item.highlight}</div>}
+                  <div className={`qdh-step-icon-box bg-gradient-to-br ${item.gradient}`}>
+                    <StepIcon className="w-6 h-6 text-white" strokeWidth={2.5} />
+                    <div className="qdh-step-glow" />
+                  </div>
+                  <h3 className="qdh-step-title">{item.title}</h3>
+                  <p className="qdh-step-desc">{item.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="qdh-faq-section">
+          <h2 className="qdh-section-title">
+            <div className="qdh-section-icon">
+              <HelpCircle className="w-5 h-5" />
+            </div>
+            <span>Got Questions?</span>
+          </h2>
+          <p className="qdh-section-subtitle">💡 Everything you need to know about Quiz Dangal</p>
+          <div className="qdh-faq-list">
+            {HOME_FAQ_ENTRIES.map((item, index) => (
+              <FAQItem
+                key={item.question}
+                question={item.question}
+                answer={item.answer}
+                isOpen={openFAQ === index}
+                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
+                index={index}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Footer Links */}
+        <footer className="qdh-footer">
+          <div className="qdh-footer-links">
+            <Link to="/about-us/">About Us</Link>
+            <Link to="/contact-us/">Contact</Link>
+            <Link to="/privacy-policy/">Privacy</Link>
+            <Link to="/terms-conditions/">Terms</Link>
+          </div>
+          <p className="qdh-footer-copy">© 2025 Quiz Dangal. All rights reserved.</p>
+        </footer>
 
       </main>
 

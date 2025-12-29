@@ -1,4 +1,5 @@
 ﻿import React from 'react';
+import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import {
   FileText,
@@ -10,6 +11,11 @@ import {
   EyeOff,
   Repeat,
   CheckCircle,
+  Lock,
+  Mail,
+  Globe,
+  Bell,
+  Cookie,
 } from 'lucide-react';
 import { getBrandGradient } from '@/lib/brand';
 
@@ -18,154 +24,274 @@ const sections = [
     icon: Users,
     title: '1. Information We Collect',
     content: [
-      'We collect account details you provide (e.g., name, email, username, mobile number), basic device/usage info for app functionality, and quiz performance data.',
+      '<strong>Account Information:</strong> When you create an account, we collect your name, email address, username, and optionally your mobile number. This information is necessary to create and manage your Quiz Dangal account.',
+      '<strong>Profile Data:</strong> You may choose to add a profile picture, display name, or other optional information to personalize your account. This data is stored securely and can be updated or deleted anytime.',
+      '<strong>Quiz Activity:</strong> We collect data about your quiz participation including questions answered, scores, time taken, streak history, and leaderboard rankings. This helps us provide accurate results and maintain fair competition.',
+      '<strong>Device Information:</strong> We automatically collect basic device information such as device type, operating system, browser type, and screen resolution. This helps us optimize the app experience for different devices.',
+      '<strong>Usage Analytics:</strong> We use Google Analytics to understand how users interact with Quiz Dangal. This includes pages visited, time spent on the app, and navigation patterns. This data is anonymized and helps us improve our services.',
+      '<strong>Referral Data:</strong> If you join through a referral link or share your referral code, we track this to credit rewards appropriately to both you and the referrer.',
     ],
   },
   {
     icon: Info,
     title: '2. How We Use Your Information',
     content: [
-      'To run your account, enable quizzes and rewards, improve the app, ensure fair play, send updates, and meet legal duties (if applicable).',
+      '<strong>Account Management:</strong> To create, maintain, and authenticate your Quiz Dangal account, allowing you to access personalized features, track your progress, and manage your profile.',
+      '<strong>Quiz Operations:</strong> To enable your participation in quizzes, calculate scores accurately, maintain leaderboards, track streaks, and credit rewards based on your performance.',
+      '<strong>Communication:</strong> To send you important updates about your account, quiz notifications, reward credits, and occasional promotional content. You can opt-out of promotional emails anytime.',
+      '<strong>Platform Improvement:</strong> To analyze usage patterns, identify bugs, improve features, and develop new functionalities that enhance your Quiz Dangal experience.',
+      '<strong>Fair Play Enforcement:</strong> To detect and prevent cheating, bot activity, multiple account creation, and other violations of our terms to maintain a fair environment for all users.',
+      '<strong>Legal Compliance:</strong> To comply with applicable laws, regulations, legal processes, or government requests when required.',
     ],
   },
   {
     icon: Shield,
     title: '3. Sharing of Information',
     content: [
-      'We do not sell your data. We may share with service providers, legal authorities when required, and for fraud prevention.',
+      '<strong>We Do Not Sell Your Data:</strong> Quiz Dangal will never sell, rent, or trade your personal information to third parties for marketing purposes.',
+      '<strong>Service Providers:</strong> We share data with trusted service providers who help us operate Quiz Dangal, including Supabase (database & authentication), Google Analytics (usage tracking), and web hosting services. These providers are contractually obligated to protect your data.',
+      '<strong>Legal Requirements:</strong> We may disclose information when required by law, such as in response to court orders, subpoenas, or legal processes to protect our rights or the safety of users.',
+      '<strong>Fraud Prevention:</strong> We may share information with fraud detection services to prevent abuse, cheating, or other violations that could harm Quiz Dangal or its users.',
+      '<strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user data may be transferred to the new entity. We will notify users of any such changes.',
     ],
   },
   {
     icon: Database,
     title: '4. Data Storage & Security',
     content: [
-      'Data is stored on secure services (e.g., Supabase/PostgreSQL) with encryption and access controls. No system is 100% secure - use strong passwords.',
+      '<strong>Secure Infrastructure:</strong> Your data is stored on Supabase, a secure cloud platform built on PostgreSQL, hosted on Google Cloud Platform with industry-standard security certifications.',
+      '<strong>Encryption:</strong> All data transmitted between your device and our servers is encrypted using TLS/SSL. Sensitive data at rest is also encrypted using AES-256 encryption.',
+      '<strong>Access Controls:</strong> We implement strict access controls to limit who can access user data. Only authorized personnel with specific roles can access personal information, and all access is logged.',
+      '<strong>Regular Security Audits:</strong> We conduct regular security reviews and updates to identify and address potential vulnerabilities in our systems.',
+      '<strong>Password Security:</strong> We encourage users to use strong, unique passwords. Passwords are never stored in plain text—they are hashed using industry-standard algorithms.',
+      '<strong>No Absolute Guarantee:</strong> While we implement robust security measures, no system is 100% secure. We recommend using strong passwords and not sharing your login credentials.',
     ],
   },
   {
     icon: CheckCircle,
-    title: '5. Your Rights',
+    title: '5. Your Rights & Choices',
     content: [
-      'You may request access, correction, deletion (subject to law), and opt out of non-essential notifications.',
+      '<strong>Access Your Data:</strong> You have the right to request a copy of all personal data we hold about you. Contact us at support@quizdangal.com to make such a request.',
+      '<strong>Correct Your Data:</strong> If any information we have about you is inaccurate or incomplete, you can update it directly in your profile settings or contact us for assistance.',
+      '<strong>Delete Your Data:</strong> You can request deletion of your account and associated data at any time. Send an email to support@quizdangal.com with "Account Deletion Request" in the subject line. Deletion is processed within 30 days, subject to legal retention requirements.',
+      '<strong>Opt-Out of Communications:</strong> You can unsubscribe from promotional emails by clicking the unsubscribe link in any email or updating your notification preferences in your profile.',
+      '<strong>Disable Push Notifications:</strong> You can disable push notifications through your browser or device settings at any time.',
+      '<strong>Cookie Preferences:</strong> You can manage cookie preferences through your browser settings, though disabling certain cookies may affect functionality.',
     ],
   },
   {
     icon: EyeOff,
     title: "6. Children's Privacy",
     content: [
-      'For users 18+. We do not knowingly collect data from individuals under 18 years of age.',
+      '<strong>Age Requirement:</strong> Quiz Dangal is intended for users who are 18 years of age or older. We do not knowingly collect personal information from individuals under 18.',
+      '<strong>Parental Notice:</strong> If you are a parent or guardian and believe your child has provided personal information to Quiz Dangal, please contact us immediately at support@quizdangal.com.',
+      '<strong>Data Removal:</strong> If we discover that we have inadvertently collected data from a user under 18, we will take steps to delete that information as quickly as possible.',
     ],
   },
   {
-    icon: Repeat,
-    title: '7. Cookies & Tracking',
+    icon: Cookie,
+    title: '7. Cookies & Tracking Technologies',
     content: [
-      'We use cookies/tech to save preferences and analyze usage. Disabling them may affect functionality.',
+      '<strong>Essential Cookies:</strong> These cookies are necessary for the basic functionality of Quiz Dangal, such as keeping you logged in and remembering your preferences.',
+      '<strong>Analytics Cookies:</strong> We use Google Analytics cookies to understand how users interact with our app, which helps us improve features and user experience. This data is anonymized.',
+      '<strong>Advertising Cookies:</strong> When ads are displayed, third-party advertisers (like Google AdSense) may use cookies to serve personalized ads based on your browsing history.',
+      '<strong>Local Storage:</strong> We use browser local storage to save preferences, cache quiz data, and improve loading times.',
+      '<strong>Managing Cookies:</strong> You can disable cookies through your browser settings. Note that disabling essential cookies may prevent you from using certain features of Quiz Dangal.',
     ],
   },
   {
     icon: Repeat,
-    title: '8. Changes to Privacy Policy',
-    content: ['We may update this policy and will post changes in the app.'],
+    title: '8. Changes to This Privacy Policy',
+    content: [
+      '<strong>Policy Updates:</strong> We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors.',
+      '<strong>Notification:</strong> When we make significant changes, we will notify users through the app, email, or by posting a notice on our website. Minor changes may be made without notice.',
+      '<strong>Continued Use:</strong> Your continued use of Quiz Dangal after any changes to this Privacy Policy constitutes your acceptance of the updated terms.',
+      '<strong>Review Regularly:</strong> We encourage you to review this Privacy Policy periodically to stay informed about how we protect your data.',
+    ],
   },
   {
     icon: Database,
     title: '9. Data Retention',
     content: [
-      'Account data is retained as long as your account is active. Inactive accounts (no login for 2+ years) may be archived. You can request account deletion anytime via support@quizdangal.com. Deletion is processed within 30 days, subject to legal obligations.',
+      '<strong>Active Accounts:</strong> We retain your personal data as long as your account is active and as needed to provide you with our services.',
+      '<strong>Inactive Accounts:</strong> Accounts with no login activity for more than 2 years may be marked as inactive and subject to archival. You will receive notification before any data is archived.',
+      '<strong>Post-Deletion:</strong> After account deletion, some anonymized data may be retained for analytics purposes. Personal identifiers are removed.',
+      '<strong>Legal Requirements:</strong> Certain data may be retained longer if required by law, such as for tax, legal, or regulatory purposes.',
+      '<strong>Deletion Request:</strong> You can request complete account deletion by emailing support@quizdangal.com. Deletion requests are processed within 30 days.',
     ],
   },
   {
-    icon: Info,
+    icon: Globe,
     title: '10. Third-Party Services',
     content: [
-      'We use Supabase (database & authentication), Google Analytics (usage tracking), and Web Push (notifications). These services have their own privacy policies. We do not share personal data beyond what is necessary for app functionality.',
+      '<strong>Supabase:</strong> We use Supabase for database hosting and user authentication. Supabase is built on PostgreSQL and hosted on secure cloud infrastructure. <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 underline">View Supabase Privacy Policy</a>',
+      '<strong>Google Analytics:</strong> We use Google Analytics to track usage patterns and improve our services. Data is anonymized and IP addresses are masked. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 underline">View Google Privacy Policy</a>',
+      '<strong>Web Push Notifications:</strong> We use standard web push technology to send notifications. You can disable these through your browser settings.',
+      '<strong>Social Media:</strong> If you interact with our social media pages, those platforms have their own privacy policies governing your data.',
+      '<strong>Data Minimization:</strong> We only share the minimum data necessary with third-party services for their specific functionality. We do not share unnecessary personal information.',
     ],
   },
   {
-    icon: Shield,
+    icon: Bell,
     title: '11. Advertising',
     content: [
-      'We may display third-party advertisements (Google AdSense). Advertisers may use cookies to serve relevant ads. You can opt-out via Google Ad Settings. We do not control advertiser content.',
+      '<strong>Third-Party Ads:</strong> Quiz Dangal may display advertisements from third-party networks, including Google AdSense. These ads help us provide free services to all users.',
+      '<strong>Personalized Advertising:</strong> Advertisers may use cookies and tracking technologies to serve personalized ads based on your browsing history and interests.',
+      '<strong>Opt-Out Options:</strong> You can opt out of personalized advertising through <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 underline">Google Ad Settings</a> or by using the "Your Ad Choices" options where available.',
+      '<strong>Ad Content:</strong> We do not control the content of third-party advertisements. If you encounter inappropriate ads, please report them to us.',
+      '<strong>Children & Ads:</strong> We do not serve personalized ads to users we know are under 18 years of age.',
+    ],
+  },
+  {
+    icon: Lock,
+    title: '12. Data Security Measures',
+    content: [
+      '<strong>HTTPS Encryption:</strong> All connections to Quiz Dangal use HTTPS, ensuring that data transmitted between your device and our servers is encrypted.',
+      '<strong>Secure Authentication:</strong> We use secure authentication methods including OAuth 2.0 for social logins and industry-standard password hashing.',
+      '<strong>Rate Limiting:</strong> We implement rate limiting to prevent brute force attacks and protect user accounts.',
+      '<strong>Regular Updates:</strong> We regularly update our software and dependencies to patch security vulnerabilities.',
+      '<strong>Incident Response:</strong> In the event of a data breach, we have procedures in place to notify affected users and relevant authorities as required by law.',
     ],
   },
 ];
 
 const PrivacyPolicy = () => {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      { '@type': 'Question', name: 'What data does Quiz Dangal collect?', acceptedAnswer: { '@type': 'Answer', text: 'Quiz Dangal collects account information (name, email, username), quiz activity data (scores, streaks, rankings), and basic device information for app optimization.' } },
+      { '@type': 'Question', name: 'Does Quiz Dangal sell my data?', acceptedAnswer: { '@type': 'Answer', text: 'No, Quiz Dangal never sells, rents, or trades your personal information to third parties for marketing purposes.' } },
+      { '@type': 'Question', name: 'How can I delete my Quiz Dangal account?', acceptedAnswer: { '@type': 'Answer', text: 'You can request account deletion by emailing support@quizdangal.com. Deletion is processed within 30 days.' } },
+    ],
+  };
+
   return (
     <div className="min-h-screen pt-14 text-slate-100">
-      <div className="container mx-auto px-4 py-4 space-y-5">
+      <div className="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
         <SEO
-          title="Privacy Policy - Quiz Dangal"
-          description="How Quiz Dangal collects, uses, stores, and protects your personal data and quiz activity."
+          title="Privacy Policy - Quiz Dangal | Data Protection & User Privacy"
+          description="Comprehensive Privacy Policy for Quiz Dangal. Learn how we collect, use, store, and protect your personal data. Your privacy is our priority."
           canonical="https://quizdangal.com/privacy-policy/"
           alternateLocales={['hi_IN', 'en_US']}
           keywords={[
-            'quiz dangal privacy',
+            'quiz dangal privacy policy',
             'quiz app privacy policy',
             'quiz dangal data protection',
+            'quiz dangal user privacy',
+            'quiz dangal gdpr',
+            'quiz app data security',
           ]}
+          jsonLd={[faqSchema]}
         />
 
-        <section className="text-center mb-5 animate-fade-up" style={{ '--fade-delay': '40ms' }}>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-1">
+        {/* Header */}
+        <header className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-3">
             Privacy Policy
           </h1>
-          <div className="flex items-center justify-center space-x-2 text-slate-300 mb-2">
-            <Calendar className="w-3 h-3" />
-            <span className="text-xs">Last Updated: November 1, 2025</span>
+          <div className="flex items-center justify-center space-x-2 text-slate-300 mb-4">
+            <Calendar className="w-4 h-4" />
+            <span className="text-sm">Last Updated: December 29, 2025</span>
           </div>
-          <p className="text-sm text-slate-300 leading-relaxed max-w-3xl mx-auto">
-            At Quiz Dangal, we value your privacy and are committed to protecting your personal
-            data. By using the app, you agree to this Privacy Policy.
+          <p className="text-base text-slate-300 leading-relaxed max-w-3xl mx-auto">
+            At Quiz Dangal, we take your privacy seriously. This Privacy Policy explains in detail 
+            how we collect, use, store, and protect your personal information when you use our 
+            platform. By using Quiz Dangal, you agree to the practices described in this policy.
           </p>
+        </header>
+
+        {/* Quick Summary */}
+        <section className="bg-gradient-to-br from-emerald-900/40 via-teal-900/30 to-cyan-900/40 backdrop-blur-xl border border-emerald-700/50 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Shield className="w-6 h-6 text-emerald-400" />
+            <h2 className="text-xl font-bold text-emerald-300">Privacy at a Glance</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-300 text-sm"><strong>We don&apos;t sell your data</strong> — Your information is never sold or traded.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-300 text-sm"><strong>Secure storage</strong> — Data encrypted with industry-standard protocols.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-300 text-sm"><strong>Your control</strong> — Access, update, or delete your data anytime.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-300 text-sm"><strong>18+ only</strong> — We do not collect data from users under 18.</p>
+            </div>
+          </div>
         </section>
-        <div className="space-y-4">
-          {sections.map((section, index) => {
-            const baseDelay = 240 + index * 90;
-            return (
-              <section
-                key={section.title}
-                className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-xl p-4 animate-fade-up"
-                style={{ '--fade-delay': `${baseDelay}ms` }}
-              >
-                <div className="flex items-start space-x-3 mb-2">
+
+        {/* Main Content */}
+        <div className="space-y-5">
+          {sections.map((section, index) => (
+            <section
+              key={section.title}
+              className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-xl p-5"
+            >
+              <div className="flex items-start space-x-3 mb-4">
+                <div
+                  className={`bg-gradient-to-r ${getBrandGradient(index)} p-2.5 rounded-full flex-shrink-0`}
+                >
+                  <section.icon className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-lg font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent">
+                  {section.title}
+                </h2>
+              </div>
+              <div className="space-y-3 ml-0 md:ml-12">
+                {section.content.map((item, itemIndex) => (
                   <div
-                    className={`bg-gradient-to-r ${getBrandGradient(index)} p-2 rounded-full flex-shrink-0`}
+                    key={`${section.title}-${itemIndex}`}
+                    className="flex items-start space-x-3"
                   >
-                    <section.icon className="w-4 h-4 text-white" />
+                    <div className="w-1.5 h-1.5 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-full mt-2 flex-shrink-0" />
+                    <p 
+                      className="text-slate-300 text-sm leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: item }}
+                    />
                   </div>
-                  <h2 className="text-base font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent">
-                    {section.title}
-                  </h2>
-                </div>
-                <div className="space-y-2 ml-0 md:ml-12">
-                  {section.content.map((item, itemIndex) => (
-                    <div
-                      key={`${section.title}-${itemIndex}`}
-                      className="flex items-start space-x-2 animate-fade-left"
-                      style={{ '--fade-left-delay': `${baseDelay + 50 + itemIndex * 40}ms` }}
-                    >
-                      <div className="w-1.5 h-1.5 bg-gradient-to-r from-indigo-600 to-fuchsia-600 rounded-full mt-1.5 flex-shrink-0" />
-                      <p className="text-slate-300 text-xs leading-relaxed">{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
 
-        <section
-          className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-xl p-4 text-center animate-fade-up"
-          style={{ '--fade-delay': '520ms' }}
-        >
-          <FileText className="w-8 h-8 text-fuchsia-400 mx-auto mb-2" />
-          <h3 className="text-base font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent mb-2">
-            Questions About This Policy?
-          </h3>
-          <p className="text-slate-300 text-sm leading-relaxed mb-1">We are here to help.</p>
-          <p className="text-slate-400 text-xs">Contact: support@quizdangal.com</p>
+        {/* Contact Section */}
+        <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-xl p-6 text-center">
+          <FileText className="w-10 h-10 text-fuchsia-400 mx-auto mb-3" />
+          <h2 className="text-xl font-bold bg-gradient-to-r from-violet-300 via-indigo-200 to-fuchsia-300 bg-clip-text text-transparent mb-3">
+            Questions About This Privacy Policy?
+          </h2>
+          <p className="text-slate-300 text-sm leading-relaxed mb-4 max-w-lg mx-auto">
+            If you have any questions, concerns, or requests regarding this Privacy Policy or how 
+            we handle your data, please don&apos;t hesitate to contact us. We are here to help.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 mb-4">
+            <a 
+              href="mailto:support@quizdangal.com" 
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+            >
+              <Mail className="w-4 h-4" />
+              support@quizdangal.com
+            </a>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <Link to="/terms-conditions/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+              Terms & Conditions
+            </Link>
+            <Link to="/contact-us/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+              Contact Us
+            </Link>
+            <Link to="/about-us/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+              About Us
+            </Link>
+          </div>
         </section>
       </div>
     </div>
