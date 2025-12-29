@@ -4,6 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================================
+   PERFORMANCE OPTIMIZATIONS - CRITICAL
+   ============================================== */
+/* Enable content-visibility for off-screen content */
+.qdh-how-it-works,
+.qdh-faq-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* CSS containment for cards to isolate paint */
+.qdh-card {
+  contain: layout style;
+}
+
+/* Reduce paint areas for large sections */
+.qdh-section {
+  contain: content;
+}
+
+/* Font display optimization */
+@font-face {
+  font-display: swap;
+}
+
 html,
 :host {
   -webkit-text-size-adjust: 100%;
@@ -2077,16 +2102,24 @@ section:focus-visible {
   overflow-y: auto;
 }
 
-/* Background Effects */
+/* Background Effects - Hidden on mobile for performance */
 .qdh-bg-effects {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+  display: none; /* Hidden by default on mobile */
 }
 
-/* Animated Glows */
+/* Show background effects only on desktop */
+@media (min-width: 1024px) and (hover: hover) {
+  .qdh-bg-effects {
+    display: block;
+  }
+}
+
+/* Animated Glows - Only on desktop */
 .qdh-glow {
   position: absolute;
   border-radius: 50%;
@@ -3600,5 +3633,100 @@ section:focus-visible {
   .qdh-how-it-works,
   .qdh-faq-section {
     padding: 16px;
+  }
+}
+
+/* ============================================
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   Disable heavy animations/effects on mobile
+   to improve Lighthouse Performance score
+   ============================================ */
+@media (max-width: 1023px) {
+  /* Disable continuous animations on mobile */
+  .qdh-card-border {
+    animation: none !important;
+    background: rgba(255, 255, 255, 0.15);
+    background-size: 100% 100%;
+  }
+  
+  .qdh-card-shine {
+    animation: none !important;
+  }
+  
+  /* Disable star twinkle animations */
+  .qdh-star {
+    animation: none !important;
+    opacity: 0.4;
+  }
+  
+  /* Disable crown sparkle animations */
+  .qdh-crown-sparkle {
+    display: none !important;
+  }
+  
+  .qdh-sparkle-1,
+  .qdh-sparkle-2,
+  .qdh-sparkle-3 {
+    animation: none !important;
+    display: none !important;
+  }
+  
+  /* Disable ring animations */
+  .qdh-ring {
+    display: none !important;
+  }
+  
+  /* Reduce backdrop blur on mobile (expensive) */
+  .qdh-card-glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Disable floating/pulsing animations */
+  .animate-float,
+  .animate-pulse,
+  .qdh-floating {
+    animation: none !important;
+  }
+  
+  /* Disable section fade animations for faster LCP */
+  .qdh-section-title {
+    animation: none !important;
+    opacity: 1;
+  }
+  
+  /* Optimize will-change for mobile */
+  .qdh-card,
+  .qdh-card-border,
+  .qdh-card-shine,
+  [class*="qdh-"] {
+    will-change: auto !important;
+  }
+  
+  /* Reduce transform animations */
+  .qdh-card:hover {
+    transform: none;
+  }
+  
+  .qdh-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .qdh-bg-effects,
+  .qdh-crown-sparkle,
+  .qdh-card-rings,
+  .qdh-ring {
+    display: none !important;
   }
 }
