@@ -11,22 +11,22 @@ export const PRIZES = [121, 71, 51];
 export const QUIZ_DURATION_MINUTES = 5;
 // Interval between quiz starts (10 min = 5 min quiz + 5 min gap)
 export const QUIZ_INTERVAL_MINUTES = 10;
-// 8:00 AM to 11:50 PM with 10-min intervals = 96 quizzes per day per category
-// (8:00-8:05 quiz, 8:05-8:10 gap, 8:10-8:15 quiz, 8:15-8:20 gap... 23:50-23:55 last quiz)
-// 4 categories × 96 = 384 total quizzes per day
-export const TOTAL_QUIZZES_PER_DAY = 96;
+// 00:00 to 23:50 with 10-min intervals = 144 quizzes per day per category (24 hours)
+// (00:00-00:05 quiz, 00:05-00:10 gap, 00:10-00:15 quiz... 23:50-23:55 last quiz)
+// 4 categories × 144 = 576 total quizzes per day
+export const TOTAL_QUIZZES_PER_DAY = 144;
 const QUESTIONS_PER_QUIZ = 10;
 
-// Generate time slots from 08:00 to 23:50 (10-min intervals)
+// Generate time slots from 00:00 to 23:50 (10-min intervals) - 24 hour schedule
 function generateDaySchedule() {
   const times = [];
-  let h = 8, m = 0;
+  let h = 0, m = 0;
   while (h < 24) {
     times.push(String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
     m += QUIZ_INTERVAL_MINUTES; // 10 min intervals
     if (m >= 60) { h++; m = m - 60; }
   }
-  return times; // 08:00, 08:10, 08:20... 23:50
+  return times; // 00:00, 00:10, 00:20... 23:50
 }
 
 // Category colors
@@ -488,7 +488,7 @@ export default function DailyScheduler() {
             Quiz Scheduler
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {TOTAL_QUIZZES_PER_DAY} quizzes/day × 4 categories • 08:00 - 23:50 IST • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
+            {TOTAL_QUIZZES_PER_DAY} quizzes/day × 4 categories • 00:00 - 23:50 IST (24hr) • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
           </p>
         </div>
         {loading && (

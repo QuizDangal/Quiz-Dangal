@@ -36,4 +36,4 @@ SUPABASE_SERVICE_ROLE_KEY=... (secret)
 `cleanup_slots` deletes data where target_date < (current_date - 3). Uses RPC `purge_old_slots`.
 
 ## Seeding
-`admin_seed_quiz_day_multi` enforces 96 slots (08:00–23:50, 10-min cadence) per category.
+`admin_seed_quiz_day_multi` enforces 144 slots (00:00–23:50, 10-min cadence, 24-hour) per category.

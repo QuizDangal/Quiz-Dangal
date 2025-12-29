@@ -5,7 +5,7 @@ Ek modern quiz web app jo Supabase (Auth + DB + Edge Functions), React (Vite), a
 ## Features
 - User Auth (Supabase)
 - Admin tools (notifications, recompute results, daily scheduler)
-- Slot-based quiz system (96 quizzes/day per category)
+- Slot-based quiz system (144 quizzes/day per category, 24-hour schedule)
 - PWA (offline cache, installable)
 - Push Notifications (Web Push + VAPID)
 - Resilient quiz answer syncing (retry + backoff) ✅
