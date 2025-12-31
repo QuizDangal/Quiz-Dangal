@@ -14,6 +14,23 @@ import { logger } from '@/lib/logger';
 
 const scheduledMap = new Map(); // quizId/slotId -> timeout id
 
+// Cleanup function to clear scheduled timeouts (call on component unmount)
+export function clearScheduledJoins(quizIdentifier = null) {
+  if (quizIdentifier) {
+    const tid = scheduledMap.get(quizIdentifier);
+    if (tid) {
+      clearTimeout(tid);
+      scheduledMap.delete(quizIdentifier);
+    }
+  } else {
+    // Clear all scheduled joins
+    for (const [key, tid] of scheduledMap.entries()) {
+      clearTimeout(tid);
+      scheduledMap.delete(key);
+    }
+  }
+}
+
 // Helper to call the appropriate RPC based on quiz type
 async function callPreJoin(supabase, quiz) {
   // If this is a slot-based quiz (has slotId and no isLegacy flag)

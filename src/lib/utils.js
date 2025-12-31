@@ -1,5 +1,6 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { logger } from '@/lib/logger';
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -280,7 +281,7 @@ export async function safeComputeResultsIfDue(supabase, quizId, opts = {}) {
         (msg.includes('function') && msg.includes('does not exist'));
       if (!notFound && import.meta.env.DEV) {
         // Only log non-404 errors in dev
-        console.debug('safeComputeResultsIfDue error', error);
+        logger.debug('safeComputeResultsIfDue error', error);
       }
       return false;
     }

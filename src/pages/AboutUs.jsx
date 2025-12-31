@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import SEO from '@/components/SEO';
+import React from 'react';
+import SeoHead from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { 
   Target, Users, Trophy, Shield, CheckCircle, Star, Lightbulb, 
@@ -119,36 +119,69 @@ const AboutUs = () => {
     })),
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+      { '@type': 'ListItem', position: 2, name: 'About Us', item: 'https://quizdangal.com/about-us/' },
+    ],
+  };
+
   const orgSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Quiz Dangal',
+    alternateName: ['QuizDangal', 'Quiz Dangal India'],
     url: 'https://quizdangal.com/',
-    logo: 'https://quizdangal.com/android-chrome-512x512.png',
-    description: 'India\'s premier quiz and rewards platform offering daily quizzes, leaderboards, and coin-based rewards.',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://quizdangal.com/android-chrome-512x512.png',
+      width: 512,
+      height: 512,
+    },
+    image: 'https://quizdangal.com/refer-earn-poster.png',
+    description: 'India\'s premier quiz and rewards platform offering daily quizzes, leaderboards, and coin-based rewards. Play for free and win exciting prizes.',
     foundingDate: '2025',
+    foundingLocation: {
+      '@type': 'Place',
+      name: 'Jaipur, Rajasthan, India',
+    },
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Jaipur',
       addressRegion: 'Rajasthan',
-      addressCountry: 'India',
+      addressCountry: 'IN',
     },
     contactPoint: {
       '@type': 'ContactPoint',
+      telephone: '+91-9587803557',
       email: 'support@quizdangal.com',
       contactType: 'customer support',
+      availableLanguage: ['English', 'Hindi'],
+      areaServed: 'IN',
     },
     sameAs: [
       'https://www.instagram.com/quizdangal',
       'https://www.facebook.com/profile.php?id=61576614092243',
       'https://x.com/quizdangal',
     ],
+    knowsAbout: ['quizzes', 'trivia', 'general knowledge', 'opinion polls', 'sports quizzes', 'movie quizzes', 'rewards', 'leaderboards', 'gaming'],
+    slogan: 'Play. Compete. Win.',
+    numberOfEmployees: {
+      '@type': 'QuantitativeValue',
+      value: '1-10',
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'India',
+    },
   };
 
   return (
     <div className="min-h-screen pt-14 text-slate-100">
       <div className="container mx-auto px-4 py-6 space-y-8 max-w-5xl">
-        <SEO
+        <SeoHead
           title="About Us - Quiz Dangal | India's #1 Free Quiz & Rewards Platform"
           description="Learn about Quiz Dangal - India's most exciting free quiz platform. Play daily quizzes on GK, sports, movies, earn coins, climb leaderboards, and win rewards. Join thousands of quiz enthusiasts today!"
           canonical="https://quizdangal.com/about-us/"
@@ -163,11 +196,14 @@ const AboutUs = () => {
             'indian quiz platform',
             'online quiz contest india',
           ]}
-          jsonLd={[orgSchema, faqSchema]}
+          jsonLd={[orgSchema, faqSchema, breadcrumbSchema]}
+          author="Quiz Dangal"
+          datePublished="2025-01-01"
+          dateModified="2025-12-29"
         />
 
-        {/* Hero Section */}
-        <header className="text-center mb-8">
+        {/* Hero Section - AI Speakable */}
+        <header className="text-center mb-8" data-speakable="true">
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-4">
             About Quiz Dangal
           </h1>
@@ -179,7 +215,7 @@ const AboutUs = () => {
         </header>
 
         {/* Our Story Section */}
-        <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
+        <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 md:backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-2 rounded-full">
               <BookOpen className="w-5 h-5 text-white" />
@@ -211,7 +247,7 @@ const AboutUs = () => {
 
         {/* Mission & Vision */}
         <div className="grid md:grid-cols-2 gap-6">
-          <section className="bg-gradient-to-br from-emerald-900/50 via-teal-900/40 to-cyan-900/40 backdrop-blur-xl border border-emerald-700/60 rounded-2xl p-6 shadow-xl">
+          <section className="bg-gradient-to-br from-emerald-900/50 via-teal-900/40 to-cyan-900/40 md:backdrop-blur-xl border border-emerald-700/60 rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-2 rounded-full">
                 <Target className="w-5 h-5 text-white" />
@@ -225,7 +261,7 @@ const AboutUs = () => {
             </p>
           </section>
 
-          <section className="bg-gradient-to-br from-purple-900/50 via-violet-900/40 to-pink-900/40 backdrop-blur-xl border border-purple-700/60 rounded-2xl p-6 shadow-xl">
+          <section className="bg-gradient-to-br from-purple-900/50 via-violet-900/40 to-pink-900/40 md:backdrop-blur-xl border border-purple-700/60 rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full">
                 <Lightbulb className="w-5 h-5 text-white" />
@@ -241,7 +277,7 @@ const AboutUs = () => {
         </div>
 
         {/* Quiz Categories */}
-        <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
+        <section className="bg-slate-900/60 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
           <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent text-center mb-6">
             Quiz Categories We Offer
           </h2>
@@ -335,7 +371,7 @@ const AboutUs = () => {
         </section>
 
         {/* Company Info */}
-        <section className="bg-gradient-to-br from-slate-800/80 via-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
+        <section className="bg-gradient-to-br from-slate-800/80 via-slate-900/80 to-slate-800/80 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
           <h2 className="text-xl font-bold text-white text-center mb-6">Company Information</h2>
           <div className="grid md:grid-cols-3 gap-6 text-center">
             <div>
@@ -363,7 +399,7 @@ const AboutUs = () => {
         </section>
 
         {/* FAQs */}
-        <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
+        <section className="bg-slate-900/60 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl">
           <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent text-center mb-6">
             Frequently Asked Questions
           </h2>
@@ -371,14 +407,14 @@ const AboutUs = () => {
             {faqs.map((faq, index) => (
               <div key={index} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
                 <h3 className="text-base font-semibold text-white mb-2">{faq.question}</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">{faq.answer}</p>
+                <p className="text-slate-300 text-sm leading-relaxed" data-speakable="true">{faq.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="bg-gradient-to-r from-indigo-600/80 via-purple-600/80 to-pink-600/80 backdrop-blur-xl border border-indigo-500/60 rounded-2xl p-6 md:p-8 text-center shadow-xl">
+        <section className="bg-gradient-to-r from-indigo-600/80 via-purple-600/80 to-pink-600/80 md:backdrop-blur-xl border border-indigo-500/60 rounded-2xl p-6 md:p-8 text-center shadow-xl">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Star className="w-6 h-6 text-amber-300" />
             <h2 className="text-xl md:text-2xl font-bold text-white">
@@ -386,7 +422,7 @@ const AboutUs = () => {
             </h2>
             <Star className="w-6 h-6 text-amber-300" />
           </div>
-          <p className="text-slate-100 text-base leading-relaxed mb-4 max-w-2xl mx-auto">
+          <p className="text-slate-100 text-base leading-relaxed mb-4 max-w-2xl mx-auto" data-speakable="true">
             Become part of India&apos;s fastest-growing quiz community. Play daily quizzes, earn coins, 
             compete on leaderboards, and win exciting rewards—all for free!
           </p>

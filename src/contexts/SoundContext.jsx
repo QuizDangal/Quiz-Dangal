@@ -318,7 +318,6 @@ export function SoundProvider({ children }) {
       const v = localStorage.getItem(STORAGE_KEYS.volume);
       if (eNew == null) {
         // Migrate from legacy key but prefer enabling by default
-        // legacy key read removed (unused): const legacy = localStorage.getItem('qd_sound_enabled');
         const initialEnabled = true; // always start with sound on
         setEnabled(initialEnabled);
         localStorage.setItem(STORAGE_KEYS.enabled, initialEnabled ? '1' : '0');

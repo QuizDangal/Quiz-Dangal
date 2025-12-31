@@ -47,10 +47,10 @@ export default function CricketQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/category/sports/', label: 'Sports Quizzes' },
-        { href: '/sports-quiz/', label: 'Sports Quiz' },
-        { href: '/quiz-questions/', label: 'All Quiz Questions' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/category/sports/', label: 'Sports Quizzes' },
+        { to: '/sports-quiz/', label: 'Sports Quiz' },
+        { to: '/quiz-questions/', label: 'All Quiz Questions' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
       ]}
       faqs={[
         {

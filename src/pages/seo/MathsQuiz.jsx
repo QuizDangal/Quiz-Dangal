@@ -55,11 +55,11 @@ export default function MathsQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/online-quiz/', label: 'Online Quiz' },
-        { href: '/category/gk/', label: 'GK Quizzes' },
-        { href: '/science-quiz/', label: 'Science Quiz' },
-        { href: '/gk-quiz/', label: 'GK Quiz' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/online-quiz/', label: 'Online Quiz' },
+        { to: '/category/gk/', label: 'GK Quizzes' },
+        { to: '/science-quiz/', label: 'Science Quiz' },
+        { to: '/gk-quiz/', label: 'GK Quiz' },
       ]}
       faqs={[
         {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Helmet } from 'react-helmet-async';
+import SeoHead from '@/components/SEO';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -112,11 +112,13 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Helmet>
-        <title>Reset Password – Quiz Dangal</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://quizdangal.com/reset-password/" />
-      </Helmet>
+      <SeoHead
+        title="Reset Password – Quiz Dangal"
+        description="Reset your Quiz Dangal password securely. Enter your new password to regain access to your account."
+        canonical="https://quizdangal.com/reset-password/"
+        robots="noindex, nofollow"
+        author="Quiz Dangal"
+      />
       <div className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-8 max-w-md w-full shadow-xl text-slate-100">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-2 text-center">
           Reset Password

@@ -57,10 +57,10 @@ export default function QuizCompetition() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/leaderboards/', label: 'See Leaderboards' },
-        { href: '/play-win-quiz-app/', label: 'Play & Win' },
-        { href: '/quiz-game/', label: 'Quiz Game' },
-        { href: '/online-quiz/', label: 'Online Quiz' },
+        { to: '/leaderboards/', label: 'See Leaderboards' },
+        { to: '/play-win-quiz-app/', label: 'Play & Win' },
+        { to: '/quiz-game/', label: 'Quiz Game' },
+        { to: '/online-quiz/', label: 'Online Quiz' },
       ]}
       faqs={[
         {

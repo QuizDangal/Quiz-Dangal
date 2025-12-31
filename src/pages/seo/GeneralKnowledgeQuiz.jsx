@@ -50,11 +50,11 @@ export default function GeneralKnowledgeQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/gk-quiz/', label: 'GK Quiz' },
-        { href: '/category/gk/', label: 'Play GK' },
-        { href: '/quiz-questions-with-answers/', label: 'Quiz Questions With Answers' },
-        { href: '/current-affairs-quiz/', label: 'Current Affairs' },
-        { href: '/gk-questions/', label: 'GK Questions' },
+        { to: '/gk-quiz/', label: 'GK Quiz' },
+        { to: '/category/gk/', label: 'Play GK' },
+        { to: '/quiz-questions-with-answers/', label: 'Quiz Questions With Answers' },
+        { to: '/current-affairs-quiz/', label: 'Current Affairs' },
+        { to: '/gk-questions/', label: 'GK Questions' },
       ]}
       faqs={[
         {

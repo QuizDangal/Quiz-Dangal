@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 import { Camera, Loader2 } from 'lucide-react';
 
 const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
-  const { user, userProfile, supabase, refreshUserProfile } = useAuth();
+  const { user, userProfile, refreshUserProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -60,7 +62,7 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
         if (error) throw error;
         return data?.signedUrl || '';
       } catch (e) {
-        console.warn('Avatar preview fetch failed:', e);
+        logger.warn('Avatar preview fetch failed:', e);
         return '';
       }
     };
@@ -84,7 +86,7 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
     return () => {
       cancelled = true;
     };
-  }, [userProfile, supabase]);
+  }, [userProfile]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -117,14 +119,16 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
       });
 
       if (error) {
-        console.error('Username check error:', error);
-        return true; // Allow if check fails
+        logger.error('Username check error:', error);
+        setErrors((prev) => ({ ...prev, username: 'Unable to verify username. Please try again.' }));
+        return false; // Block submission if check fails - safer approach
       }
 
       return Boolean(data);
     } catch (error) {
-      console.error('Username availability check failed:', error);
-      return true; // Allow if check fails
+      logger.error('Username availability check failed:', error);
+      setErrors((prev) => ({ ...prev, username: 'Unable to verify username. Please try again.' }));
+      return false; // Block submission if check fails - safer approach
     }
   };
 
@@ -202,8 +206,13 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
           avatarUrl = uploaded.path; // store relative path in DB
           if (uploaded.previewUrl) setAvatarPreview(uploaded.previewUrl);
         } catch (avatarError) {
-          console.error('Avatar upload failed:', avatarError);
-          // Continue without avatar update
+          logger.error('Avatar upload failed:', avatarError);
+          // Warn user but continue with profile update
+          toast({
+            title: 'Avatar upload failed',
+            description: 'Profile will be saved without the new photo. Please try again later.',
+            variant: 'destructive',
+          });
         }
       }
 
@@ -227,7 +236,7 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
 
       onClose();
     } catch (error) {
-      console.error('Profile update error:', error);
+      logger.error('Profile update error:', error);
       setErrors({ submit: error.message || 'Failed to update profile' });
     } finally {
       setLoading(false);

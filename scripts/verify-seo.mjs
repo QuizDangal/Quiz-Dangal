@@ -133,8 +133,12 @@ keyPages.forEach(page => {
       const content = readFileSync(pagePath, 'utf-8');
       if (!content.includes('from \'@/components/SEO\'') && !content.includes('from "@/components/SEO"')) {
         warnings.push(`⚠️  ${page} missing SEO component import`);
-      } else if (!content.includes('<SEO')) {
-        warnings.push(`⚠️  ${page} not using SEO component`);
+      } else {
+        const usesSeoHead = content.includes('<SeoHead');
+        const usesLegacySeo = content.includes('<SEO');
+        if (!usesSeoHead && !usesLegacySeo) {
+          warnings.push(`⚠️  ${page} not using SEO component`);
+        }
       }
     }
   } catch (err) {

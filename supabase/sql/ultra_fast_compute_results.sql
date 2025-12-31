@@ -26,7 +26,28 @@ DECLARE
   v_category text;
   v_lock_key bigint;
   v_q_count  int;
+  v_uid      uuid := (SELECT auth.uid());
+  v_status   text;
+  v_end_time timestamptz;
 BEGIN
+  -- SECURITY: Do not allow arbitrary authenticated users to compute results.
+  -- Allow internal callers (triggers/cron) where auth.uid() is NULL, and allow admins.
+  IF v_uid IS NOT NULL AND NOT public.is_admin() THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+
+  -- Results should only be computed after the quiz has ended.
+  SELECT q.status, q.end_time
+  INTO v_status, v_end_time
+  FROM public.quizzes q
+  WHERE q.id = p_quiz_id;
+  IF v_status IS NULL THEN
+    RETURN;
+  END IF;
+  IF v_end_time IS NOT NULL AND v_end_time > v_now THEN
+    RAISE EXCEPTION 'results_not_ready';
+  END IF;
+
   -- Advisory lock to prevent concurrent computation
   SELECT (('x' || substr(md5(p_quiz_id::text), 1, 16))::bit(64))::bigint INTO v_lock_key;
   IF NOT pg_try_advisory_xact_lock(v_lock_key) THEN
@@ -165,11 +186,13 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission
-GRANT EXECUTE ON FUNCTION public.compute_quiz_results(uuid) TO authenticated;
+-- Permissions: service_role only (invoked by triggers/maintenance functions as well).
+REVOKE ALL ON FUNCTION public.compute_quiz_results(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.compute_quiz_results(uuid) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.compute_quiz_results(uuid) TO service_role;
 
 -- Analyze tables to update statistics for query planner
 ANALYZE public.user_answers;
 ANALYZE public.questions;
 ANALYZE public.quiz_results;
+

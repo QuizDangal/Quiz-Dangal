@@ -8,17 +8,17 @@ const PWAInstallButton = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (globalThis.window === undefined) {
       return undefined;
     }
 
     const mm =
-      typeof window.matchMedia === 'function'
-        ? window.matchMedia('(display-mode: standalone)')
+      typeof globalThis.matchMedia === 'function'
+        ? globalThis.matchMedia('(display-mode: standalone)')
         : null;
     const isStandaloneView = () => {
       try {
-        return Boolean(mm?.matches || window.navigator?.standalone === true);
+        return Boolean(mm?.matches || globalThis.navigator?.standalone === true);
       } catch {
         return false;
       }
@@ -27,19 +27,18 @@ const PWAInstallButton = () => {
     setIsStandalone(isStandaloneView());
 
     const onModeChange = (event) => {
-      setIsStandalone(Boolean(event?.matches) || window.navigator?.standalone === true);
+      setIsStandalone(Boolean(event?.matches) || globalThis.navigator?.standalone === true);
     };
 
     if (mm) {
       try {
         mm.addEventListener('change', onModeChange);
       } catch {
-        if (mm.addListener) mm.addListener(onModeChange);
+        // Fallback removed - deprecated addListener not used
       }
     }
 
     const onBeforeInstall = (e) => {
-      e.preventDefault();
       setDeferredPrompt(e);
     };
     const onInstalled = () => {
@@ -48,8 +47,8 @@ const PWAInstallButton = () => {
 
     // If the prompt was captured before this component mounted, pick it up.
     try {
-      if (window.__qdDeferredPrompt) {
-        setDeferredPrompt(window.__qdDeferredPrompt);
+      if (globalThis.__qdDeferredPrompt) {
+        setDeferredPrompt(globalThis.__qdDeferredPrompt);
       }
     } catch {
       // ignore
@@ -57,8 +56,8 @@ const PWAInstallButton = () => {
 
     const onGlobalBip = () => {
       try {
-        if (window.__qdDeferredPrompt) {
-          setDeferredPrompt(window.__qdDeferredPrompt);
+        if (globalThis.__qdDeferredPrompt) {
+          setDeferredPrompt(globalThis.__qdDeferredPrompt);
         }
       } catch {
         // ignore
@@ -68,21 +67,21 @@ const PWAInstallButton = () => {
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
-    window.addEventListener('appinstalled', onInstalled);
-    window.addEventListener('qd:beforeinstallprompt', onGlobalBip);
-    window.addEventListener('qd:appinstalled', onGlobalInstalled);
+    globalThis.addEventListener('beforeinstallprompt', onBeforeInstall);
+    globalThis.addEventListener('appinstalled', onInstalled);
+    globalThis.addEventListener('qd:beforeinstallprompt', onGlobalBip);
+    globalThis.addEventListener('qd:appinstalled', onGlobalInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
-      window.removeEventListener('qd:beforeinstallprompt', onGlobalBip);
-      window.removeEventListener('qd:appinstalled', onGlobalInstalled);
+      globalThis.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      globalThis.removeEventListener('appinstalled', onInstalled);
+      globalThis.removeEventListener('qd:beforeinstallprompt', onGlobalBip);
+      globalThis.removeEventListener('qd:appinstalled', onGlobalInstalled);
       if (mm) {
         try {
           mm.removeEventListener('change', onModeChange);
         } catch {
-          if (mm.removeListener) mm.removeListener(onModeChange);
+          // Fallback removed - deprecated removeListener not used
         }
       }
     };
@@ -90,12 +89,12 @@ const PWAInstallButton = () => {
 
   const waitForInstallPrompt = (timeoutMs = 2500) => {
     return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve(null);
+      if (globalThis.window === undefined) return resolve(null);
 
       // Prefer globally captured prompt if available.
       try {
-        if (window.__qdDeferredPrompt) {
-          return resolve(window.__qdDeferredPrompt);
+        if (globalThis.__qdDeferredPrompt) {
+          return resolve(globalThis.__qdDeferredPrompt);
         }
       } catch {
         // ignore
@@ -105,20 +104,15 @@ const PWAInstallButton = () => {
       const done = (value) => {
         if (settled) return;
         settled = true;
-        window.removeEventListener('beforeinstallprompt', onBip);
-        window.removeEventListener('qd:beforeinstallprompt', onGlobalBip);
+        globalThis.removeEventListener('beforeinstallprompt', onBip);
+        globalThis.removeEventListener('qd:beforeinstallprompt', onGlobalBip);
         resolve(value);
       };
 
       const onBip = (e) => {
-        try {
-          e.preventDefault();
-        } catch {
-          // ignore
-        }
         setDeferredPrompt(e);
         try {
-          window.__qdDeferredPrompt = e;
+          globalThis.__qdDeferredPrompt = e;
         } catch {
           // ignore
         }
@@ -127,9 +121,9 @@ const PWAInstallButton = () => {
 
       const onGlobalBip = () => {
         try {
-          if (window.__qdDeferredPrompt) {
-            setDeferredPrompt(window.__qdDeferredPrompt);
-            done(window.__qdDeferredPrompt);
+          if (globalThis.__qdDeferredPrompt) {
+            setDeferredPrompt(globalThis.__qdDeferredPrompt);
+            done(globalThis.__qdDeferredPrompt);
             return;
           }
         } catch {
@@ -138,78 +132,101 @@ const PWAInstallButton = () => {
       };
 
       try {
-        window.addEventListener('beforeinstallprompt', onBip, { once: true });
+        globalThis.addEventListener('beforeinstallprompt', onBip, { once: true });
       } catch {
-        window.addEventListener('beforeinstallprompt', onBip);
+        globalThis.addEventListener('beforeinstallprompt', onBip);
       }
 
       // Also listen for the custom global event.
-      window.addEventListener('qd:beforeinstallprompt', onGlobalBip);
+      globalThis.addEventListener('qd:beforeinstallprompt', onGlobalBip);
 
-      window.setTimeout(() => done(null), Math.max(0, timeoutMs));
+      globalThis.setTimeout(() => done(null), Math.max(0, timeoutMs));
     });
+  };
+
+  // Helper: Check if iOS device and show toast
+  const checkIOSAndShowToast = () => {
+    try {
+      const ua = String(navigator.userAgent || '').toLowerCase();
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isIOSBrowser = isIOS && !/android/.test(ua);
+      if (isIOSBrowser) {
+        toast({
+          title: 'Install on iPhone',
+          description: 'Use Share → Add to Home Screen.',
+        });
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  };
+
+  // Helper: Clear deferred prompt state
+  const clearDeferredPrompt = () => {
+    setDeferredPrompt(null);
+    try {
+      globalThis.__qdDeferredPrompt = null;
+    } catch {
+      // ignore
+    }
+  };
+
+  // Helper: Register SW if needed for install prompt
+  const ensureSWRegistered = async () => {
+    if (globalThis.window === undefined) return;
+    if (!('serviceWorker' in navigator) || !globalThis.isSecureContext) return;
+    
+    let isLocal = false;
+    try {
+      const h = globalThis.location.hostname;
+      isLocal = /(^localhost$)|(^127\.)|(^0\.0\.0\.0$)|(^192\.168\.)|(^10\.)|(^172\.(1[6-9]|2\d|3[0-1])\.)|(\. local$)/.test(h);
+    } catch {
+      // assume not local
+    }
+    
+    let forceDevSW = false;
+    try {
+      forceDevSW = localStorage.getItem('qd_sw_dev') === '1';
+    } catch {
+      // ignore
+    }
+
+    if (!isLocal || forceDevSW) {
+      await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
+    }
+  };
+
+  // Helper: Trigger install prompt and wait for user choice
+  const triggerInstallPrompt = async (prompt) => {
+    try {
+      if (!prompt || typeof prompt.prompt !== 'function') {
+        return;
+      }
+      prompt.prompt();
+      await prompt.userChoice;
+    } finally {
+      clearDeferredPrompt();
+    }
   };
 
   const handleClick = async () => {
     try {
       // If we already captured the prompt, use it.
       if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        setDeferredPrompt(null);
-        try {
-          window.__qdDeferredPrompt = null;
-        } catch {
-          // ignore
-        }
+        await triggerInstallPrompt(deferredPrompt);
         return;
       }
 
       // iOS Safari/Chrome do not support `beforeinstallprompt`.
-      // Keep the button visible (as requested), but don't dead-click.
-      try {
-        const ua = String(navigator.userAgent || '').toLowerCase();
-        const isIOS = /iphone|ipad|ipod/.test(ua);
-        const isIOSBrowser = isIOS && !/android/.test(ua);
-        if (isIOSBrowser) {
-          toast({
-            title: 'Install on iPhone',
-            description: 'Use Share → Add to Home Screen.',
-          });
-          return;
-        }
-      } catch {
-        // ignore
-      }
+      if (checkIOSAndShowToast()) return;
 
       toast({ title: 'Preparing install…', description: 'Checking if install prompt is available.' });
 
-      // On some loads the beforeinstallprompt fires only after SW registration.
-      // Force SW registration on user click (won't affect Lighthouse/PSI runs).
+      // Force SW registration on user click
       try {
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.isSecureContext) {
-          let isLocal = false;
-          let forceDevSW = false;
-          try {
-            const h = window.location.hostname;
-            isLocal = /(^localhost$)|(^127\.)|(^0\.0\.0\.0$)|(^192\.168\.)|(^10\.)|(^172\.(1[6-9]|2[0-9]|3[0-1])\.)|(\.local$)/.test(h);
-          } catch {
-            isLocal = false;
-          }
-          try {
-            forceDevSW = localStorage.getItem('qd_sw_dev') === '1';
-          } catch {
-            forceDevSW = false;
-          }
-
-          // Avoid registering SW on localhost by default (prevents stale cached UI during dev).
-          if (!isLocal || forceDevSW) {
-            await navigator.serviceWorker.register('/sw.js', {
-              scope: '/',
-              updateViaCache: 'none',
-            });
-          }
-        }
+        await ensureSWRegistered();
       } catch {
         // ignore
       }
@@ -217,14 +234,7 @@ const PWAInstallButton = () => {
       // Wait briefly for the prompt to become available, then show it.
       const bipEvent = await waitForInstallPrompt(2500);
       if (bipEvent) {
-        bipEvent.prompt();
-        await bipEvent.userChoice;
-        setDeferredPrompt(null);
-        try {
-          window.__qdDeferredPrompt = null;
-        } catch {
-          // ignore
-        }
+        await triggerInstallPrompt(bipEvent);
       } else {
         toast({
           title: 'Install not available',

@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useQuizEngine } from '@/hooks/useQuizEngine';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 import {
   LoadingView,
   ErrorView,
@@ -105,6 +105,28 @@ const Quiz = () => {
   // Navigate to home
   const handleNavigateHome = () => navigate('/');
 
+  // Pre-calculate values needed by all render paths (must be before early returns per React Hooks rules)
+  const quizTitle = isSlotQuiz ? (slot?.quiz_title || quiz?.title || 'Quiz') : (quiz?.title || 'Quiz');
+  const prizes = isSlotQuiz 
+    ? (Array.isArray(slot?.prizes) ? slot.prizes : [])
+    : (Array.isArray(quiz?.prizes) ? quiz.prizes : []);
+  const prizeType = isSlotQuiz ? 'coins' : (quiz?.prize_type || 'coins');
+  
+  // Get effective times
+  const effectiveStartTime = isSlotQuiz ? slot?.start_time : quiz?.start_time;
+  const effectiveQuizEndTime = isSlotQuiz ? slot?.end_time : quiz?.end_time;
+
+  // Calculate if quiz is currently active
+  const now = new Date();
+  const startTime = effectiveStartTime ? new Date(effectiveStartTime) : null;
+  const endTime = effectiveQuizEndTime ? new Date(effectiveQuizEndTime) : null;
+  const isActive = startTime && endTime && now >= startTime && now < endTime;
+
+  // Build quiz object for views (unified interface) - memoized to prevent re-renders
+  const quizData = React.useMemo(() => isSlotQuiz 
+    ? { start_time: slot?.start_time, end_time: slot?.end_time }
+    : quiz, [isSlotQuiz, slot?.start_time, slot?.end_time, quiz]);
+
   // Loading state - for slot quiz, wait for slot to load first
   if (isSlotQuiz && slotLoading) {
     return <LoadingView quizId={effectiveId} />;
@@ -124,28 +146,6 @@ const Quiz = () => {
   if (quizState === 'loading' || (!isSlotQuiz && !quiz) || (isSlotQuiz && !slot)) {
     return <LoadingView quizId={effectiveId} />;
   }
-
-  // Get quiz/slot details
-  const quizTitle = isSlotQuiz ? (slot?.quiz_title || quiz?.title || 'Quiz') : (quiz?.title || 'Quiz');
-  const prizes = isSlotQuiz 
-    ? (Array.isArray(slot?.prizes) ? slot.prizes : [])
-    : (Array.isArray(quiz?.prizes) ? quiz.prizes : []);
-  const prizeType = isSlotQuiz ? 'coins' : (quiz?.prize_type || 'coins');
-  
-  // Get effective times
-  const effectiveStartTime = isSlotQuiz ? slot?.start_time : quiz?.start_time;
-  const effectiveQuizEndTime = isSlotQuiz ? slot?.end_time : quiz?.end_time;
-
-  // Calculate if quiz is currently active
-  const now = new Date();
-  const startTime = effectiveStartTime ? new Date(effectiveStartTime) : null;
-  const endTime = effectiveQuizEndTime ? new Date(effectiveQuizEndTime) : null;
-  const isActive = startTime && endTime && now >= startTime && now < endTime;
-
-  // Build quiz object for views (unified interface)
-  const quizData = isSlotQuiz 
-    ? { start_time: slot?.start_time, end_time: slot?.end_time }
-    : quiz;
 
   // Pre-lobby: not joined yet
   if (!joined && quizState !== 'completed') {
@@ -207,10 +207,11 @@ const Quiz = () => {
   // Active quiz with questions
   return (
     <>
-      <SEO
-        title={`${quizTitle} – Quiz Dangal`}
+      <SeoHead
+        title={`${quizTitle} | Quiz Dangal`}
         description="Play this quiz on Quiz Dangal and win rewards!"
         robots="noindex, nofollow"
+        author="Quiz Dangal"
       />
       <ActiveQuizView
         title={quizTitle}

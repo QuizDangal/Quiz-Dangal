@@ -3,6 +3,7 @@ import { STREAK_CLAIM_DELAY_MS } from '@/constants';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 import { Coins, User } from 'lucide-react';
 import StreakModal from '@/components/StreakModal';
 import { prefetchRoute } from '@/lib/utils';
@@ -42,19 +43,19 @@ const Header = () => {
         try {
           const last = sessionStorage.getItem(key);
           if (last === stamp) return; // already claimed today in this session
-        } catch (e) {
-          /* sessionStorage read fail */
+        } catch {
+          // sessionStorage read failed, continue with claim
         }
 
         const { data, error } = await supabase.rpc('handle_daily_login', { user_uuid: user.id });
 
         if (error) {
-          console.error('Error handling daily login:', error);
+          logger.error('Error handling daily login:', error);
           return;
         }
 
         // The backend now tells us if it's a new login. Only show modal then.
-        if (data && data.is_new_login) {
+        if (data?.is_new_login) {
           // Refresh the user profile to get the new coin balance immediately
           await refreshUserProfile(user);
           // Show the popup with data directly from the RPC response
@@ -68,11 +69,11 @@ const Header = () => {
         // Mark as claimed for today in this session
         try {
           sessionStorage.setItem(key, stamp);
-        } catch (e) {
-          /* sessionStorage write fail */
+        } catch {
+          // sessionStorage write failed, non-critical
         }
       } catch (e) {
-        console.error('Exception handling daily login:', e);
+        logger.error('Exception handling daily login:', e);
       } finally {
         claimingRef.current = false;
       }
@@ -120,6 +121,7 @@ const Header = () => {
                     width="48"
                     height="48"
                     decoding="async"
+                    loading="eager"
                     className="w-11 h-11 sm:w-14 sm:h-14 rounded-full shadow-lg object-contain select-none shrink-0"
                     draggable="false"
                     style={{ imageRendering: 'auto' }}
@@ -156,11 +158,10 @@ const Header = () => {
                 {/* When logged in: show coins and streak */}
                 {user && (
                   <>
-                    <div
+                    <output
                       className="hidden sm:inline-flex hd-badge hd-badge-gold"
                       title="Coins"
                       aria-label={`Coins balance: ${walletLabel}`}
-                      role="status"
                     >
                       <div className="hd-badge-icon" aria-hidden="true">
                         <div className="hd-badge-coin">
@@ -174,7 +175,7 @@ const Header = () => {
                         <span className="hd-badge-value tabular-nums">{walletLabel}</span>
                         <span className="sr-only">Coins</span>
                       </div>
-                    </div>
+                    </output>
                     <button
                       type="button"
                       onClick={() => {

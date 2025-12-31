@@ -24,7 +24,11 @@ export function normalizeReferralCode(code) {
   if (typeof code !== 'string') return '';
   const trimmed = code.trim();
   if (!trimmed) return '';
-  return trimmed.replace(/\s+/g, '').toUpperCase();
+  // Remove whitespace and convert to uppercase
+  const normalized = trimmed.replace(/\s+/g, '').toUpperCase();
+  // Validate: alphanumeric and hyphens, 3-32 characters length
+  if (!/^[A-Z0-9-]{3,32}$/.test(normalized)) return '';
+  return normalized;
 }
 
 export function saveReferralCode(code) {

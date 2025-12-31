@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import SeoHead from '@/components/SEO';
 
 export default function NotificationsDebug() {
   const { isSubscribed, subscribeToPush, unsubscribeFromPush, error } = usePushNotifications();
@@ -51,6 +52,13 @@ export default function NotificationsDebug() {
 
   return (
     <div className="container mx-auto p-6 max-w-xl bg-white text-gray-900 rounded-2xl shadow-sm">
+      <SeoHead
+        title="Notifications Debug – Quiz Dangal"
+        description="Push notification diagnostics and troubleshooting for Quiz Dangal."
+        canonical="https://quizdangal.com/debug/notifications/"
+        robots="noindex, nofollow"
+        author="Quiz Dangal"
+      />
       <h1 className="text-xl font-semibold mb-2">Notifications Diagnostics</h1>
       <p className="text-sm text-gray-600 mb-4">
         Yahan aap push setup ka quick status dekh sakte hain.
@@ -79,8 +87,8 @@ export default function NotificationsDebug() {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <Button onClick={subscribeToPush}>Subscribe</Button>
-        <Button variant="outline" onClick={unsubscribeFromPush}>
+        <Button onClick={subscribeToPush} aria-label="Subscribe to push notifications">Subscribe</Button>
+        <Button variant="outline" onClick={unsubscribeFromPush} aria-label="Unsubscribe from push notifications">
           Unsubscribe
         </Button>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { 
   Mail, Phone, MapPin, Send, Instagram, Facebook, Twitter, 
@@ -36,7 +36,7 @@ Sent via Quiz Dangal Contact Form`
     );
     
     // Open default email app with pre-filled content
-    window.location.href = `mailto:support@quizdangal.com?subject=${subject}&body=${body}`;
+    globalThis.location.href = `mailto:support@quizdangal.com?subject=${subject}&body=${body}`;
     
     setTimeout(() => {
       setSending(false);
@@ -46,6 +46,7 @@ Sent via Quiz Dangal Contact Form`
 
   const contactInfo = [
     { 
+      id: 'phone',
       icon: Phone, 
       label: '+91 9587803557', 
       href: 'tel:+919587803557', 
@@ -53,6 +54,7 @@ Sent via Quiz Dangal Contact Form`
       description: 'Call us for urgent queries'
     },
     { 
+      id: 'email',
       icon: Mail, 
       label: 'support@quizdangal.com', 
       href: 'mailto:support@quizdangal.com', 
@@ -60,6 +62,7 @@ Sent via Quiz Dangal Contact Form`
       description: 'Email for detailed inquiries'
     },
     { 
+      id: 'location',
       icon: MapPin, 
       label: 'Jaipur, Rajasthan, India', 
       href: null, 
@@ -67,6 +70,7 @@ Sent via Quiz Dangal Contact Form`
       description: 'Our headquarters location'
     },
     {
+      id: 'hours',
       icon: Clock,
       label: 'Mon-Sat: 10 AM - 7 PM IST',
       href: null,
@@ -76,36 +80,41 @@ Sent via Quiz Dangal Contact Form`
   ];
 
   const socialLinks = [
-    { icon: Instagram, href: 'https://www.instagram.com/quizdangal', gradient: 'from-pink-500 via-fuchsia-500 to-purple-600', name: 'Instagram' },
-    { icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61576614092243', gradient: 'from-blue-500 via-blue-600 to-indigo-700', name: 'Facebook' },
-    { icon: Twitter, href: 'https://x.com/quizdangal', gradient: 'from-sky-400 via-cyan-500 to-blue-600', name: 'X (Twitter)' },
+    { id: 'instagram', icon: Instagram, href: 'https://www.instagram.com/quizdangal', gradient: 'from-pink-500 via-fuchsia-500 to-purple-600', name: 'Instagram' },
+    { id: 'facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61576614092243', gradient: 'from-blue-500 via-blue-600 to-indigo-700', name: 'Facebook' },
+    { id: 'twitter', icon: Twitter, href: 'https://x.com/quizdangal', gradient: 'from-sky-400 via-cyan-500 to-blue-600', name: 'X (Twitter)' },
   ];
 
   const supportCategories = [
-    { icon: HelpCircle, title: 'General Inquiries', desc: 'Questions about Quiz Dangal, how it works, or getting started' },
-    { icon: Users, title: 'Account Support', desc: 'Help with login, profile, password reset, or account issues' },
-    { icon: Shield, title: 'Report Issues', desc: 'Report technical bugs, unfair play, or security concerns' },
-    { icon: MessageCircle, title: 'Feedback & Suggestions', desc: 'Share your ideas to help us improve Quiz Dangal' },
+    { id: 'general', icon: HelpCircle, title: 'General Inquiries', desc: 'Questions about Quiz Dangal, how it works, or getting started' },
+    { id: 'account', icon: Users, title: 'Account Support', desc: 'Help with login, profile, password reset, or account issues' },
+    { id: 'report', icon: Shield, title: 'Report Issues', desc: 'Report technical bugs, unfair play, or security concerns' },
+    { id: 'feedback', icon: MessageCircle, title: 'Feedback & Suggestions', desc: 'Share your ideas to help us improve Quiz Dangal' },
   ];
 
   const faqs = [
     { 
+      id: 'response-time',
       question: 'How quickly will I get a response?', 
       answer: 'We aim to respond to all inquiries within 24-48 hours during business days. For urgent issues, please call us directly.' 
     },
     { 
+      id: 'include-info',
       question: 'What information should I include in my message?', 
       answer: 'Please include your registered email, a clear description of your issue or question, and any relevant screenshots if applicable.' 
     },
     { 
+      id: 'account-help',
       question: 'Can I get help with my quiz account?', 
       answer: 'Yes! For account-related issues like password reset, profile updates, or coin balance queries, email us with your registered email address.' 
     },
     { 
+      id: 'report-bug',
       question: 'How do I report a bug or technical issue?', 
       answer: 'Please describe the issue in detail, including your device type, browser, and steps to reproduce the problem. Screenshots are very helpful!' 
     },
     { 
+      id: 'phone-support',
       question: 'Is there a phone support option?', 
       answer: 'Yes, you can call us at +91 9587803557 during business hours (Mon-Sat, 10 AM - 7 PM IST) for urgent queries.' 
     },
@@ -119,6 +128,15 @@ Sent via Quiz Dangal Contact Form`
       name: item.question,
       acceptedAnswer: { '@type': 'Answer', text: item.answer },
     })),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Contact Us', item: 'https://quizdangal.com/contact-us/' },
+    ],
   };
 
   const contactSchema = {
@@ -163,7 +181,7 @@ Sent via Quiz Dangal Contact Form`
   return (
     <div className="min-h-screen pt-14 text-slate-100">
       <div className="container mx-auto px-4 py-6 space-y-8 max-w-5xl">
-        <SEO
+        <SeoHead
           title="Contact Us – Quiz Dangal | Customer Support & Help"
           description="Get in touch with the Quiz Dangal support team for help, feedback, partnerships, and media inquiries. Call +91 9587803557 or email support@quizdangal.com. We're here to help!"
           canonical="https://quizdangal.com/contact-us/"
@@ -177,17 +195,21 @@ Sent via Quiz Dangal Contact Form`
             'quiz dangal customer care',
             'quiz app support india',
           ]}
-          jsonLd={[contactSchema, faqSchema]}
+          jsonLd={[contactSchema, faqSchema, breadcrumbSchema]}
+          author="Quiz Dangal"
+          datePublished="2025-01-01"
+          dateModified="2025-12-29"
         />
 
         <AnimatePresence>
           {mounted && (
             <>
-              {/* Hero Section */}
+              {/* Hero Section - AI Speakable */}
               <m.header
                 className="text-center mb-8"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
+                data-speakable="true"
                 transition={{ duration: 0.5 }}
               >
                 <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">
@@ -206,9 +228,9 @@ Sent via Quiz Dangal Contact Form`
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                {contactInfo.map((item, i) => (
+                {contactInfo.map((item) => (
                   <div
-                    key={i}
+                    key={item.id}
                     className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-xl p-4 text-center hover:border-indigo-500/50 transition-colors"
                   >
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mx-auto mb-3`}>
@@ -330,8 +352,8 @@ Sent via Quiz Dangal Contact Form`
                       <h2 className="text-xl font-bold text-white">How Can We Help?</h2>
                     </div>
                     <div className="space-y-3">
-                      {supportCategories.map((cat, i) => (
-                        <div key={i} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-xl">
+                      {supportCategories.map((cat) => (
+                        <div key={cat.id} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-xl">
                           <cat.icon className="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" />
                           <div>
                             <h3 className="text-sm font-semibold text-white">{cat.title}</h3>
@@ -368,12 +390,12 @@ Sent via Quiz Dangal Contact Form`
                   <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 shadow-xl">
                     <h3 className="text-lg font-bold text-white mb-4 text-center">Connect With Us</h3>
                     <div className="flex justify-center gap-4">
-                      {socialLinks.map((social, i) => (
+                      {socialLinks.map((social) => (
                         <a
-                          key={i}
+                          key={social.id}
                           href={social.href}
                           target="_blank"
-                          rel="noopener noreferrer"
+                          rel="me noopener noreferrer"
                           className={`w-14 h-14 rounded-full bg-gradient-to-br ${social.gradient} flex items-center justify-center hover:scale-110 transition-transform`}
                           aria-label={`Follow Quiz Dangal on ${social.name}`}
                         >
@@ -390,7 +412,7 @@ Sent via Quiz Dangal Contact Form`
 
               {/* FAQs Section */}
               <m.section
-                className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl"
+                className="bg-slate-900/60 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8 shadow-xl"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
@@ -402,10 +424,10 @@ Sent via Quiz Dangal Contact Form`
                   </h2>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                  {faqs.map((faq, i) => (
-                    <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                  {faqs.map((faq) => (
+                    <div key={faq.id} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-white mb-2">{faq.question}</h3>
-                      <p className="text-xs text-slate-300 leading-relaxed">{faq.answer}</p>
+                      <p className="text-xs text-slate-300 leading-relaxed" data-speakable="true">{faq.answer}</p>
                     </div>
                   ))}
                 </div>

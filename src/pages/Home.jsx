@@ -1,6 +1,7 @@
 // 🔥 QUIZ DANGAL - Ultimate Gaming Home
 import React, { useCallback, useState, useEffect } from 'react';
-import SEO from '@/components/SEO';
+import PropTypes from 'prop-types';
+import SeoHead from '@/components/SEO';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   MessageSquare, Brain, Trophy, Clapperboard, 
@@ -65,11 +66,61 @@ const HOME_FAQ_SCHEMA = {
   })),
 };
 
+const HOME_HOW_TO_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Play and Earn on Quiz Dangal',
+  description: 'Step-by-step guide to start playing quizzes and earning coins on Quiz Dangal',
+  totalTime: 'PT5M',
+  step: [
+    { '@type': 'HowToStep', position: 1, name: 'Sign Up', text: 'Create a free account in 10 seconds using your email or phone number' },
+    { '@type': 'HowToStep', position: 2, name: 'Choose Category', text: 'Pick from Opinion, GK, Sports, or Movies quiz categories' },
+    { '@type': 'HowToStep', position: 3, name: 'Play Quizzes', text: 'Answer questions correctly and quickly to earn more coins' },
+    { '@type': 'HowToStep', position: 4, name: 'Earn Rewards', text: 'Accumulate coins and redeem them for exciting prizes' },
+  ],
+};
+
 const HOME_JSON_LD = [
-  { '@context': 'https://schema.org', '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/', logo: 'https://quizdangal.com/android-chrome-512x512.png' },
-  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
-  { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Quiz Dangal', url: 'https://quizdangal.com/', applicationCategory: 'Game', operatingSystem: 'Web', offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' } },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Quiz Dangal',
+    alternateName: 'QuizDangal',
+    url: 'https://quizdangal.com/',
+    logo: { '@type': 'ImageObject', url: 'https://quizdangal.com/android-chrome-512x512.png', width: 512, height: 512 },
+    description: "India's premier free-to-play quiz and rewards platform.",
+    foundingDate: '2025',
+    address: { '@type': 'PostalAddress', addressLocality: 'Jaipur', addressRegion: 'Rajasthan', addressCountry: 'IN' },
+    contactPoint: { '@type': 'ContactPoint', telephone: '+91-9587803557', email: 'support@quizdangal.com', contactType: 'customer support', availableLanguage: ['English', 'Hindi'] },
+    sameAs: ['https://www.instagram.com/quizdangal', 'https://www.facebook.com/profile.php?id=61576614092243', 'https://x.com/quizdangal'],
+    knowsAbout: ['quizzes', 'trivia', 'general knowledge', 'opinion polls', 'sports', 'movies', 'rewards'],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Quiz Dangal',
+    alternateName: 'QuizDangal',
+    url: 'https://quizdangal.com/',
+    inLanguage: ['en-IN', 'hi-IN'],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Quiz Dangal',
+    url: 'https://quizdangal.com/',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Web Browser',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR', availability: 'https://schema.org/InStock' },
+    author: { '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
+    publisher: { '@type': 'Organization', name: 'Quiz Dangal' },
+    datePublished: '2025-01-01',
+    dateModified: '2025-12-29',
+    inLanguage: ['en-IN', 'hi-IN'],
+    featureList: 'Daily Quizzes, Opinion Polls, GK Quizzes, Sports Quizzes, Movie Quizzes, Leaderboards, Coin Rewards, Referral Program',
+    audience: { '@type': 'PeopleAudience', suggestedMinAge: 18 },
+  },
   HOME_FAQ_SCHEMA,
+  HOME_HOW_TO_SCHEMA,
 ];
 
 // Category Card with 3D effect
@@ -78,6 +129,7 @@ const CategoryCard = ({ cat, index, onPlay }) => {
   
   return (
     <button
+      type="button"
       onClick={() => onPlay(cat.id)}
       className="qdh-card group"
       style={{ '--card-index': index, '--shadow-color': cat.shadowColor }}
@@ -133,27 +185,60 @@ const HOW_IT_WORKS = [
   { step: 4, icon: Trophy, title: '🏆 Win Rewards', desc: 'Climb leaderboards, maintain streaks & redeem coins for real prizes!', gradient: 'from-pink-500 to-rose-500', highlight: 'REAL PRIZES' },
 ];
 
-// FAQ Accordion Item
-const FAQItem = ({ question, answer, isOpen, onClick, index }) => (
-  <div className={`qdh-faq-item ${isOpen ? 'qdh-faq-open' : ''}`}>
-    <button 
-      className="qdh-faq-question" 
-      onClick={onClick}
-      aria-expanded={isOpen}
+// FAQ Accordion Item - with Schema.org microdata for AI/LLM citation
+const FAQItem = ({ question, answer, isOpen, onClick, index }) => {
+  const answerId = `faq-answer-${index}`;
+  
+  return (
+    <div 
+      className={`qdh-faq-item ${isOpen ? 'qdh-faq-open' : ''}`}
     >
-      <div className="qdh-faq-q-content">
-        <span className="qdh-faq-number">{index + 1}</span>
-        <span className="qdh-faq-q-text">{question}</span>
+      <button 
+        type="button"
+        className="qdh-faq-question" 
+        onClick={onClick}
+        aria-expanded={isOpen}
+        aria-controls={answerId}
+      >
+        <div className="qdh-faq-q-content">
+          <span className="qdh-faq-number">{index + 1}</span>
+          <span className="qdh-faq-q-text">{question}</span>
+        </div>
+        <div className={`qdh-faq-chevron ${isOpen ? 'qdh-chevron-open' : ''}`}>
+          <ArrowRight className="w-4 h-4" />
+        </div>
+      </button>
+      <div 
+        id={answerId}
+        className={`qdh-faq-answer ${isOpen ? 'qdh-answer-open' : ''}`} 
+        data-speakable="true"
+      >
+        <p>{answer}</p>
       </div>
-      <div className={`qdh-faq-chevron ${isOpen ? 'qdh-chevron-open' : ''}`}>
-        <ArrowRight className="w-4 h-4" />
-      </div>
-    </button>
-    <div className={`qdh-faq-answer ${isOpen ? 'qdh-answer-open' : ''}`}>
-      <p>{answer}</p>
     </div>
-  </div>
-);
+  );
+};
+
+// PropTypes
+CategoryCard.propTypes = {
+  cat: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    icon: PropTypes.elementType.isRequired,
+    gradient: PropTypes.string.isRequired,
+    shadowColor: PropTypes.string,
+  }).isRequired,
+  index: PropTypes.number.isRequired,
+  onPlay: PropTypes.func.isRequired,
+};
+
+FAQItem.propTypes = {
+  question: PropTypes.string.isRequired,
+  answer: PropTypes.string.isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  onClick: PropTypes.func.isRequired,
+  index: PropTypes.number.isRequired,
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -166,19 +251,25 @@ const Home = () => {
   }, []);
 
   const handlePlay = useCallback(async (id) => {
-    try { await getSupabase(); } catch { /* ignore */ }
+    try { await getSupabase(); } catch (e) {
+      // Supabase warmup failed - non-blocking, continue to category page
+      if (import.meta.env?.DEV) console.debug('Supabase warmup failed:', e?.message);
+    }
     navigate(`/category/${id}/`);
   }, [navigate]);
 
   return (
     <div className="qdh-container">
-      <SEO
+      <SeoHead
         title="Quiz Dangal – Play Quiz & Win Rewards | Opinion, GK, Sports, Movies"
         description="Quiz Dangal is India's play-and-win quiz arena. Take opinion and GK quizzes daily, grow streaks, invite friends, and redeem coins for rewards."
         canonical="https://quizdangal.com/"
         keywords={['Quiz Dangal', 'quizdangal', 'quiz app', 'play quiz and win', 'opinion quiz', 'daily quiz india']}
         alternateLocales={['hi_IN', 'en_US']}
         jsonLd={HOME_JSON_LD}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
       />
 
       {/* Animated background elements */}
@@ -196,8 +287,8 @@ const Home = () => {
       {/* Main Content */}
       <main className={`qdh-main ${mounted ? 'qdh-visible' : ''}`}>
         
-        {/* Hero Section */}
-        <section className="qdh-hero">
+        {/* Hero Section - AI Speakable */}
+        <section className="qdh-hero" data-speakable="true">
           {/* Floating Crown */}
           <div className="qdh-crown-container">
             <div className="qdh-crown-glow" />
@@ -208,7 +299,7 @@ const Home = () => {
           </div>
           
           {/* Main title - Single Line */}
-          <h1 className="qdh-title">
+          <h1 className="qdh-title" data-speakable="true">
             <span className="qdh-title-text">Quiz Dangal</span>
           </h1>
           
@@ -292,7 +383,7 @@ const Home = () => {
             <Link to="/privacy-policy/">Privacy</Link>
             <Link to="/terms-conditions/">Terms</Link>
           </div>
-          <p className="qdh-footer-copy">© 2025 Quiz Dangal. All rights reserved.</p>
+          <p className="qdh-footer-copy">© {new Date().getFullYear()} Quiz Dangal. All rights reserved. 🇮🇳 Made in India</p>
         </footer>
 
       </main>

@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { supabase, hasSupabaseConfig, getSupabase } from '@/lib/customSupabaseClient';
 import { loadReferralCode, clearReferralCode, normalizeReferralCode } from '@/lib/referralStorage';
+import { RATE_LIMIT_DEFAULT_WINDOW_MS, RATE_LIMIT_DEFAULT_MAX_ATTEMPTS } from '@/constants';
 
 const AuthContext = createContext();
 
@@ -18,6 +19,20 @@ function AuthProviderInner({ children }) {
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
   const initProfileRef = useRef(false);
   const authSubRef = useRef(null);
+  const rateLimitRef = useRef({});
+
+  const checkRateLimit = useCallback((key) => {
+    const now = Date.now();
+    const bucket = rateLimitRef.current[key] || { start: now, count: 0 };
+    const withinWindow = now - bucket.start < RATE_LIMIT_DEFAULT_WINDOW_MS;
+    const next = withinWindow
+      ? { start: bucket.start, count: bucket.count + 1 }
+      : { start: now, count: 1 };
+    rateLimitRef.current[key] = next;
+    if (withinWindow && next.count > RATE_LIMIT_DEFAULT_MAX_ATTEMPTS) {
+      throw new Error('Too many attempts. Please wait a few seconds and try again.');
+    }
+  }, []);
 
   // Profile fetch karne ka function
   const refreshUserProfile = async (currentUser) => {
@@ -25,7 +40,7 @@ function AuthProviderInner({ children }) {
       try {
         const sb = await getSupabase();
         if (!sb) return;
-        const { data, error } = await supabase
+        const { data, error } = await sb
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
@@ -368,6 +383,7 @@ function AuthProviderInner({ children }) {
 
   // SIGN UP FUNCTION (EMAIL)
   const signUp = async (email, password, { referralCode, options } = {}) => {
+    checkRateLimit('signup');
     const sb = await getSupabase();
     if (!sb) throw new Error('Supabase not configured');
     const supabaseOptions = { ...(options || {}) };
@@ -398,6 +414,7 @@ function AuthProviderInner({ children }) {
 
   // SIGN IN FUNCTION (EMAIL)
   const signIn = async (email, password) => {
+    checkRateLimit('signin');
     const sb = await getSupabase();
     if (!sb) throw new Error('Supabase not configured');
     const e = (email || '').trim();
@@ -422,7 +439,9 @@ function AuthProviderInner({ children }) {
 
 export const AuthProvider = ({ children }) => {
   const _bypass = String(import.meta.env.VITE_BYPASS_AUTH || '').toLowerCase();
-  const devBypass = _bypass === '1' || _bypass === 'true' || _bypass === 'yes';
+  // SECURITY: Never allow auth bypass in production builds.
+  // `import.meta.env.DEV` is false in `vite build` output.
+  const devBypass = import.meta.env.DEV && (_bypass === '1' || _bypass === 'true' || _bypass === 'yes');
   if (devBypass) {
     const mockUser = {
       id: 'dev-bypass-admin',
@@ -488,8 +507,8 @@ export const AuthProvider = ({ children }) => {
               </code>
             </pre>
             <p className="text-gray-600 mt-3">
-              Or for local UI only testing set <code>VITE_BYPASS_AUTH=1</code> then restart dev
-              server.
+              For local UI-only testing you can set <code>VITE_BYPASS_AUTH=1</code> in dev mode
+              (only works with <code>npm run dev</code>).
             </p>
           </div>
         </div>

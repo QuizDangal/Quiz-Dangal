@@ -16,7 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 
 function categoryMeta(slug = '') {
   const s = String(slug || '').toLowerCase();
@@ -125,8 +125,7 @@ const CategoryQuizzes = () => {
     loadSlots().finally(() => {
       setLoading(false);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadSlots, slug]);
+  }, [loadSlots]);
 
   // Poll slots for updates
   useEffect(() => {
@@ -194,46 +193,46 @@ const CategoryQuizzes = () => {
   useEffect(() => {
     const run = async () => {
       // Collect IDs from both quizzes and slots
-      const quizIds = (quizzes || []).map((q) => q.id).filter(Boolean);
-      // For slot-based quizzes, collect slotIds (used as slot_id in quiz_participants)
-      const slotIds = (slots || []).filter(s => !s.isLegacy).map((s) => s.slotId).filter(Boolean);
-      // For legacy quizzes from slots, collect quizIds
-      const legacyQuizIds = (slots || []).filter(s => s.isLegacy).map((s) => s.quizId).filter(Boolean);
+      // Filter out any null/undefined/empty values and ensure valid UUIDs
+      const isValidUuid = (id) => {
+        if (!id || typeof id !== 'string') return false;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      };
       
-      const allQuizIds = [...new Set([...quizIds, ...legacyQuizIds])];
+      const quizIds = (quizzes || []).map((q) => q.id).filter(isValidUuid);
+      // For slot-based quizzes, use quiz_id (not slot_id) since quiz_participants tracks by quiz_id
+      const slotQuizIds = (slots || []).map((s) => s.quizId || s.quiz_id || s.id).filter(isValidUuid);
       
-      if (!user || (!allQuizIds.length && !slotIds.length)) {
+      // Combine all quiz IDs (legacy quizzes + slot quiz IDs)
+      const allQuizIds = [...new Set([...quizIds, ...slotQuizIds])];
+      
+      if (!user || !allQuizIds.length) {
         setJoinedMap({});
         return;
       }
       try {
         const map = {};
         
-        // Fetch by quiz_id for legacy quizzes
-        if (allQuizIds.length) {
-          const { data, error } = await supabase
-            .from('quiz_participants')
-            .select('quiz_id,status')
-            .eq('user_id', user.id)
-            .in('quiz_id', allQuizIds);
-          if (!error && data) {
-            for (const r of data) {
+        // Fetch participation status by quiz_id
+        const { data, error } = await supabase
+          .from('quiz_participants')
+          .select('quiz_id,status')
+          .eq('user_id', user.id)
+          .in('quiz_id', allQuizIds);
+        
+        if (!error && data) {
+          for (const r of data) {
+            if (r.quiz_id) {
               map[r.quiz_id] = r.status === 'pre_joined' ? 'pre' : 'joined';
             }
           }
         }
         
-        // Fetch by slot_id for slot-based quizzes
-        if (slotIds.length) {
-          const { data, error } = await supabase
-            .from('quiz_participants')
-            .select('slot_id,status')
-            .eq('user_id', user.id)
-            .in('slot_id', slotIds);
-          if (!error && data) {
-            for (const r of data) {
-              map[r.slot_id] = r.status === 'pre_joined' ? 'pre' : 'joined';
-            }
+        // Also map by slotId for UI lookup (slot cards use slotId as key)
+        for (const slot of (slots || [])) {
+          const qId = slot.quizId || slot.quiz_id || slot.id;
+          if (qId && map[qId] && slot.slotId) {
+            map[slot.slotId] = map[qId];
           }
         }
         
@@ -585,11 +584,23 @@ const CategoryQuizzes = () => {
 
   return (
     <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
-      <SEO
+      <SeoHead
         title={`${meta.title} – Quiz Dangal`}
-        description={`Active and upcoming quizzes in ${meta.title}.`}
+        description={`Active and upcoming quizzes in ${meta.title}. Play daily ${meta.title.toLowerCase()} on Quiz Dangal and earn coins.`}
         canonical={canonical}
         robots="index, follow"
+        alternateLocales={['hi_IN', 'en_US']}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
+        jsonLd={[{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+            { '@type': 'ListItem', position: 2, name: meta.title, item: canonical },
+          ],
+        }]}
       />
       <span className="hidden" aria-hidden>
         {tick}

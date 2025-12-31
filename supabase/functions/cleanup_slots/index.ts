@@ -9,6 +9,25 @@ const url = Deno.env.get('SUPABASE_URL');
 const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const RETENTION_DAYS = parseInt(Deno.env.get('CLEANUP_RETENTION_DAYS') || '3', 10);
 
+function isAuthorizedCron(req: Request, serviceRoleKey: string | null): boolean {
+  // Prefer a dedicated cron secret if configured.
+  const cronSecret = Deno.env.get('CRON_SECRET') || Deno.env.get('EDGE_CRON_SECRET') || '';
+  const authHeader = req.headers.get('Authorization') || '';
+  const apiKeyHeader = req.headers.get('apikey') || req.headers.get('x-api-key') || '';
+  const cronHeader = req.headers.get('x-cron-secret') || '';
+
+  const normalizeBearer = (v: string) => v.replace(/^Bearer\s+/i, '').trim();
+  const authToken = normalizeBearer(authHeader);
+
+  if (cronSecret) {
+    return authToken === cronSecret || cronHeader === cronSecret;
+  }
+
+  // Backward-compatible option: allow callers to authenticate using the service role key.
+  if (!serviceRoleKey) return false;
+  return authToken === serviceRoleKey || apiKeyHeader === serviceRoleKey;
+}
+
 if (!url || !key) {
   console.error('Missing SUPABASE_URL or SERVICE_ROLE key');
   Deno.exit(1);
@@ -37,6 +56,15 @@ Deno.serve(async (req: Request) => {
       return String(Date.now());
     }
   })();
+
+  // This function performs privileged deletion via service-role key.
+  // It must not be callable by the public internet.
+  if (!isAuthorizedCron(req, key)) {
+    return new Response(JSON.stringify({ ok: false, error: 'unauthorized', errorId }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const cutoff = new Date();

@@ -1,9 +1,10 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { Button } from '@/components/ui/button';
 import { formatDateOnly, formatTimeOnly, getPrizeDisplay } from '@/lib/utils';
 import { Loader2, CheckCircle, Clock, Users, X, ChevronRight, Send } from 'lucide-react';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 
 /**
  * Shared QuizUI components used by Quiz.jsx
@@ -51,7 +52,7 @@ export const PrizeChips = ({ prizes = [], prizeType = 'coins' }) => {
 
 export const LoadingView = ({ quizId }) => (
   <div className="min-h-screen flex items-center justify-center">
-    <SEO
+    <SeoHead
       title="Quiz – Loading | Quiz Dangal"
       description="Loading quiz details."
       canonical={
@@ -60,6 +61,7 @@ export const LoadingView = ({ quizId }) => (
           : 'https://quizdangal.com/quiz'
       }
       robots="noindex, nofollow"
+      author="Quiz Dangal"
     />
     <div className="text-center">
       <Loader2 className="h-16 w-16 animate-spin text-indigo-500 mx-auto mb-4" />
@@ -95,10 +97,11 @@ export const PreLobbyView = ({
   onClose,
 }) => (
   <div className="min-h-screen flex items-center justify-center px-3 pt-16">
-    <SEO
+    <SeoHead
       title={`${title} – Lobby | Quiz Dangal`}
       description="Join the quiz lobby."
       robots="noindex, nofollow"
+      author="Quiz Dangal"
     />
     <div className="w-full max-w-sm">
       <div className="p-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
@@ -153,10 +156,11 @@ export const WaitingView = ({
   onClose,
 }) => (
   <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
-    <SEO
+    <SeoHead
       title={`${title} – Waiting | Quiz Dangal`}
       description="Waiting for the quiz to start."
       robots="noindex, nofollow"
+      author="Quiz Dangal"
     />
     <m.div
       initial={{ opacity: 0, y: 12 }}
@@ -193,10 +197,11 @@ export const WaitingView = ({
 
 export const CompletedView = ({ title, onNavigateHome }) => (
   <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
-    <SEO
+    <SeoHead
       title={`${title} – Completed | Quiz Dangal`}
       description="Quiz completed. Results will be published soon."
       robots="noindex, nofollow"
+      author="Quiz Dangal"
     />
     <m.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -225,10 +230,11 @@ export const CompletedView = ({ title, onNavigateHome }) => (
 
 export const TimesUpView = ({ title, onNavigateHome }) => (
   <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
-    <SEO
+    <SeoHead
       title={`${title} – Time's Up | Quiz Dangal`}
       description="Quiz time ended."
       robots="noindex, nofollow"
+      author="Quiz Dangal"
     />
     <m.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -279,7 +285,7 @@ export const ActiveQuizView = ({
 
   return (
     <div className="min-h-screen px-3 pt-16 pb-6">
-      <SEO
+      <SeoHead
         title={`${title} – Play | Quiz Dangal`}
         description="Answer questions and compete to win."
         canonical={
@@ -288,6 +294,7 @@ export const ActiveQuizView = ({
             : 'https://quizdangal.com/quiz'
         }
         robots="noindex, nofollow"
+        author="Quiz Dangal"
       />
       <div className="max-w-md mx-auto space-y-4">
         {/* Compact Header */}
@@ -302,14 +309,14 @@ export const ActiveQuizView = ({
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <div className="quiz-timer">
-                  <Clock className="w-3.5 h-3.5" />
+                <div className="quiz-timer" role="timer" aria-live="polite" aria-label={`Time remaining: ${formatTime(timeLeft)}`}>
+                  <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>{formatTime(timeLeft)}</span>
                 </div>
               </div>
             </div>
             {/* Progress Bar */}
-            <div className="mt-3 w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
+            <div className="mt-3 w-full bg-slate-800/80 rounded-full h-2 overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={`Quiz progress: ${Math.round(progress)}%`}>
               <m.div
                 className="h-2 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500"
                 initial={false}
@@ -339,7 +346,7 @@ export const ActiveQuizView = ({
               {currentQuestion?.question_text}
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-3" role="radiogroup" aria-label={`Options for question ${currentQuestionIndex + 1}`}>
               {(currentQuestion?.options || []).map((option, index) => {
                 const selected = answers[currentQuestion?.id] === option.id;
                 return (
@@ -351,8 +358,11 @@ export const ActiveQuizView = ({
                     }
                     whileTap={{ scale: 0.98 }}
                     className={`quiz-option ${selected ? 'quiz-option-selected' : ''}`}
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={`Option ${String.fromCharCode(65 + index)}: ${option.option_text}`}
                   >
-                    <span className={`quiz-option-letter ${selected ? 'quiz-option-letter-selected' : ''}`}>
+                    <span className={`quiz-option-letter ${selected ? 'quiz-option-letter-selected' : ''}`} aria-hidden="true">
                       {String.fromCharCode(65 + index)}
                     </span>
                     <span className="flex-1 text-left">{option.option_text}</span>
@@ -361,6 +371,7 @@ export const ActiveQuizView = ({
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         className="quiz-option-check"
+                        aria-hidden="true"
                       >
                         <CheckCircle className="w-4 h-4" />
                       </m.div>
@@ -417,6 +428,75 @@ export const ActiveQuizView = ({
       </div>
     </div>
   );
+};
+
+// PropTypes for all components
+InfoChips.propTypes = {
+  startTime: PropTypes.string,
+  endTime: PropTypes.string,
+};
+
+PrizeChips.propTypes = {
+  prizes: PropTypes.arrayOf(PropTypes.number),
+  prizeType: PropTypes.string,
+};
+
+LoadingView.propTypes = {
+  quizId: PropTypes.string,
+};
+
+ErrorView.propTypes = {
+  message: PropTypes.string,
+};
+
+PreLobbyView.propTypes = {
+  quiz: PropTypes.object,
+  title: PropTypes.string.isRequired,
+  isActive: PropTypes.bool,
+  timeLeft: PropTypes.number,
+  displayJoined: PropTypes.number,
+  prizes: PropTypes.arrayOf(PropTypes.number),
+  prizeType: PropTypes.string,
+  formatTime: PropTypes.func.isRequired,
+  onJoin: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+WaitingView.propTypes = {
+  quiz: PropTypes.object,
+  title: PropTypes.string.isRequired,
+  timeLeft: PropTypes.number,
+  totalJoined: PropTypes.number,
+  prizes: PropTypes.arrayOf(PropTypes.number),
+  prizeType: PropTypes.string,
+  formatTime: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+CompletedView.propTypes = {
+  title: PropTypes.string.isRequired,
+  onNavigateHome: PropTypes.func.isRequired,
+};
+
+TimesUpView.propTypes = {
+  title: PropTypes.string.isRequired,
+  onNavigateHome: PropTypes.func.isRequired,
+};
+
+ActiveQuizView.propTypes = {
+  title: PropTypes.string.isRequired,
+  quizId: PropTypes.string,
+  questions: PropTypes.arrayOf(PropTypes.object).isRequired,
+  currentQuestionIndex: PropTypes.number.isRequired,
+  answers: PropTypes.object.isRequired,
+  timeLeft: PropTypes.number,
+  submitting: PropTypes.bool,
+  quizState: PropTypes.string,
+  participantStatus: PropTypes.string,
+  formatTime: PropTypes.func.isRequired,
+  onAnswerSelect: PropTypes.func.isRequired,
+  onNext: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export default {

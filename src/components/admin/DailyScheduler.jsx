@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // Categories for scheduler (keep in sync with backend expected values)
@@ -100,7 +101,7 @@ export default function DailyScheduler() {
       }
       
       // Fallback: Direct query if RPC not available
-      console.warn('get_scheduler_status RPC failed, using fallback:', error?.message);
+      logger.warn('get_scheduler_status RPC failed, using fallback:', error?.message);
       
       const { data: overrides } = await supabase
         .from('category_runtime_overrides')
@@ -136,7 +137,7 @@ export default function DailyScheduler() {
         categories
       });
     } catch (e) {
-      console.error('loadStatus error:', e);
+      logger.error('loadStatus error:', e);
       // Set default empty state instead of showing error toast repeatedly
       setSchedulerStatus({
         ok: false,

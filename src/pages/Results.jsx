@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { normalizeReferralCode, saveReferralCode, loadReferralCode } from '@/lib/referralStorage';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
-import SEO from '@/components/SEO';
+import { logger } from '@/lib/logger';
+import SeoHead from '@/components/SEO';
 
 const Results = () => {
   const { id: quizIdParam, slotId: slotIdParam } = useParams();
@@ -59,8 +60,8 @@ const Results = () => {
 
   // Resolve slotId to quizId if needed
   useEffect(() => {
+    let cancelled = false;
     const resolveQuizId = async () => {
-      let cancelled = false;
       if (slotId && !quizIdParam) {
         // Slot route - need to get quiz_id from quiz_slots_view
         try {
@@ -76,13 +77,13 @@ const Results = () => {
           // ignore
         }
       } else {
-        setEffectiveQuizId(quizIdParam);
+        if (!cancelled) setEffectiveQuizId(quizIdParam);
       }
-      return () => {
-        cancelled = true;
-      };
     };
     resolveQuizId();
+    return () => {
+      cancelled = true;
+    };
   }, [slotId, quizIdParam]);
 
   // Use effectiveQuizId as quizId throughout
@@ -264,6 +265,7 @@ const Results = () => {
                   .select('question_id, selected_option_id')
                   .in('question_id', qids)
                   .eq('user_id', user.id);
+                if (isStale()) return;
                 if (Array.isArray(uans))
                   selectionsMap = new Map(uans.map((r) => [r.question_id, r.selected_option_id]));
               }
@@ -277,9 +279,12 @@ const Results = () => {
                   isSelected: selectionsMap.get(q.id) === o.id,
                 })),
               }));
-              setQaItems(mapped);
+              if (!isStale()) setQaItems(mapped);
             }
-          } catch { /* ignore */ }
+          } catch (e) {
+            // Q&A processing failed - non-critical, results still show
+            if (import.meta.env?.DEV) console.debug('Q&A processing failed:', e?.message);
+          }
 
           // Process profile enrichment
           try {
@@ -306,11 +311,14 @@ const Results = () => {
                 );
               }
             }
-          } catch { /* ignore */ }
+          } catch (e) {
+            // Profile enrichment failed - non-critical, basic results still show
+            if (import.meta.env?.DEV) console.debug('Profile enrichment failed:', e?.message);
+          }
         }).catch(() => {});
       }).catch(() => {});
     } catch (error) {
-      console.error('Error fetching results:', error);
+      logger.error('Error fetching results:', error);
       setFinalizing(false);
       setErrorMessage(error?.message || 'Failed to load results.');
       setLoading(false);
@@ -333,37 +341,6 @@ const Results = () => {
       ? quiz.prizes[userRank.rank - 1]
       : 0;
   const userPrizeDisplay = getPrizeDisplay(prizeType, userPrizeVal, { fallback: 0 });
-  // Prepare poster in the background once results are available
-  useEffect(() => {
-    let cancelled = false;
-    const prep = async () => {
-      try {
-        if (results.length === 0) {
-          setPosterBlob(null);
-          return;
-        }
-        const blob = await generateComposedResultsPoster();
-        if (!cancelled) setPosterBlob(blob);
-      } catch {
-        if (!cancelled) setPosterBlob(null);
-      }
-    };
-    prep();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    results.length,
-    quizId,
-    userRank?.rank,
-    userRank?.score,
-    userProfile?.full_name,
-    userProfile?.username,
-    user?.id,
-    userProfile?.referral_code,
-    userPrizeVal,
-  ]);
 
   // Removed static background poster; we render a clean gradient background only.
 
@@ -456,12 +433,23 @@ const Results = () => {
         while (s && measureW(s) > maxW) s = s.slice(0, -1);
         return s.length < String(text).length ? s.slice(0, Math.max(0, s.length - 1)) + '…' : s;
       };
-      const loadImage = (src) =>
+      const loadImage = (src, timeoutMs = 10000) =>
         new Promise((resolve, reject) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          img.onload = () => resolve(img);
-          img.onerror = reject;
+          const timer = setTimeout(() => {
+            img.onload = null;
+            img.onerror = null;
+            reject(new Error('Image load timeout'));
+          }, timeoutMs);
+          img.onload = () => {
+            clearTimeout(timer);
+            resolve(img);
+          };
+          img.onerror = (e) => {
+            clearTimeout(timer);
+            reject(e);
+          };
           img.src = src;
         });
       const roundRect = (x, y, w, h, r) => {
@@ -765,6 +753,38 @@ const Results = () => {
     userPrizeVal,
   ]);
 
+  // Prepare poster in the background once results are available
+  useEffect(() => {
+    let cancelled = false;
+    const prep = async () => {
+      try {
+        if (results.length === 0) {
+          setPosterBlob(null);
+          return;
+        }
+        const blob = await generateComposedResultsPoster();
+        if (!cancelled) setPosterBlob(blob);
+      } catch {
+        if (!cancelled) setPosterBlob(null);
+      }
+    };
+    prep();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    results.length,
+    generateComposedResultsPoster,
+    quizId,
+    userRank?.rank,
+    userRank?.score,
+    userProfile?.full_name,
+    userProfile?.username,
+    user?.id,
+    userProfile?.referral_code,
+    userPrizeVal,
+  ]);
+
   // Live countdown updater when results aren't available yet
   useEffect(() => {
     if (!quiz?.end_time || results.length > 0) {
@@ -915,7 +935,9 @@ const Results = () => {
       const intentUrl = `intent://send#Intent;scheme=whatsapp;package=com.whatsapp;end`;
       const waWeb = `https://wa.me/`;
       const openNew = (url) => {
-        const w = window.open(url, '_blank');
+        // Prevent reverse-tabnabbing: ensure the new page cannot control this window
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (w) w.opener = null;
         return !!w;
       };
       if (isAndroid) {
@@ -948,7 +970,7 @@ const Results = () => {
   if (loading) {
     return (
       <div className="min-h-screen px-3 pt-16 sm:pt-20 pb-24">
-        <SEO
+        <SeoHead
           title="Results – Loading | Quiz Dangal"
           description="Loading quiz results."
           canonical={
@@ -957,6 +979,7 @@ const Results = () => {
               : 'https://quizdangal.com/results'
           }
           robots="noindex, nofollow"
+          author="Quiz Dangal"
         />
         <div className="max-w-md mx-auto space-y-3">
           {/* Skeleton Header */}
@@ -1001,7 +1024,7 @@ const Results = () => {
   if (!loading && errorMessage) {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
-        <SEO
+        <SeoHead
           title="Results – Error | Quiz Dangal"
           description={errorMessage || 'Could not load results.'}
           canonical={
@@ -1010,6 +1033,7 @@ const Results = () => {
               : 'https://quizdangal.com/results'
           }
           robots="noindex, nofollow"
+          author="Quiz Dangal"
         />
         <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-2xl font-bold mb-2 text-white">Couldn&apos;t load results</h2>
@@ -1048,10 +1072,11 @@ const Results = () => {
     );
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
-        <SEO
+        <SeoHead
           title="Results – Not Published | Quiz Dangal"
           description="Results will be available after the quiz ends."
           robots="noindex, nofollow"
+          author="Quiz Dangal"
         />
         <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-xl font-bold mb-2 text-white">Results will be published soon.</h2>
@@ -1083,10 +1108,11 @@ const Results = () => {
   if (!loading && (timeLeftMs ?? 0) === 0 && results.length === 0 && (finalizing || quiz?.end_time)) {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
-        <SEO
+        <SeoHead
           title="Results – Finalizing | Quiz Dangal"
           description="Finalizing quiz results."
           robots="noindex, nofollow"
+          author="Quiz Dangal"
         />
         <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-xl font-bold mb-2 text-white">Finalizing results…</h2>
@@ -1115,7 +1141,7 @@ const Results = () => {
       className="min-h-screen px-3 pt-16 sm:pt-20 pb-24 relative"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}
     >
-      <SEO
+      <SeoHead
         title={`${quiz?.title ? `${quiz.title} – Results` : 'Quiz Results'} | Quiz Dangal`}
         description={
           results.length > 0 ? 'Leaderboard and winners for this quiz.' : 'Results are finalized.'
@@ -1126,6 +1152,7 @@ const Results = () => {
             : 'https://quizdangal.com/results'
         }
         robots="noindex, nofollow"
+        author="Quiz Dangal"
       />
       <style>{`.results-prize-row::-webkit-scrollbar{display:none;}`}</style>
       <div className="max-w-md mx-auto space-y-3">
@@ -1302,8 +1329,10 @@ const Results = () => {
                       {participant.profiles?.avatar_url ? (
                         <img
                           src={participant.profiles.avatar_url}
-                          alt=""
+                          alt="Player avatar"
                           className="w-full h-full object-cover"
+                          width={24}
+                          height={24}
                           loading="lazy"
                           decoding="async"
                         />
@@ -1339,6 +1368,7 @@ const Results = () => {
         >
           <div className="grid grid-cols-3 gap-2">
             <button
+              type="button"
               onClick={() => navigate('/my-quizzes/')}
               className="inline-flex items-center justify-center gap-1.5 h-10 rounded-lg text-[11px] font-semibold bg-slate-800 text-white border border-slate-700 hover:bg-slate-700 transition"
             >
@@ -1346,6 +1376,7 @@ const Results = () => {
               Back
             </button>
             <button
+              type="button"
               onClick={shareToWhatsApp}
               className="inline-flex items-center justify-center gap-1.5 h-10 rounded-lg text-[11px] font-bold text-white bg-gradient-to-r from-green-600 to-emerald-500 border border-green-500/50 hover:opacity-90 transition"
             >
@@ -1355,6 +1386,7 @@ const Results = () => {
               WhatsApp
             </button>
             <button
+              type="button"
               onClick={shareResultDirect}
               className="inline-flex items-center justify-center gap-1.5 h-10 rounded-lg text-[11px] font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-500 border border-violet-500/50 hover:opacity-90 transition"
             >

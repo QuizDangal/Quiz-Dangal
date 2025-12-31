@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 import {
   Loader2,
   Crown,
@@ -17,10 +19,11 @@ import {
   Coins,
 } from 'lucide-react';
 import ProfileUpdateModal from '@/components/ProfileUpdateModal';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 
 export default function Profile() {
   const { signOut } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -177,51 +180,62 @@ export default function Profile() {
   // Push notification subscription options not used on this simplified profile page now
   // const { isSubscribed, subscribeToPush, unsubscribeFromPush, error: pushError } = usePushNotifications();
 
+  // Helper: Resolve avatar URL (external URL or signed storage URL)
+  const resolveAvatarUrl = useCallback(async (avatarPath) => {
+    if (!avatarPath) return '';
+    if (avatarPath.includes('://')) return avatarPath;
+    
+    const { data: signed, error: signedError } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(avatarPath, 60 * 60);
+    if (signedError) {
+      logger.warn('Avatar signed URL creation failed:', signedError);
+      return '';
+    }
+    return signed?.signedUrl || '';
+  }, []);
+
+  // Helper: Fetch and process user profile data
+  const fetchProfileData = useCallback(async (user) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (error) throw error;
+    return data;
+  }, []);
+
+  // Helper: Update level/progress state from profile data
+  const updateLevelState = useCallback((data) => {
+    const coins = Number(data?.total_coins || 0);
+    const lvl = calcLevelFromCoins(coins);
+    setDerivedLevel(lvl);
+    setDerivedNext(computeNextInfo(coins, lvl));
+  }, [calcLevelFromCoins, computeNextInfo]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const u = session?.user || null;
       setSessionUser(u);
-      if (u) {
-        const { data, error } = await supabase.from('profiles').select('*').eq('id', u.id).single();
-        if (error) throw error;
-        setProfile(data);
-        // Derive level/progress locally (works even if DB migration not applied yet)
-        const coins = Number(data?.total_coins || 0);
-        const lvl = calcLevelFromCoins(coins);
-        setDerivedLevel(lvl);
-        setDerivedNext(computeNextInfo(coins, lvl));
-        if (data?.avatar_url) {
-          if (data.avatar_url.includes('://')) {
-            setAvatarUrl(data.avatar_url);
-          } else {
-            const { data: signed, error: signedError } = await supabase.storage
-              .from('avatars')
-              .createSignedUrl(data.avatar_url, 60 * 60);
-            if (signedError) {
-              console.warn('Avatar signed URL creation failed:', signedError);
-              setAvatarUrl('');
-            } else {
-              setAvatarUrl(signed?.signedUrl || '');
-            }
-          }
-        } else {
-          setAvatarUrl('');
-        }
-      } else {
+      
+      if (!u) {
         setProfile(null);
         setAvatarUrl('');
+        return;
       }
-    } catch (e) {
+      
+      const data = await fetchProfileData(u);
+      setProfile(data);
+      updateLevelState(data);
+      const resolvedUrl = await resolveAvatarUrl(data?.avatar_url);
+      setAvatarUrl(resolvedUrl);
+    } catch (err) {
+      logger.warn('Failed to load profile:', err);
       setProfile(null);
       setAvatarUrl('');
     } finally {
       setLoading(false);
     }
-  }, [calcLevelFromCoins, computeNextInfo]);
+  }, [fetchProfileData, updateLevelState, resolveAvatarUrl]);
 
   useEffect(() => {
     load();
@@ -254,9 +268,9 @@ export default function Profile() {
         setAvatarUrl(signed?.signedUrl || '');
       }
       await load();
-      alert('Avatar updated');
+      toast({ title: 'Avatar updated', description: 'Your profile picture has been changed.', variant: 'default' });
     } catch (err) {
-      alert(`Avatar change failed: ${err?.message || 'Try again later'}`);
+      toast({ title: 'Avatar change failed', description: err?.message || 'Try again later', variant: 'destructive' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -306,21 +320,23 @@ export default function Profile() {
   const progressPct = getLevelProgress(totalCoins, derivedLevel);
 
   // Gradient colors for level ring animation
-  const levelGradient = derivedLevel >= 80
-    ? 'from-violet-500 via-fuchsia-500 to-pink-500'
-    : derivedLevel >= 50
-      ? 'from-amber-400 via-orange-500 to-red-500'
-      : derivedLevel >= 20
-        ? 'from-cyan-400 via-blue-500 to-indigo-500'
-        : 'from-emerald-400 via-teal-500 to-cyan-500';
+  const getLevelGradient = (level) => {
+    if (level >= 80) return 'from-violet-500 via-fuchsia-500 to-pink-500';
+    if (level >= 50) return 'from-amber-400 via-orange-500 to-red-500';
+    if (level >= 20) return 'from-cyan-400 via-blue-500 to-indigo-500';
+    return 'from-emerald-400 via-teal-500 to-cyan-500';
+  };
+  const levelGradient = getLevelGradient(derivedLevel);
 
   return (
     <div className="relative overflow-x-hidden">
-      <SEO
+      <SeoHead
         title="Your Quiz Dangal Profile"
         description="View and manage your Quiz Dangal profile details, quiz preferences, and account settings."
         canonical="https://quizdangal.com/profile/"
         robots="noindex, nofollow"
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
       />
 
       <div className="mx-auto w-full max-w-lg lg:max-w-xl px-4 pt-14 lg:pt-20 pb-12 space-y-3 lg:space-y-4">
@@ -349,8 +365,11 @@ export default function Profile() {
                   {avatarUrl ? (
                     <img
                       src={avatarUrl}
-                      alt={profile?.full_name || profile?.username ? `${profile.full_name || profile.username} avatar` : 'User avatar'}
+                      alt="User profile avatar"
+                      title={(profile?.full_name || profile?.username) ? `${profile.full_name || profile.username}'s avatar` : 'User avatar'}
                       className="w-full h-full object-cover"
+                      width={80}
+                      height={80}
                       loading="lazy"
                       decoding="async"
                     />
@@ -363,6 +382,7 @@ export default function Profile() {
 
                 {/* Camera Button */}
                 <button
+                  type="button"
                   onClick={onChooseAvatar}
                   disabled={uploading}
                   className="absolute -bottom-0.5 -right-0.5 p-1.5 lg:p-1 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-slate-900 shadow-lg text-white hover:scale-110 transition disabled:opacity-60"
@@ -371,7 +391,15 @@ export default function Profile() {
                 >
                   <Camera className="w-3.5 h-3.5 lg:w-3 lg:h-3" aria-hidden="true" />
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onAvatarSelected} />
+                <input 
+                  ref={fileInputRef} 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={onAvatarSelected}
+                  id="avatar-upload"
+                  aria-label="Upload avatar image"
+                />
                 
                 {/* Level Badge */}
                 <div className={`absolute -top-1 -left-1 px-2 lg:px-1.5 py-0.5 rounded-full bg-gradient-to-r ${levelGradient} shadow-lg`}>
@@ -391,20 +419,25 @@ export default function Profile() {
 
             {/* Edit Profile Button - Below Avatar */}
             <button
+              type="button"
               onClick={() => setEditingProfile(true)}
               className="mt-3 lg:mt-2 inline-flex items-center gap-1.5 px-4 lg:px-3 py-1.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-semibold bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-105 transition"
+              aria-label="Edit your profile"
             >
-              <svg className="w-3 h-3 lg:w-2.5 lg:h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              <svg className="w-3 h-3 lg:w-2.5 lg:h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               Edit Profile
             </button>
 
             {/* Level Progress - Clickable */}
             <button
+              type="button"
               onClick={() => setShowLevelInfo(!showLevelInfo)}
               className="mt-3 lg:mt-2 w-full p-2.5 lg:p-2 rounded-xl lg:rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition text-left"
+              aria-label={showLevelInfo ? 'Hide level info' : 'Show level info'}
+              aria-expanded={showLevelInfo}
             >
               <div className="flex items-center gap-1.5 mb-1.5 lg:mb-1">
-                <Zap className="w-3.5 h-3.5 lg:w-3 lg:h-3 text-yellow-400" />
+                <Zap className="w-3.5 h-3.5 lg:w-3 lg:h-3 text-yellow-400" aria-hidden="true" />
                 <span className="text-xs lg:text-[11px] font-semibold text-white">Level {derivedLevel}</span>
               </div>
               <div className="relative h-2 lg:h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
@@ -447,7 +480,7 @@ export default function Profile() {
             }}
           >
             <div className="w-9 h-9 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 grid place-items-center shadow-md flex-shrink-0">
-              <Coins className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-white" />
+              <Coins className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-white" aria-hidden="true" />
             </div>
             <p className="flex-1 text-sm lg:text-xs font-bold text-white">Wallet</p>
           </Link>
@@ -462,7 +495,7 @@ export default function Profile() {
             }}
           >
             <div className="w-9 h-9 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br from-pink-400 to-violet-500 grid place-items-center shadow-md flex-shrink-0">
-              <Share2 className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-white" />
+              <Share2 className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-white" aria-hidden="true" />
             </div>
             <p className="flex-1 text-sm lg:text-xs font-bold text-white">Refer & Earn</p>
           </Link>
@@ -497,10 +530,12 @@ export default function Profile() {
           {/* Logout inside menu */}
           <div className="px-4 lg:px-3 py-3 lg:py-2 border-t border-white/5">
             <button
+              type="button"
               onClick={handleSignOut}
               className="inline-flex items-center gap-2 lg:gap-1.5 px-3 lg:px-2.5 py-1.5 lg:py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition text-xs lg:text-[11px] text-rose-300 font-semibold"
+              aria-label="Log out of your account"
             >
-              <LogOut className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
+              <LogOut className="w-3.5 h-3.5 lg:w-3 lg:h-3" aria-hidden="true" />
               Logout
             </button>
           </div>

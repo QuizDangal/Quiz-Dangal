@@ -57,11 +57,11 @@ export default function QuizGame() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/', label: 'Start Playing' },
-        { href: '/online-quiz/', label: 'Online Quiz' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
-        { href: '/quiz-app/', label: 'Quiz App' },
-        { href: '/quiz-competition/', label: 'Quiz Competition' },
+        { to: '/', label: 'Start Playing' },
+        { to: '/online-quiz/', label: 'Online Quiz' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/quiz-app/', label: 'Quiz App' },
+        { to: '/quiz-competition/', label: 'Quiz Competition' },
       ]}
       faqs={[
         {

@@ -56,11 +56,11 @@ export default function QuizApp() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/online-quiz/', label: 'Online Quiz' },
-        { href: '/quiz-game/', label: 'Quiz Game' },
-        { href: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/online-quiz/', label: 'Online Quiz' },
+        { to: '/quiz-game/', label: 'Quiz Game' },
+        { to: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
       ]}
       faqs={[
         {
@@ -80,8 +80,8 @@ export default function QuizApp() {
           answer: 'Quiz Dangal offers a unique combination of daily fresh content, multiple quiz categories (GK, Sports, Movies, Opinion), real rewards, national leaderboards, and a refer-and-earn program. Plus, as a PWA, it\'s faster and takes no storage space!',
         },
         {
-          question: 'Can I earn money from this quiz app?',
-          answer: 'You earn coins by playing quizzes correctly and quickly. These coins can be redeemed for exciting rewards. While it\'s not a gambling app, consistent players can accumulate significant rewards. We also have a refer-and-earn program!',
+          question: 'Can I earn rewards from this quiz app?',
+          answer: 'You earn coins by playing quizzes correctly and quickly. These coins can be redeemed for exciting rewards like gift vouchers. This is an educational trivia game, not gambling. Consistent players can accumulate rewards through our refer-and-earn program!',
         },
         {
           question: 'Does the quiz app work offline?',

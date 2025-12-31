@@ -12,11 +12,14 @@ import {
   safeComputeResultsIfDue,
   prefetchRoute,
 } from '@/lib/utils';
-import SEO from '@/components/SEO';
+import { logger } from '@/lib/logger';
+import SeoHead from '@/components/SEO';
 // LeaderboardDisplay removed (unused)
 
 const GoldTrophy = ({ size = 72, centered = false, fitParent = false }) => {
   const px = typeof size === 'number' ? `${size}px` : size;
+  const intrinsicSize =
+    typeof size === 'number' ? size : Number.parseInt(String(size || ''), 10) || 96;
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
     `${import.meta.env.BASE_URL}Trophy.png`, // provided image (preferred)
@@ -39,6 +42,8 @@ const GoldTrophy = ({ size = 72, centered = false, fitParent = false }) => {
               src={src}
               alt="Trophy"
               className="w-full h-full object-contain select-none"
+              width={intrinsicSize}
+              height={intrinsicSize}
               style={{
                 backgroundColor: 'transparent',
                 display: 'block',
@@ -175,7 +180,7 @@ const MyQuizzes = () => {
       // Merge for downstream UI which splits again by time; keeping shape consistent
       setQuizzes([...(liveData || []), ...(finishedData || [])]);
     } catch (err) {
-      console.error('fetchMyQuizzes failed', err);
+      logger.error('fetchMyQuizzes failed', err);
       setQuizzes([]);
     }
   }, [user]);
@@ -798,11 +803,13 @@ const MyQuizzes = () => {
         />
       </div>
       
-      <SEO
+      <SeoHead
         title="My Quizzes – Quiz Dangal"
         description="Track the quizzes you have joined, monitor live rounds, and revisit completed contests on Quiz Dangal."
         canonical="https://quizdangal.com/my-quizzes/"
         robots="noindex, nofollow"
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
       />
       <div className="relative z-10">
         <m.div

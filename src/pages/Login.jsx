@@ -7,8 +7,19 @@ import { useToast } from '@/components/ui/use-toast';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Eye, EyeOff } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import SeoHead from '@/components/SEO';
 import { normalizeReferralCode, saveReferralCode } from '@/lib/referralStorage';
+
+// Moved outside Login component to avoid re-creating on each render
+const LoginHead = () => (
+  <SeoHead
+    title="Login / Sign Up – Quiz Dangal"
+    description="Sign in or create your free Quiz Dangal account. Play daily quizzes, earn coins, and compete on leaderboards."
+    canonical="https://quizdangal.com/login/"
+    robots="noindex, nofollow"
+    author="Quiz Dangal"
+  />
+);
 
 const Login = () => {
   const { toast } = useToast();
@@ -27,7 +38,7 @@ const Login = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [signInHint, setSignInHint] = useState(null); // { type: 'unconfirmed'|'invalid', message }
+  const [signInHint, setSignInHint] = useState(null);
   const [resendLoading, setResendLoading] = useState(false);
 
   // Get redirect path from state (if user was redirected from protected route)
@@ -79,7 +90,7 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: globalThis.location.origin },
       });
       if (error) throw error;
     } catch (error) {
@@ -92,90 +103,129 @@ const Login = () => {
     }
   };
 
+  const validateSignInInputs = (rawEmail, rawPassword) => {
+    const cleanEmail = String(rawEmail || '').trim();
+    const cleanPassword = String(rawPassword || '').trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      return {
+        ok: false,
+        cleanEmail,
+        cleanPassword,
+        toast: {
+          title: 'Missing credentials',
+          description: 'Please enter email and password.',
+          variant: 'destructive',
+        },
+      };
+    }
+
+    // Basic client validation to reduce round-trips
+    const emailOk = /.+@.+\..+/.test(cleanEmail);
+    if (!emailOk) {
+      return {
+        ok: false,
+        cleanEmail,
+        cleanPassword,
+        toast: {
+          title: 'Invalid email',
+          description: 'Please enter a valid email address.',
+          variant: 'destructive',
+        },
+      };
+    }
+
+    if (cleanPassword.length < 6) {
+      return {
+        ok: false,
+        cleanEmail,
+        cleanPassword,
+        toast: {
+          title: 'Weak password',
+          description: 'Password must be at least 6 characters.',
+          variant: 'destructive',
+        },
+      };
+    }
+
+    return { ok: true, cleanEmail, cleanPassword };
+  };
+
+  const runSignUp = async () => {
+    const normalizedReferral = referralCode ? saveReferralCode(referralCode) : '';
+    const { error } = await signUp(email, password, {
+      referralCode: normalizedReferral || undefined,
+    });
+
+    if (error) {
+      toast({
+        title: 'Sign Up Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setEmailSent(true);
+    toast({
+      title: 'Confirmation email sent!',
+      description: 'Please check your inbox to verify your email.',
+    });
+  };
+
+  const runSignIn = async () => {
+    const validation = validateSignInInputs(email, password);
+    if (!validation.ok) {
+      toast(validation.toast);
+      return { didNavigate: false };
+    }
+
+    const { cleanEmail, cleanPassword } = validation;
+    const { error } = await signIn(cleanEmail, cleanPassword);
+
+    if (error) {
+      const msg = String(error.message || '').toLowerCase();
+      const isUnconfirmed = msg.includes('confirm') || msg.includes('not confirmed');
+      if (isUnconfirmed) {
+        setSignInHint({
+          type: 'unconfirmed',
+          message:
+            'Your email is not confirmed. Please confirm your email or resend the confirmation link.',
+        });
+        toast({
+          title: 'Email not confirmed',
+          description: 'We can resend the confirmation link to your inbox.',
+          variant: 'destructive',
+        });
+      } else {
+        setSignInHint({
+          type: 'invalid',
+          message: 'Invalid credentials. Please check your email and password.',
+        });
+        toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
+      }
+      return { didNavigate: false };
+    }
+
+    navigate(redirectTo, { replace: true });
+    return { didNavigate: true };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setEmailSent(false);
     setSignInHint(null);
 
-    if (isSignUp) {
-      const normalizedReferral = referralCode ? saveReferralCode(referralCode) : '';
-      const { error } = await signUp(email, password, {
-        referralCode: normalizedReferral || undefined,
-      });
-      if (error) {
-        toast({
-          title: 'Sign Up Failed',
-          description: error.message,
-          variant: 'destructive',
-        });
+    try {
+      if (isSignUp) {
+        await runSignUp();
       } else {
-        setEmailSent(true);
-        toast({
-          title: 'Confirmation email sent!',
-          description: 'Please check your inbox to verify your email.',
-        });
+        await runSignIn();
       }
-    } else {
-      const cleanEmail = (email || '').trim();
-      const cleanPassword = (password || '').trim();
-      if (!cleanEmail || !cleanPassword) {
-        toast({
-          title: 'Missing credentials',
-          description: 'Please enter email and password.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-      // Basic client validation to reduce round-trips
-      const emailOk = /.+@.+\..+/.test(cleanEmail);
-      if (!emailOk) {
-        toast({
-          title: 'Invalid email',
-          description: 'Please enter a valid email address.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-      if (cleanPassword.length < 6) {
-        toast({
-          title: 'Weak password',
-          description: 'Password must be at least 6 characters.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-      const { error } = await signIn(cleanEmail, cleanPassword);
-      if (error) {
-        const msg = (error.message || '').toLowerCase();
-        const isUnconfirmed = msg.includes('confirm') || msg.includes('not confirmed');
-        if (isUnconfirmed) {
-          setSignInHint({
-            type: 'unconfirmed',
-            message:
-              'Your email is not confirmed. Please confirm your email or resend the confirmation link.',
-          });
-          toast({
-            title: 'Email not confirmed',
-            description: 'We can resend the confirmation link to your inbox.',
-            variant: 'destructive',
-          });
-        } else {
-          setSignInHint({
-            type: 'invalid',
-            message: 'Invalid credentials. Please check your email and password.',
-          });
-          toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
-        }
-      } else {
-        // Successful login - redirect to saved path or home
-        navigate(redirectTo, { replace: true });
-      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const resendConfirmation = async () => {
@@ -199,14 +249,6 @@ const Login = () => {
       setResendLoading(false);
     }
   };
-
-  const LoginHead = () => (
-    <Helmet>
-      <title>Login / Sign Up – Quiz Dangal</title>
-      <meta name="robots" content="noindex, nofollow" />
-      <link rel="canonical" href="https://quizdangal.com/login/" />
-    </Helmet>
-  );
 
   if (emailSent) {
     return (
@@ -248,7 +290,7 @@ const Login = () => {
               setForgotLoading(true);
               try {
                 const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-                  redirectTo: `${window.location.origin}/reset-password`,
+                  redirectTo: `${globalThis.location.origin}/reset-password`,
                 });
                 if (error) throw error;
                 toast({
@@ -267,15 +309,20 @@ const Login = () => {
             }}
             className="space-y-3 sm:space-y-4"
           >
-            <Input
-              id="forgot-email"
-              type="email"
-              value={forgotEmail}
-              onChange={(e) => setForgotEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="mb-2 bg-white text-black placeholder-slate-500 border-slate-300"
-            />
+            <div>
+              <Label htmlFor="forgot-email" className="text-sm font-medium text-white mb-1 block">
+                Email Address
+              </Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="mb-2 bg-white text-black placeholder-slate-500 border-slate-300"
+              />
+            </div>
             <Button type="submit" disabled={forgotLoading} className="w-full">
               {forgotLoading ? 'Sending...' : 'Send Reset Link'}
             </Button>
@@ -398,10 +445,17 @@ const Login = () => {
             variant="brand"
             className="w-full font-semibold py-3 rounded-lg shadow-lg"
           >
-            {isLoading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            {(() => {
+              if (isLoading) return 'Processing...';
+              return isSignUp ? 'Sign Up' : 'Sign In';
+            })()}
           </Button>
+          {/* Accessible error announcements for screen readers */}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {signInHint?.message && <span>{signInHint.message}</span>}
+          </div>
           {!isSignUp && signInHint?.type === 'unconfirmed' && (
-            <div className="mt-2 text-center">
+            <div className="mt-2 text-center" role="alert">
               <p className="text-xs text-amber-200/90 mb-2">{signInHint.message}</p>
               <Button
                 type="button"
@@ -413,6 +467,11 @@ const Login = () => {
               >
                 {resendLoading ? 'Sending…' : 'Resend Confirmation Email'}
               </Button>
+            </div>
+          )}
+          {!isSignUp && signInHint?.type === 'invalid' && (
+            <div className="mt-2 text-center" role="alert">
+              <p className="text-xs text-red-300/90">{signInHint.message}</p>
             </div>
           )}
         </form>

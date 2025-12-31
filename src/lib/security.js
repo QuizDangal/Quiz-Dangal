@@ -1,6 +1,8 @@
 // Frontend-only lightweight security & safety helpers (no backend changes required)
 // All functions are side-effect free utilities.
 
+import { RATE_LIMIT_DEFAULT_WINDOW_MS, RATE_LIMIT_DEFAULT_MAX_ATTEMPTS } from '@/constants';
+
 /**
  * Escape a string for safe interpolation into HTML (defense-in-depth if ever dangerouslySetInnerHTML is needed).
  */
@@ -19,18 +21,20 @@ export function escapeHTML(str = '') {
  * Buckets are periodically pruned to avoid unbounded memory growth.
  */
 const actionBuckets = new Map(); // key -> { count, firstTs, windowMs }
+const MAX_BUCKET_SIZE = 500; // Hard cap to prevent memory leaks
 let rateLimitCalls = 0;
 
 function pruneBuckets(now) {
-  // Only prune when map grows or every ~200 calls to keep overhead tiny.
-  if (rateLimitCalls % 200 !== 0 && actionBuckets.size < 100) return;
-  for (const [k, v] of actionBuckets.entries()) {
-    const ttl = (v.windowMs || 8000) * 2; // keep a little longer than window for burst patterns
-    if (now - v.firstTs > ttl) actionBuckets.delete(k);
+  // Force prune if map exceeds hard cap, or every ~200 calls, or when size >= 100
+  if (actionBuckets.size >= MAX_BUCKET_SIZE || rateLimitCalls % 200 === 0 || actionBuckets.size >= 100) {
+    for (const [k, v] of actionBuckets.entries()) {
+      const ttl = (v.windowMs || RATE_LIMIT_DEFAULT_WINDOW_MS) * 2; // keep a little longer than window for burst patterns
+      if (now - v.firstTs > ttl) actionBuckets.delete(k);
+    }
   }
 }
 
-export function rateLimit(key, { max = 5, windowMs = 8000 } = {}) {
+export function rateLimit(key, { max = RATE_LIMIT_DEFAULT_MAX_ATTEMPTS, windowMs = RATE_LIMIT_DEFAULT_WINDOW_MS } = {}) {
   rateLimitCalls += 1;
   const now = Date.now();
   const bucket = actionBuckets.get(key);

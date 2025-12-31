@@ -56,11 +56,11 @@ export default function IndiaQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/', label: 'Home' },
-        { href: '/gk-quiz/', label: 'GK Quiz' },
-        { href: '/hindi-quiz/', label: 'Hindi Quiz' },
-        { href: '/cricket-quiz/', label: 'Cricket Quiz' },
-        { href: '/current-affairs-quiz/', label: 'Current Affairs' },
+        { to: '/', label: 'Home' },
+        { to: '/gk-quiz/', label: 'GK Quiz' },
+        { to: '/hindi-quiz/', label: 'Hindi Quiz' },
+        { to: '/cricket-quiz/', label: 'Cricket Quiz' },
+        { to: '/current-affairs-quiz/', label: 'Current Affairs' },
       ]}
       faqs={[
         {

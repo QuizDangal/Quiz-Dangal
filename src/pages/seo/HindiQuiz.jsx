@@ -47,11 +47,11 @@ export default function HindiQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/category/gk/', label: 'GK Quiz' },
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
-        { href: '/gk-quiz/', label: 'GK Quiz Landing' },
-        { href: '/india-quiz/', label: 'India Quiz' },
+        { to: '/category/gk/', label: 'GK Quiz' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/gk-quiz/', label: 'GK Quiz Landing' },
+        { to: '/india-quiz/', label: 'India Quiz' },
       ]}
       faqs={[
         {

@@ -56,11 +56,11 @@ export default function QuizQuestionsWithAnswers() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/category/gk/', label: 'GK Quiz' },
-        { href: '/category/sports/', label: 'Sports Quiz' },
-        { href: '/category/movies/', label: 'Movie Quiz' },
-        { href: '/gk-questions/', label: 'GK Questions' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/category/gk/', label: 'GK Quiz' },
+        { to: '/category/sports/', label: 'Sports Quiz' },
+        { to: '/category/movies/', label: 'Movie Quiz' },
+        { to: '/gk-questions/', label: 'GK Questions' },
       ]}
       faqs={[
         {

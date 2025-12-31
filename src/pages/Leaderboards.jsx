@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2, ChevronDown, Trophy, Crown } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const periods = [
@@ -110,7 +111,7 @@ export default function Leaderboards() {
       setRows(data);
     } catch (err) {
       const errorMessage = err.message || 'Failed to load leaderboard.';
-      console.error('Leaderboard fetch error:', err);
+      logger.error('Leaderboard fetch error:', err);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -163,7 +164,7 @@ export default function Leaderboards() {
         />
       </div>
 
-      <SEO
+      <SeoHead
         title="Leaderboards – Quiz Dangal | Top Quiz Players"
         description="See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks."
         canonical="https://quizdangal.com/leaderboards/"
@@ -174,6 +175,17 @@ export default function Leaderboards() {
           'quizdangal leaderboard',
           'daily quiz rankings',
         ]}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
+        jsonLd={[{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Leaderboards', item: 'https://quizdangal.com/leaderboards/' },
+          ],
+        }]}
       />
       
       <div className="max-w-3xl mx-auto px-4 py-4 space-y-2">
@@ -475,6 +487,7 @@ export default function Leaderboards() {
             <div className="py-12 text-center px-4">
               <div className="text-red-400 text-sm font-medium mb-3">{error}</div>
               <button
+                type="button"
                 onClick={() => loadLeaderboard(period)}
                 className="px-4 py-2 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
               >
@@ -489,6 +502,7 @@ export default function Leaderboards() {
                   Try selecting All-time or refresh the page.
                 </div>
                 <button
+                  type="button"
                   onClick={() => loadLeaderboard(period)}
                   className="mt-3 px-4 py-2 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
                 >

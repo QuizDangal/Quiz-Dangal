@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 import { Gift, Users, Coins, Share2, Copy, Check, Loader2, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { normalizeReferralCode, saveReferralCode } from '@/lib/referralStorage';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getSignedAvatarUrls } from '@/lib/avatar';
+import { logger } from '@/lib/logger';
 import { m as motion } from '@/lib/motion-lite';
 
 const ReferEarn = () => {
@@ -79,7 +80,7 @@ Referral Link: ${referralLink}`,
           const referredIds = Array.from(new Set(history.map((r) => r.referred_id).filter(Boolean)));
           if (referredIds.length) {
             const { data: publicProfiles, error: profileError } = await supabase.rpc('profiles_public_by_ids', { p_ids: referredIds });
-            if (profileError) console.warn('Referral profile lookup failed:', profileError);
+            if (profileError) logger.warn('Referral profile lookup failed:', profileError);
             const profiles = publicProfiles || [];
             const profileMap = new Map(profiles.map((p) => [p.id, p]));
             const signedMap = await getSignedAvatarUrls(profiles.map((p) => p.avatar_url).filter(Boolean));
@@ -131,7 +132,12 @@ Referral Link: ${referralLink}`,
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
     const waDeep = `whatsapp://send?text=${encoded}`;
     const waWeb = `https://wa.me/?text=${encoded}`;
-    const openNew = (url) => { const w = window.open(url, '_blank'); return !!w; };
+    const openNew = (url) => {
+      // Prevent reverse-tabnabbing: ensure the new page cannot control this window
+      const w = window.open(url, '_blank', 'noopener,noreferrer');
+      if (w) w.opener = null;
+      return !!w;
+    };
 
     if (isAndroid || isIOS) {
       window.location.href = waDeep;
@@ -147,7 +153,10 @@ Referral Link: ${referralLink}`,
         await navigator.share({ title: 'Quiz Dangal', text: shareCaption });
         return;
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      // Web Share API cancelled or failed - fallback to WhatsApp
+      if (import.meta.env?.DEV) console.debug('Web Share failed, using WhatsApp fallback:', e?.message);
+    }
     shareToWhatsApp();
   };
 
@@ -176,7 +185,7 @@ Referral Link: ${referralLink}`,
 
   return (
     <>
-      <SEO
+      <SeoHead
         title="Refer & Earn – Quiz Dangal | Invite Friends, Get Coins"
         description="Share your unique referral link on Quiz Dangal and earn bonus coins when friends join and play opinion-based quizzes."
         canonical="https://quizdangal.com/refer/"
@@ -185,6 +194,8 @@ Referral Link: ${referralLink}`,
         imageAlt="Quiz Dangal Refer and Earn poster"
         keywords={['refer and earn', 'quizdangal refer', 'invite friends quiz app', 'earn coins by referral']}
         jsonLd={[faqSchema]}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
       />
       
       <div className="min-h-screen pt-14 pb-24">
@@ -221,7 +232,7 @@ Referral Link: ${referralLink}`,
                 <div className="text-lg font-bold text-white">+50 <span className="text-amber-400">Coins</span></div>
                 <p className="text-xs text-slate-500">Per referral</p>
               </div>
-              <Zap className="w-4 h-4 text-amber-400" />
+              <Zap className="w-4 h-4 text-amber-400" aria-hidden="true" />
             </div>
           </motion.div>
 
@@ -231,7 +242,7 @@ Referral Link: ${referralLink}`,
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 group-hover:from-cyan-500/20 group-hover:to-blue-500/20 transition-colors" />
               <div className="absolute inset-[1px] rounded-2xl bg-slate-900/90" />
               <div className="relative">
-                <Users className="w-5 h-5 text-cyan-400 mb-2" />
+                <Users className="w-5 h-5 text-cyan-400 mb-2" aria-hidden="true" />
                 <div className="text-2xl font-bold text-white">{referralStats.total}</div>
                 <p className="text-xs text-slate-500 font-medium">Friends Joined</p>
               </div>
@@ -241,7 +252,7 @@ Referral Link: ${referralLink}`,
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-green-500/10 group-hover:from-emerald-500/20 group-hover:to-green-500/20 transition-colors" />
               <div className="absolute inset-[1px] rounded-2xl bg-slate-900/90" />
               <div className="relative">
-                <Trophy className="w-5 h-5 text-emerald-400 mb-2" />
+                <Trophy className="w-5 h-5 text-emerald-400 mb-2" aria-hidden="true" />
                 <div className="text-2xl font-bold text-white">{referralStats.earnings}</div>
                 <p className="text-xs text-slate-500 font-medium">Coins Earned</p>
               </div>
@@ -259,8 +270,9 @@ Referral Link: ${referralLink}`,
                 <Button
                   onClick={() => copyToClipboard(referralCode, 'code')}
                   className="h-auto px-5 bg-slate-700 hover:bg-slate-600 border-0 rounded-xl"
+                  aria-label={copied === 'code' ? 'Code copied' : 'Copy referral code'}
                 >
-                  {copied === 'code' ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                  {copied === 'code' ? <Check className="w-5 h-5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-5 h-5" aria-hidden="true" />}
                 </Button>
               </div>
             </div>
@@ -271,8 +283,9 @@ Referral Link: ${referralLink}`,
             <Button
               onClick={shareToWhatsApp}
               className="h-14 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold shadow-lg shadow-emerald-900/30 border-0"
+              aria-label="Share referral link via WhatsApp"
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.471-.148-.67.149-.198.297-.768.966-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.149-.173.198-.297.297-.495.099-.198.05-.372-.025-.521-.074-.149-.669-1.611-.916-2.205-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.521.074-.793.372s-1.042 1.016-1.042 2.479 1.067 2.876 1.219 3.074c.149.198 2.1 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.718 2.007-1.41.248-.694.248-1.289.173-1.41-.074-.123-.272-.198-.57-.347m-5.49 7.485h-.004a9.867 9.867 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.861 9.861 0 01-1.51-5.241c.001-5.45 4.434-9.884 9.885-9.884 2.641 0 5.122 1.03 6.988 2.897a9.825 9.825 0 012.897 6.994c-.003 5.45-4.436 9.884-9.887 9.884m8.413-18.297A11.815 11.815 0 0012.004 0C5.375 0 .16 5.215.157 11.844a11.82 11.82 0 001.624 5.99L0 24l6.305-1.654a11.86 11.86 0 005.68 1.448h.005c6.628 0 11.843-5.215 11.846-11.844a11.787 11.787 0 00-3.473-8.372z" />
               </svg>
               WhatsApp
@@ -281,8 +294,9 @@ Referral Link: ${referralLink}`,
             <Button
               onClick={shareReferralLink}
               className="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-900/30 border-0"
+              aria-label="Share referral link"
             >
-              <Share2 className="w-5 h-5 mr-2" />
+              <Share2 className="w-5 h-5 mr-2" aria-hidden="true" />
               Share
             </Button>
           </motion.div>
@@ -291,7 +305,7 @@ Referral Link: ${referralLink}`,
           <motion.div variants={itemVariants}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4" />
+                <Users className="w-4 h-4" aria-hidden="true" />
                 Recent Referrals
               </h3>
               {referralHistory.length > 0 && (
@@ -317,9 +331,17 @@ Referral Link: ${referralLink}`,
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden">
                         {ref.referred?.avatar_url ? (
-                          <img src={ref.referred.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          <img
+                            src={ref.referred.avatar_url}
+                            alt="Referred user avatar"
+                            className="w-full h-full object-cover"
+                            width={36}
+                            height={36}
+                            loading="lazy"
+                            decoding="async"
+                          />
                         ) : (
-                          <span className="text-sm font-bold text-slate-400">
+                          <span className="text-sm font-bold text-slate-400" aria-hidden="true">
                             {(ref.referred?.username || 'U')[0].toUpperCase()}
                           </span>
                         )}
@@ -332,7 +354,7 @@ Referral Link: ${referralLink}`,
                       </div>
                     </div>
                     <div className="flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                      <Coins className="w-3.5 h-3.5 text-emerald-400" />
+                      <Coins className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
                       <span className="text-sm font-bold text-emerald-400">+{ref.coins_awarded}</span>
                     </div>
                   </motion.div>
@@ -344,7 +366,7 @@ Referral Link: ${referralLink}`,
             ) : (
               <div className="text-center py-10 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700/50">
                 <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-7 h-7 text-slate-600" />
+                  <Users className="w-7 h-7 text-slate-600" aria-hidden="true" />
                 </div>
                 <h4 className="text-slate-400 font-medium mb-1">Koi referral nahi</h4>
                 <p className="text-xs text-slate-600 max-w-[200px] mx-auto">Link share karo aur coins kamao!</p>

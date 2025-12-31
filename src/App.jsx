@@ -1,15 +1,15 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/toaster';
+import CookieConsent from '@/components/CookieConsent';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Header from '@/components/Header';
 import PWAInstallButton from '@/components/PWAInstallButton';
 import Home from '@/pages/Home';
 // OnboardingFlow removed (unused)
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { prefetch } from '@/lib/prefetch';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
@@ -51,6 +51,7 @@ const IndiaQuiz = lazy(() => import('@/pages/seo/IndiaQuiz'));
 const SportsQuizLanding = lazy(() => import('@/pages/seo/SportsQuizLanding'));
 const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
 const GeneralKnowledgeQuiz = lazy(() => import('@/pages/seo/GeneralKnowledgeQuiz'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
 
@@ -201,15 +202,20 @@ function App() {
           style={{ margin: 0, padding: 0, background: 'transparent' }}
         >
           <Helmet>
+            <html lang="en-IN" />
             <title>Quiz Dangal – Play Quizzes & Win | Refer & Earn</title>
             <meta
               name="description"
-              content="Play opinion-based quizzes, climb leaderboards, win rewards, and refer friends to earn coins on Quiz Dangal."
+              content="Play opinion-based quizzes, climb leaderboards, win rewards, and refer friends to earn coins on Quiz Dangal. India's #1 free quiz platform."
             />
-            <meta
-              name="keywords"
-              content="Quiz Dangal, quizdangal, quiz app, opinion quiz, daily quiz, play and win, refer and earn, rewards, leaderboards"
-            />
+            <meta name="author" content="Quiz Dangal" />
+            <meta name="creator" content="Quiz Dangal" />
+            <meta name="publisher" content="Quiz Dangal" />
+            <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+            <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+            <meta name="rating" content="General" />
+            <meta name="distribution" content="global" />
+            <meta name="revisit-after" content="3 days" />
           </Helmet>
           {/* Initialize notifications for authenticated, confirmed users outside of <Routes> */}
           {authUser &&
@@ -245,7 +251,7 @@ function App() {
                   <>
                     <Route path="/quiz/:id" element={<Quiz />} />
                     <Route path="/quiz/slot/:slotId" element={<Quiz />} />
-                    {/* Accept both with and without trailing slash for category routes */}
+                    {/* Canonicalize category routes (avoid duplicate-content URLs) */}
                     <Route
                       path="/category/:slug"
                       element={
@@ -256,11 +262,7 @@ function App() {
                     />
                     <Route
                       path="/category/:slug/"
-                      element={
-                        <Page>
-                          <CategoryQuizzes />
-                        </Page>
-                      }
+                      element={<CategoryTrailingSlashRedirect />}
                     />
                     <Route path="/results/:id" element={<Results />} />
                     <Route path="/results/slot/:slotId" element={<Results />} />
@@ -271,28 +273,21 @@ function App() {
             </RouteFocusWrapper>
           </Suspense>
           <Toaster />
+          <CookieConsent />
         </div>
       </Router>
     </ErrorBoundary>
   );
 }
 
+/**
+ * AdminRoute - Client-side UI protection ONLY
+ * ⚠️ SECURITY NOTE: This is NOT real security! It only hides the UI.
+ * Real security is enforced by Supabase RLS (Row Level Security) policies.
+ * Anyone with DevTools can bypass this check - that's why backend RLS is critical.
+ */
 function AdminRoute({ children }) {
-  const { userProfile, user, loading } = useAuth();
-  const adminEmails = useMemo(() => {
-    try {
-      const raw = String(import.meta.env.VITE_ADMIN_EMAILS || '').trim();
-      if (!raw) return new Set();
-      return new Set(
-        raw
-          .split(/[,\s]+/)
-          .map((email) => email.trim().toLowerCase())
-          .filter(Boolean),
-      );
-    } catch {
-      return new Set();
-    }
-  }, []);
+  const { userProfile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -304,13 +299,9 @@ function AdminRoute({ children }) {
   const role = String(userProfile?.role || '')
     .trim()
     .toLowerCase();
-  const email = String(user?.email || '')
-    .trim()
-    .toLowerCase();
-  const metadataRole = String(user?.app_metadata?.role || '')
-    .trim()
-    .toLowerCase();
-  const isAdmin = role === 'admin' || metadataRole === 'admin' || (email && adminEmails.has(email));
+  // Only check role from server-backed profile.
+  // Real security is enforced by Supabase RLS, this is UI-only protection
+  const isAdmin = role === 'admin';
 
   if (!isAdmin) {
     return (
@@ -331,9 +322,6 @@ function AdminRoute({ children }) {
               Agar dev bypass (<code>VITE_BYPASS_AUTH=1</code>) use kar rahe hain to mock admin
               profile already enable hai.
             </li>
-            {adminEmails.size > 0 && (
-              <li>Whitelisted admin emails: {[...adminEmails].join(', ')}</li>
-            )}
           </ul>
         </div>
       </div>
@@ -393,14 +381,10 @@ const PublicLayout = () => {
             />
             <Route
               path="/category/:slug/"
-              element={
-                <Page>
-                  <CategoryQuizzes />
-                </Page>
-              }
+              element={<CategoryTrailingSlashRedirect />}
             />
-            {/* For unknown routes when logged out, send users and bots to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* For unknown routes show proper 404 page (SEO-friendly) */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
@@ -409,10 +393,15 @@ const PublicLayout = () => {
   );
 };
 
+function CategoryTrailingSlashRedirect() {
+  const { slug } = useParams();
+  const safeSlug = String(slug || '').trim();
+  return <Navigate to={safeSlug ? `/category/${safeSlug}` : '/category'} replace />;
+}
+
 const MainLayout = () => {
   const { userProfile, loading: authLoading, hasSupabaseConfig } = useAuth();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const warmedRoutesRef = useRef(false);
 
   const requiresProfileCompletion = useMemo(() => {
     // If profile hasn't loaded yet, don't show the modal to avoid flicker
@@ -445,51 +434,7 @@ const MainLayout = () => {
   // Detect if current path is home to tailor layout spacing/overflow (BrowserRouter)
   const isHome =
     typeof window !== 'undefined' && window.location && window.location.pathname === '/';
-  useEffect(() => {
-    if (warmedRoutesRef.current) return;
-    // Skip warming on slow networks, data saver, low-memory devices, or when tab is hidden
-    const shouldWarm = () => {
-      try {
-        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
-        const conn =
-          (navigator &&
-            (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) ||
-          null;
-        if (conn) {
-          if (conn.saveData) return false;
-          if (typeof conn.effectiveType === 'string' && /(^|\b)2g(\b|$)/i.test(conn.effectiveType))
-            return false;
-        }
-        const mem = (navigator && navigator.deviceMemory) || 4;
-        if (mem && mem <= 2) return false;
-        return true;
-      } catch {
-        return true;
-      }
-    };
-    if (!shouldWarm()) return;
 
-    // Defer prefetch until a real user interaction to keep initial load (and Lighthouse mobile) clean.
-    const warm = () => {
-      if (warmedRoutesRef.current) return;
-      warmedRoutesRef.current = true;
-      prefetch(() => import('@/pages/Leaderboards'));
-      prefetch(() => import('@/pages/Wallet'));
-    };
-
-    const opts = { once: true, passive: true };
-    window.addEventListener('pointerdown', warm, opts);
-    window.addEventListener('touchstart', warm, opts);
-    window.addEventListener('keydown', warm, { once: true });
-    window.addEventListener('scroll', warm, opts);
-
-    return () => {
-      window.removeEventListener('pointerdown', warm, opts);
-      window.removeEventListener('touchstart', warm, opts);
-      window.removeEventListener('keydown', warm, { once: true });
-      window.removeEventListener('scroll', warm, opts);
-    };
-  }, []);
   return (
     <>
       <Header />
@@ -645,7 +590,8 @@ const MainLayout = () => {
               element={<Navigate to="/admin?tab=redemptions" replace />}
             />
             <Route path="/admin/reports" element={<Navigate to="/admin?tab=reports" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Show proper 404 page for unknown routes (SEO-friendly) */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>

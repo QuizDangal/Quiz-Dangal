@@ -1,9 +1,24 @@
 import React from 'react';
+import { logger } from '@/lib/logger';
 
 let motionModulePromise = null;
 let motionModule = null;
 
+// Check if user prefers reduced motion (WCAG accessibility)
+function prefersReducedMotion() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
 function loadMotionModule() {
+  // Skip loading framer-motion entirely if user prefers reduced motion
+  if (prefersReducedMotion()) {
+    return Promise.resolve(null);
+  }
   if (!motionModulePromise) {
     motionModulePromise = import('framer-motion')
       .then((mod) => {
@@ -13,7 +28,7 @@ function loadMotionModule() {
       .catch((err) => {
         motionModulePromise = null;
         if (import.meta.env?.DEV) {
-          console.warn('framer-motion failed to load lazily', err);
+          logger.warn('framer-motion failed to load lazily', err);
         }
         throw err;
       });

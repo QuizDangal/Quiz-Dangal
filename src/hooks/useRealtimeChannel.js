@@ -18,7 +18,7 @@ export function useRealtimeChannel({
   table,
   filter,
   onChange,
-  joinTimeoutMs = 5000,
+  joinTimeoutMs = 10000,
   maxRetries = 3,
   baseDelayMs = 800,
   maxDelayMs = 10000,

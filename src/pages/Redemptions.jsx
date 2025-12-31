@@ -24,7 +24,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import SEO from '@/components/SEO';
+import { logger } from '@/lib/logger';
+import SeoHead from '@/components/SEO';
+import { isValidIndianPhone } from '@/lib/validation';
 // Removed Link import since we no longer show the Earn now link
 
 export default function Redemptions() {
@@ -79,13 +81,13 @@ export default function Redemptions() {
         .eq('user_id', user.id)
         .order('requested_at', { ascending: false });
       if (error) {
-        console.error('Failed to fetch redemptions history', error);
+        logger.error('Failed to fetch redemptions history', error);
         setRows([]);
         return;
       }
       setRows(data || []);
     } catch (err) {
-      console.error('Unexpected error while fetching redemptions history', err);
+      logger.error('Unexpected error while fetching redemptions history', err);
       setRows([]);
     } finally {
       setLoading(false);
@@ -258,18 +260,52 @@ export default function Redemptions() {
       });
       return;
     }
+
+    const normalizeIndianPhoneToE164 = (input) => {
+      const digits = String(input || '').replace(/\D/g, '');
+      if (!digits) return '';
+      // Accept +91XXXXXXXXXX, 91XXXXXXXXXX, or 10-digit Indian mobile
+      let ten = digits;
+      if (digits.length === 12 && digits.startsWith('91')) ten = digits.slice(2);
+      if (ten.length !== 10) return '';
+      if (!isValidIndianPhone(ten)) return '';
+      return `+91${ten}`;
+    };
+
     let identifierToSend = rawIdentifier;
     if (requiresWhatsApp) {
-      const digitsOnly = rawIdentifier.replace(/\D/g, '');
-      if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+      const e164 = normalizeIndianPhoneToE164(rawIdentifier);
+      if (!e164) {
         toast({
           title: 'Invalid WhatsApp number',
-          description: 'Please enter a valid WhatsApp number with 8 to 15 digits.',
+          description: 'Please enter a valid Indian WhatsApp number (10 digits / +91XXXXXXXXXX).',
           variant: 'destructive',
         });
         return;
       }
-      identifierToSend = digitsOnly;
+      identifierToSend = e164;
+    } else if ((payoutChannel || 'upi') === 'phone') {
+      const e164 = normalizeIndianPhoneToE164(rawIdentifier);
+      if (!e164) {
+        toast({
+          title: 'Invalid phone number',
+          description: 'Please enter a valid Indian mobile number (10 digits / +91XXXXXXXXXX).',
+          variant: 'destructive',
+        });
+        return;
+      }
+      identifierToSend = e164;
+    } else {
+      // UPI basic validation: name@bank (keep permissive to avoid rejecting valid handles)
+      const upi = rawIdentifier;
+      if (!/^[-\w.]{2,}@[a-zA-Z]{2,}$/i.test(upi)) {
+        toast({
+          title: 'Invalid UPI ID',
+          description: 'Please enter a valid UPI ID (example: name@bank).',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
     try {
       setRedeemSubmitting(true);
@@ -304,11 +340,13 @@ export default function Redemptions() {
 
   return (
     <>
-      <SEO
+      <SeoHead
         title="Redemptions – Quiz Dangal"
         description="View and manage your reward redemptions on Quiz Dangal."
         canonical="https://quizdangal.com/redemptions/"
         robots="noindex, nofollow"
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
       />
       <div className="relative pt-20 mx-auto max-w-5xl px-4 py-6">
         {/* Dev guard: if Supabase is not configured, show a helpful message */}
@@ -344,6 +382,7 @@ export default function Redemptions() {
               { key: 'history', label: 'Full History', icon: Receipt },
             ].map((tab) => (
               <button
+                type="button"
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
@@ -421,11 +460,20 @@ export default function Redemptions() {
                                   : 'bg-gradient-to-br from-emerald-500/25 to-teal-500/25 ring-1 ring-emerald-400/20'
                               }`}>
                                 {rw.image_url ? (
-                                  <img src={rw.image_url} alt="" className="w-full h-full rounded-xl object-cover" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                  <img
+                                    src={rw.image_url}
+                                    alt="Reward item"
+                                    className="w-full h-full rounded-xl object-cover"
+                                    width={48}
+                                    height={48}
+                                    loading="lazy"
+                                    decoding="async"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                  />
                                 ) : isVoucher ? (
-                                  <Gift className="w-5 h-5 text-purple-300" />
+                                  <Gift className="w-5 h-5 text-purple-300" aria-hidden="true" />
                                 ) : (
-                                  <span className="text-lg font-bold text-emerald-300">₹</span>
+                                  <span className="text-lg font-bold text-emerald-300" aria-hidden="true">₹</span>
                                 )}
                               </div>
                               

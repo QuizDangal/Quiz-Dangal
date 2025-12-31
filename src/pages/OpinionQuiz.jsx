@@ -1,5 +1,6 @@
 import React from 'react';
-import SEO from '@/components/SEO';
+import { Link } from 'react-router-dom';
+import SeoHead from '@/components/SEO';
 
 export default function OpinionQuiz() {
   const canonical = 'https://quizdangal.com/opinion-quiz-app/';
@@ -36,13 +37,23 @@ export default function OpinionQuiz() {
 
   return (
     <div className="min-h-screen text-slate-100">
-      <SEO
+      <SeoHead
         title="Opinion-Based Quiz App – Quiz Dangal"
         description="Opinion-based quizzes designed for quick fun and fair play. Learn how voting works, how results are shown, and tips to enjoy and improve your outcomes."
         canonical={canonical}
         alternateLocales={['hi_IN', 'en_US']}
         keywords={['opinion quiz app', 'poll quiz india', 'real-time results', 'quizdangal']}
-        jsonLd={[faqSchema]}
+        jsonLd={[faqSchema, {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Opinion Quiz', item: 'https://quizdangal.com/opinion-quiz-app/' },
+          ],
+        }]}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">
@@ -73,33 +84,33 @@ export default function OpinionQuiz() {
         <h2 className="text-2xl font-semibold text-white">Next Steps</h2>
         <p className="text-slate-300 max-w-3xl">
           After you try a few opinion rounds, start playing live categories:{' '}
-          <a href="/category/opinion/" className="text-indigo-300 underline">
+          <Link to="/category/opinion/" className="text-indigo-300 underline">
             Opinion
-          </a>
+          </Link>
           ,{' '}
-          <a href="/category/gk/" className="text-indigo-300 underline">
+          <Link to="/category/gk/" className="text-indigo-300 underline">
             GK
-          </a>
+          </Link>
           ,{' '}
-          <a href="/category/sports/" className="text-indigo-300 underline">
+          <Link to="/category/sports/" className="text-indigo-300 underline">
             Sports
-          </a>
+          </Link>
           , and{' '}
-          <a href="/category/movies/" className="text-indigo-300 underline">
+          <Link to="/category/movies/" className="text-indigo-300 underline">
             Movies
-          </a>
+          </Link>
           . You can also switch to our{' '}
-          <a href="/play-win-quiz-app/" className="text-indigo-300 underline">
+          <Link to="/play-win-quiz-app/" className="text-indigo-300 underline">
             Play & Win
-          </a>{' '}
+          </Link>{' '}
           format to chase higher scores. Don’t forget to invite your friends via{' '}
-          <a href="/refer-earn-quiz-app/" className="text-indigo-300 underline">
+          <Link to="/refer-earn-quiz-app/" className="text-indigo-300 underline">
             Refer & Earn
-          </a>{' '}
+          </Link>{' '}
           and check the{' '}
-          <a href="/leaderboards/" className="text-indigo-300 underline">
+          <Link to="/leaderboards/" className="text-indigo-300 underline">
             Leaderboards
-          </a>{' '}
+          </Link>{' '}
           to see where you stand.
         </p>
 

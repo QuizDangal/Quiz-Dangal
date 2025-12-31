@@ -1,5 +1,6 @@
 import React from 'react';
-import SEO from '@/components/SEO';
+import { Link } from 'react-router-dom';
+import SeoHead from '@/components/SEO';
 
 export default function ReferEarnInfo() {
   const canonical = 'https://quizdangal.com/refer-earn-quiz-app/';
@@ -36,7 +37,7 @@ export default function ReferEarnInfo() {
 
   return (
     <div className="min-h-screen text-slate-100">
-      <SEO
+      <SeoHead
         title="Refer & Earn Quiz App – Quiz Dangal"
         description="Invite friends, they play quizzes, and you both earn. Learn how the referral code works, bonus rules, and best practices to invite more effectively."
         canonical={canonical}
@@ -47,7 +48,17 @@ export default function ReferEarnInfo() {
           'quiz app referral india',
           'quizdangal refer',
         ]}
-        jsonLd={[faqSchema]}
+        jsonLd={[faqSchema, {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Refer & Earn', item: 'https://quizdangal.com/refer-earn-quiz-app/' },
+          ],
+        }]}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">
@@ -83,25 +94,25 @@ export default function ReferEarnInfo() {
           <li>Send your link with a short message: what Quiz Dangal is and why it’s fun.</li>
           <li>
             Ask friends to try{' '}
-            <a href="/opinion-quiz-app/" className="text-indigo-300 underline">
+            <Link to="/opinion-quiz-app/" className="text-indigo-300 underline">
               Opinion Quizzes
-            </a>{' '}
+            </Link>{' '}
             first—they’re quick and easy to start.
           </li>
           <li>
             Share leaderboard screenshots to create friendly competition. Check the{' '}
-            <a href="/leaderboards/" className="text-indigo-300 underline">
+            <Link to="/leaderboards/" className="text-indigo-300 underline">
               Leaderboards
-            </a>{' '}
+            </Link>{' '}
             anytime.
           </li>
         </ul>
 
         <p className="text-slate-300 max-w-3xl">
           If you’re new, learn our scoring and strategy basics on{' '}
-          <a href="/play-win-quiz-app/" className="text-indigo-300 underline">
+          <Link to="/play-win-quiz-app/" className="text-indigo-300 underline">
             Play & Win
-          </a>
+          </Link>
           . Then invite your group and climb the ranks together.
         </p>
 

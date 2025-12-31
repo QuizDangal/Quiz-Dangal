@@ -1,5 +1,6 @@
 import React from 'react';
-import SEO from '@/components/SEO';
+import { Link } from 'react-router-dom';
+import SeoHead from '@/components/SEO';
 
 export default function PlayWinQuiz() {
   const canonical = 'https://quizdangal.com/play-win-quiz-app/';
@@ -36,7 +37,7 @@ export default function PlayWinQuiz() {
 
   return (
     <div className="min-h-screen text-slate-100">
-      <SEO
+      <SeoHead
         title="Play & Win Quiz App – Quiz Dangal"
         description="Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India – start free on Quiz Dangal. Learn rules, scoring, and tips to win more."
         canonical={canonical}
@@ -48,7 +49,17 @@ export default function PlayWinQuiz() {
           'leaderboards',
           'quizdangal',
         ]}
-        jsonLd={[faqSchema]}
+        jsonLd={[faqSchema, {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Play & Win Quiz', item: 'https://quizdangal.com/play-win-quiz-app/' },
+          ],
+        }]}
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
+        dateModified="2025-12-29"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent pt-14">
@@ -90,33 +101,33 @@ export default function PlayWinQuiz() {
         <h2 className="text-2xl font-semibold text-white">What You Can Do Next</h2>
         <p className="text-slate-300 max-w-3xl">
           New to Quiz Dangal? Start with the basics on our{' '}
-          <a href="/opinion-quiz-app/" className="text-indigo-300 underline">
+          <Link to="/opinion-quiz-app/" className="text-indigo-300 underline">
             Opinion Quiz
-          </a>{' '}
+          </Link>{' '}
           explainer. Then jump into categories:{' '}
-          <a href="/category/opinion/" className="text-indigo-300 underline">
+          <Link to="/category/opinion/" className="text-indigo-300 underline">
             Opinion
-          </a>
+          </Link>
           ,{' '}
-          <a href="/category/gk/" className="text-indigo-300 underline">
+          <Link to="/category/gk/" className="text-indigo-300 underline">
             GK
-          </a>
+          </Link>
           ,{' '}
-          <a href="/category/sports/" className="text-indigo-300 underline">
+          <Link to="/category/sports/" className="text-indigo-300 underline">
             Sports
-          </a>
+          </Link>
           ,{' '}
-          <a href="/category/movies/" className="text-indigo-300 underline">
+          <Link to="/category/movies/" className="text-indigo-300 underline">
             Movies
-          </a>
+          </Link>
           . Invite friends via{' '}
-          <a href="/refer-earn-quiz-app/" className="text-indigo-300 underline">
+          <Link to="/refer-earn-quiz-app/" className="text-indigo-300 underline">
             Refer & Earn
-          </a>
+          </Link>
           , and browse the{' '}
-          <a href="/leaderboards/" className="text-indigo-300 underline">
+          <Link to="/leaderboards/" className="text-indigo-300 underline">
             Leaderboards
-          </a>{' '}
+          </Link>{' '}
           to see top players.
         </p>
 

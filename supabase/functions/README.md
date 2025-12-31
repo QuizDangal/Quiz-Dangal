@@ -20,8 +20,12 @@ https://<PROJECT_REF>.functions.supabase.co/cleanup_slots
 
 Headers:
 ```
-Authorization: Bearer <SERVICE_ROLE_KEY>
-apikey: <SERVICE_ROLE_KEY>
+Authorization: Bearer <CRON_SECRET>          (preferred)
+x-cron-secret: <CRON_SECRET>                (alternative)
+
+# Backward-compatible (not recommended long-term):
+# Authorization: Bearer <SERVICE_ROLE_KEY>
+# apikey: <SERVICE_ROLE_KEY>
 ```
 
 Service role key must NEVER be exposed in client code.
@@ -30,6 +34,9 @@ Service role key must NEVER be exposed in client code.
 ```
 SUPABASE_URL=https://<PROJECT_REF>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=... (secret)
+
+# Recommended: separate secret used only for cron HTTP auth
+CRON_SECRET=... (secret)
 ```
 
 ## Purge Policy

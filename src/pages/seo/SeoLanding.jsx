@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import SEO from '@/components/SEO';
+import PropTypes from 'prop-types';
+import SeoHead from '@/components/SEO';
 import { 
   ArrowRight, Star, Trophy, Users, Coins, Shield 
 } from 'lucide-react';
@@ -8,7 +9,8 @@ import {
 function toCanonical(pathname) {
   const p = String(pathname || '/');
   const clean = p.startsWith('/') ? p : `/${p}`;
-  return `https://quizdangal.com${clean.endsWith('/') ? clean : `${clean}/`}`;
+  const withTrailingSlash = clean.endsWith('/') ? clean : clean + '/';
+  return `https://quizdangal.com${withTrailingSlash}`;
 }
 
 // Default features to show on all SEO landing pages
@@ -40,6 +42,23 @@ export default function SeoLanding({
   additionalContent = null,
 }) {
   const canonical = useMemo(() => toCanonical(path), [path]);
+
+  const howToSchema = useMemo(() => {
+    const entries = Array.isArray(steps) ? steps.filter(Boolean) : [];
+    if (!entries.length) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: 'How It Works',
+      description: 'Step-by-step guide to start playing quizzes on Quiz Dangal',
+      step: entries.map((s) => ({
+        '@type': 'HowToStep',
+        position: s.step,
+        name: s.title,
+        text: s.desc,
+      })),
+    };
+  }, [steps]);
 
   const faqSchema = useMemo(() => {
     const entries = Array.isArray(faqs) ? faqs.filter(Boolean) : [];
@@ -74,21 +93,49 @@ export default function SeoLanding({
     [canonical, description, title],
   );
 
+  // BreadcrumbList schema for better navigation signals
+  const breadcrumbSchema = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://quizdangal.com/',
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: h1 || title,
+          item: canonical,
+        },
+      ],
+    }),
+    [canonical, h1, title],
+  );
+
   const jsonLd = useMemo(() => {
-    const blocks = [webPageSchema];
+    const blocks = [webPageSchema, breadcrumbSchema];
     if (faqSchema) blocks.push(faqSchema);
+    if (howToSchema) blocks.push(howToSchema);
     return blocks;
-  }, [faqSchema, webPageSchema]);
+  }, [faqSchema, howToSchema, webPageSchema, breadcrumbSchema]);
 
   return (
     <div className="min-h-screen pt-14 text-slate-100">
       <div className="container mx-auto px-4 py-6 space-y-8 max-w-4xl">
-        <SEO
+        <SeoHead
           title={title}
           description={description}
           canonical={canonical}
           keywords={keywords}
           jsonLd={jsonLd}
+          alternateLocales={['hi_IN', 'en_US']}
+          author="Quiz Dangal"
+          datePublished="2025-01-01"
+          dateModified="2025-12-29"
         />
 
         {/* Hero Section */}
@@ -109,21 +156,23 @@ export default function SeoLanding({
         </header>
 
         {/* Features Grid */}
-        <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
+        <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 md:backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
           <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-6">
             Why Choose Quiz Dangal?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
+            {features.map((feature) => {
+              const IconComponent = feature.icon;
               return (
                 <div 
-                  key={index} 
+                  key={feature.title} 
                   className="flex items-start gap-3 bg-slate-800/40 rounded-xl p-4"
                 >
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg flex-shrink-0">
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
+                  {IconComponent && (
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                      <IconComponent className="w-5 h-5 text-indigo-400" aria-hidden="true" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-base font-semibold text-white mb-1">{feature.title}</h3>
                     <p className="text-sm text-slate-300">{feature.desc}</p>
@@ -135,13 +184,16 @@ export default function SeoLanding({
         </section>
 
         {/* How It Works */}
-        <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8">
+        <section className="bg-slate-900/60 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 md:p-8">
           <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-6">
             How It Works
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {steps.map((item) => (
-              <div key={item.step} className="text-center">
+              <div 
+                key={item.step} 
+                className="text-center"
+              >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold mx-auto mb-2">
                   {item.step}
                 </div>
@@ -154,20 +206,20 @@ export default function SeoLanding({
 
         {/* Additional Content (if provided) */}
         {additionalContent && (
-          <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
+          <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 md:backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
             {additionalContent}
           </section>
         )}
 
         {/* Related Links */}
         {Array.isArray(relatedLinks) && relatedLinks.length > 0 && (
-          <section className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6">
+          <section className="bg-slate-900/60 md:backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6">
             <h2 className="text-xl font-bold text-white mb-4">Popular on Quiz Dangal</h2>
             <div className="flex flex-wrap gap-3">
               {relatedLinks.map((l) => (
                 <Link
-                  key={l.href}
-                  to={l.href}
+                  key={l.to}
+                  to={l.to}
                   className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-slate-800 hover:bg-indigo-600/50 text-sm font-medium text-white transition-colors"
                 >
                   {l.label} <ArrowRight className="w-4 h-4" />
@@ -179,15 +231,18 @@ export default function SeoLanding({
 
         {/* FAQs */}
         {Array.isArray(faqs) && faqs.length > 0 && (
-          <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
+          <section className="bg-gradient-to-br from-indigo-900/50 via-violet-900/40 to-fuchsia-900/40 md:backdrop-blur-xl border border-indigo-700/60 rounded-2xl p-6 md:p-8">
             <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-6">
               Frequently Asked Questions
             </h2>
             <div className="space-y-4 max-w-3xl mx-auto">
               {faqs.map((item) => (
-                <div key={item.question} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                <div 
+                  key={item.question} 
+                  className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4"
+                >
                   <h3 className="font-semibold text-white mb-2">{item.question}</h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">{item.answer}</p>
+                  <p className="text-sm text-slate-300 leading-relaxed" data-speakable="true">{item.answer}</p>
                 </div>
               ))}
             </div>
@@ -195,7 +250,7 @@ export default function SeoLanding({
         )}
 
         {/* CTA Section */}
-        <section className="bg-gradient-to-r from-indigo-600/80 via-purple-600/80 to-pink-600/80 backdrop-blur-xl border border-indigo-500/60 rounded-2xl p-6 md:p-8 text-center">
+        <section className="bg-gradient-to-r from-indigo-600/80 via-purple-600/80 to-pink-600/80 md:backdrop-blur-xl border border-indigo-500/60 rounded-2xl p-6 md:p-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Star className="w-5 h-5 text-amber-300" />
             <h2 className="text-xl font-bold text-white">Start Playing Today!</h2>
@@ -221,8 +276,36 @@ export default function SeoLanding({
             <Link to="/privacy-policy/" className="hover:text-indigo-400 transition-colors">Privacy Policy</Link>
             <Link to="/terms-conditions/" className="hover:text-indigo-400 transition-colors">Terms</Link>
           </div>
+          <p className="text-slate-400 mt-2">© {new Date().getFullYear()} Quiz Dangal. All rights reserved. 🇮🇳 Made in India</p>
         </footer>
       </div>
     </div>
   );
 }
+
+SeoLanding.propTypes = {
+  path: PropTypes.string,
+  title: PropTypes.string,
+  h1: PropTypes.string,
+  description: PropTypes.string,
+  keywords: PropTypes.arrayOf(PropTypes.string),
+  relatedLinks: PropTypes.arrayOf(PropTypes.shape({
+    to: PropTypes.string,
+    label: PropTypes.string,
+  })),
+  faqs: PropTypes.arrayOf(PropTypes.shape({
+    question: PropTypes.string,
+    answer: PropTypes.string,
+  })),
+  features: PropTypes.arrayOf(PropTypes.shape({
+    icon: PropTypes.elementType,
+    title: PropTypes.string,
+    desc: PropTypes.string,
+  })),
+  steps: PropTypes.arrayOf(PropTypes.shape({
+    step: PropTypes.number,
+    title: PropTypes.string,
+    desc: PropTypes.string,
+  })),
+  additionalContent: PropTypes.node,
+};

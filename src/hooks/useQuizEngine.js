@@ -1,14 +1,20 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
-import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
+import { smartJoinQuiz, clearScheduledJoins } from '@/lib/smartJoinQuiz';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { isDocumentHidden } from '@/lib/visibility';
 import { safeComputeResultsIfDue, formatSupabaseError } from '@/lib/utils';
-import { QUIZ_ENGAGEMENT_POLL_INTERVAL_MS } from '@/constants';
+import { 
+  QUIZ_ENGAGEMENT_POLL_INTERVAL_MS, 
+  ANSWER_RETRY_BASE_DELAY_MS,
+  ANSWER_RETRY_MAX_DELAY_MS,
+  ANSWER_RETRY_MAX_ATTEMPTS,
+  SLOT_META_POLL_INTERVAL_MS,
+  MAX_RETRY_QUEUE_SIZE
+} from '@/constants';
 
 /**
  * useQuizEngine
@@ -34,6 +40,12 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const [slotPaused, setSlotPaused] = useState(false);
   const [slotLoading, setSlotLoading] = useState(!!slotId);
 
+  // Internal refs (declared early so async helpers can use them safely)
+  const mountedRef = useRef(true);
+  const slotMetaInFlightRef = useRef(false);
+  const engagementPollTimeoutRef = useRef(null);
+  const engagementPollDelayRef = useRef(QUIZ_ENGAGEMENT_POLL_INTERVAL_MS);
+
   const normalizeEngagementFromSlotRow = useCallback((row) => {
     const joined = Number(row?.participants_joined ?? row?.joined_count ?? row?.joined ?? 0);
     const pre = Number(row?.participants_pre ?? row?.pre_joined_count ?? row?.pre_joined ?? 0);
@@ -45,6 +57,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   const fetchSlotMeta = useCallback(async () => {
     if (!slotId || !supabase) return;
+    if (slotMetaInFlightRef.current) return;
+    slotMetaInFlightRef.current = true;
     try {
       const { data, error } = await supabase
         .from('quiz_slots_view')
@@ -52,6 +66,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         .eq('id', slotId)
         .maybeSingle();
       if (!error && data) {
+        if (!mountedRef.current) return;
         setSlotMeta(data);
         setSlotPaused(data.status === 'paused');
         // Keep engagement counts accurate for slot-based quizzes
@@ -60,16 +75,45 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     } catch (e) {
       // silent fail
     } finally {
-      setSlotLoading(false);
+      slotMetaInFlightRef.current = false;
+      if (mountedRef.current) setSlotLoading(false);
     }
   }, [slotId, normalizeEngagementFromSlotRow]);
 
   useEffect(() => {
+    if (!slotId) return;
+
+    let intervalId = null;
+    const stop = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+    const start = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        if (isDocumentHidden()) return;
+        fetchSlotMeta();
+      }, SLOT_META_POLL_INTERVAL_MS);
+    };
+
     fetchSlotMeta();
-    // Slot meta polling - 30s interval for free tier optimization (was 15s)
-    const id = slotId ? setInterval(fetchSlotMeta, 30000) : null;
+    if (!isDocumentHidden()) start();
+
+    const onVisibility = () => {
+      if (isDocumentHidden()) {
+        stop();
+        return;
+      }
+      fetchSlotMeta();
+      start();
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
-      if (id) clearInterval(id);
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [fetchSlotMeta, slotId]);
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +123,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
   // Internal refs
   const redirectTimeoutRef = useRef(null);
-  const mountedRef = useRef(true);
   const retryQueueRef = useRef([]); // { questionId, optionId, attempt }
   const retryTimerRef = useRef(null);
   const handleSubmitRef = useRef(null);
@@ -91,32 +134,42 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       mountedRef.current = false;
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      if (engagementPollTimeoutRef.current) {
+        clearTimeout(engagementPollTimeoutRef.current);
+        engagementPollTimeoutRef.current = null;
+      }
+      // Clear retry queue to prevent memory leak
+      retryQueueRef.current = [];
+      // Cleanup scheduled join timeouts to prevent memory leaks
+      const quizIdentifier = slotId || quizId;
+      if (quizIdentifier) clearScheduledJoins(quizIdentifier);
     },
-    [],
+    [quizId, slotId],
   );
 
-  const answersRef = useRef({});
-  useEffect(() => {
-    answersRef.current = answers;
-  }, [answers]);
-
-  // Retry queue helpers
+  // Retry queue helpers - using ref to avoid circular dependency
+  const flushRetryQueueRef = useRef(null);
+  
   const scheduleRetry = useCallback(() => {
     if (retryTimerRef.current || retryQueueRef.current.length === 0) return;
     // compute next delay based on first item's attempt (simple heuristic)
     const next = retryQueueRef.current[0];
-    const base = 2000 * Math.pow(2, (next.attempt || 1) - 1); // 2s,4s,8s...
-    const delay = Math.min(base, 30000); // cap 30s
+    const base = ANSWER_RETRY_BASE_DELAY_MS * Math.pow(2, (next.attempt || 1) - 1); // 2s,4s,8s...
+    const delay = Math.min(base, ANSWER_RETRY_MAX_DELAY_MS); // cap at max delay
     retryTimerRef.current = setTimeout(() => {
       retryTimerRef.current = null;
-      flushRetryQueue();
+      if (typeof flushRetryQueueRef.current === 'function') {
+        flushRetryQueueRef.current();
+      }
     }, delay);
-    // Intentionally not depending on flushRetryQueue to avoid recreation loops; flushRetryQueue re-schedules itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const flushRetryQueue = useCallback(async () => {
     if (retryQueueRef.current.length === 0) return;
+    // Limit queue size to prevent memory issues
+    if (retryQueueRef.current.length > MAX_RETRY_QUEUE_SIZE) {
+      retryQueueRef.current = retryQueueRef.current.slice(-MAX_RETRY_QUEUE_SIZE);
+    }
     const batch = [...retryQueueRef.current];
     retryQueueRef.current = [];
     for (const entry of batch) {
@@ -129,23 +182,32 @@ export function useQuizEngine(quizId, navigate, options = {}) {
             { onConflict: 'user_id,question_id' },
           );
         if (error) throw error;
-        setAnswers((prev) => ({ ...prev, [entry.questionId]: entry.optionId }));
+        if (mountedRef.current) {
+          setAnswers((prev) => ({ ...prev, [entry.questionId]: entry.optionId }));
+        }
       } catch (err) {
         const nextAttempt = (entry.attempt || 1) + 1;
-        if (nextAttempt <= 6) {
-          // attempts limit (~ up to 64s raw before cap)
+        if (nextAttempt <= ANSWER_RETRY_MAX_ATTEMPTS) {
+          // attempts limit (exponential backoff)
           retryQueueRef.current.push({ ...entry, attempt: nextAttempt });
         } else {
-          toast({
-            title: 'Answer not saved',
-            description: 'One answer failed to sync after multiple retries.',
-            variant: 'destructive',
-          });
+          if (mountedRef.current) {
+            toast({
+              title: 'Answer not saved',
+              description: 'One answer failed to sync after multiple retries.',
+              variant: 'destructive',
+            });
+          }
         }
       }
     }
     if (retryQueueRef.current.length > 0) scheduleRetry();
   }, [participantStatus, user, toast, scheduleRetry]);
+
+  // Keep ref updated for scheduleRetry to use
+  useEffect(() => {
+    flushRetryQueueRef.current = flushRetryQueue;
+  }, [flushRetryQueue]);
 
   // Flush on network online or when tab becomes visible
   useEffect(() => {
@@ -186,7 +248,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         .order('id');
       
       if (questionsError) {
-        console.error('Questions fetch error:', questionsError);
+        logger.error('Questions fetch error:', questionsError);
         logger.error('Failed to load questions', questionsError.message);
         // Set empty array but don't show error toast - quiz might not be ready yet
         setQuestions([]);
@@ -201,7 +263,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       
       setQuestions(questionsData);
     } catch (err) {
-      console.error('Questions load exception:', err);
+      logger.error('Questions load exception:', err);
       setQuestions([]);
     }
   }, [quiz?.id, quizId, slotId]);
@@ -211,16 +273,16 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     if (slotId) {
       if (slotMeta) {
         setEngagement(normalizeEngagementFromSlotRow(slotMeta));
-        return;
+        return true;
       }
       await fetchSlotMeta();
-      return;
+      return true;
     }
 
     // Legacy quizzes: engagement tracked by quiz_id via RPC.
     if (!quizId) {
       setEngagement({ joined: 0, pre_joined: 0 });
-      return;
+      return true;
     }
 
     try {
@@ -229,16 +291,19 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         { p_quiz_id: quizId },
       );
       if (engagementError) {
-        console.warn('Engagement counts fetch failed:', engagementError);
+        logger.warn('Engagement counts fetch failed:', engagementError);
         setEngagement({ joined: 0, pre_joined: 0 });
+        return false;
       } else {
         const rec = Array.isArray(engagementData) ? engagementData[0] : engagementData;
         const j = Number(rec?.joined ?? 0);
         const pj = Number(rec?.pre_joined ?? 0);
         setEngagement({ joined: isNaN(j) ? 0 : j, pre_joined: isNaN(pj) ? 0 : pj });
+        return true;
       }
     } catch (e) {
-      console.warn('Engagement refresh failed', e);
+      logger.warn('Engagement refresh failed', e);
+      return false;
     }
   }, [quizId, slotId, slotMeta, fetchSlotMeta, normalizeEngagementFromSlotRow]);
 
@@ -301,28 +366,15 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
       let participant = null;
       if (user && user.id && effectiveQuizId) {
-        // For slots, check by slot_id; for legacy, check by quiz_id
-        let pData = null;
-        let pError = null;
-        if (slotId) {
-          const result = await supabase
-            .from('quiz_participants')
-            .select('status')
-            .eq('user_id', user.id)
-            .eq('slot_id', slotId)
-            .maybeSingle();
-          pData = result.data;
-          pError = result.error;
-        } else {
-          const result = await supabase
-            .from('quiz_participants')
-            .select('status')
-            .eq('user_id', user.id)
-            .eq('quiz_id', effectiveQuizId)
-            .maybeSingle();
-          pData = result.data;
-          pError = result.error;
-        }
+        // Always check by quiz_id (quiz_participants table uses quiz_id, not slot_id)
+        const result = await supabase
+          .from('quiz_participants')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('quiz_id', effectiveQuizId)
+          .maybeSingle();
+        const pData = result.data;
+        const pError = result.error;
         if (!pError && pData) {
           participant = pData;
           setJoined(true);
@@ -340,13 +392,13 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       if (participant && participant.status !== 'completed') await loadQuestions(quizData?.id);
       await refreshEngagement();
     } catch (error) {
-      console.error('Error fetching quiz data:', error);
+      logger.error('Error fetching quiz data:', error);
       const msg = 'Failed to load quiz. Please check your internet and try again.';
       toast({ title: 'Error', description: msg, variant: 'destructive' });
       setError(msg);
       setQuizState('error');
     }
-  }, [quizId, slotId, user, navigate, toast, loadQuestions, refreshEngagement]); // slotId included
+  }, [quizId, slotId, user, toast, loadQuestions, refreshEngagement]); // slotId included
 
   // Reset attempt trackers when quiz/slot changes
   useEffect(() => {
@@ -405,16 +457,55 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     return () => clearInterval(timer);
   }, [quiz, quizState, slotMeta, slotPaused]);
 
-  // Engagement polling, skip hidden
+  // Engagement polling: pause when hidden + simple backoff on failures
   useEffect(() => {
     if (!quiz) return;
     if (!(quizState === 'waiting' || quizState === 'active')) return;
-    const tick = () => {
-      if (isDocumentHidden()) return;
-      refreshEngagement();
+
+    const clearPoll = () => {
+      if (engagementPollTimeoutRef.current) {
+        clearTimeout(engagementPollTimeoutRef.current);
+        engagementPollTimeoutRef.current = null;
+      }
     };
-    const id = setInterval(tick, QUIZ_ENGAGEMENT_POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+
+    let cancelled = false;
+    engagementPollDelayRef.current = QUIZ_ENGAGEMENT_POLL_INTERVAL_MS;
+
+    const scheduleNext = (delayMs) => {
+      clearPoll();
+      engagementPollTimeoutRef.current = setTimeout(async () => {
+        engagementPollTimeoutRef.current = null;
+        if (cancelled || !mountedRef.current) return;
+        if (isDocumentHidden()) {
+          scheduleNext(QUIZ_ENGAGEMENT_POLL_INTERVAL_MS);
+          return;
+        }
+
+        const ok = await refreshEngagement();
+        engagementPollDelayRef.current = ok
+          ? QUIZ_ENGAGEMENT_POLL_INTERVAL_MS
+          : Math.min(engagementPollDelayRef.current * 2, 60000);
+        scheduleNext(engagementPollDelayRef.current);
+      }, delayMs);
+    };
+
+    scheduleNext(0);
+
+    const onVisibility = () => {
+      if (isDocumentHidden()) {
+        clearPoll();
+        return;
+      }
+      scheduleNext(0);
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      clearPoll();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [quiz, quizState, refreshEngagement]);
 
   // Transition to active: join & load questions
@@ -487,7 +578,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         // Only show error if it's not a duplicate join attempt
         if (!e?.message?.includes('already') && !e?.message?.includes('completed')) {
           const msg = formatSupabaseError(e);
-          console.error('Quiz join error:', msg, e);
+          logger.error('Quiz join error:', msg, e);
           // Don't show toast to user, just log it
         }
       }
@@ -548,7 +639,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         }, timeUntilEnd);
       }
     } catch (error) {
-      console.error('Error calculating redirect time:', error);
+      logger.error('Error calculating redirect time:', error);
       // Fallback: redirect after 5 seconds
       redirectTimeoutRef.current = setTimeout(() => {
         redirectTimeoutRef.current = null;
@@ -564,7 +655,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     };
   }, [quiz, quizId, quizState, navigate]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleJoinOrPrejoin = useCallback(async () => {
     if (!quiz) return;
     if (!user) {
@@ -622,7 +712,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     } catch (err) {
       if (!err?.message?.includes('already') && !err?.message?.includes('completed')) {
         const msg = formatSupabaseError(err);
-        console.error('Join quiz error:', msg, err);
+        logger.error('Join quiz error:', msg, err);
         toast({
           title: 'Error',
           description: msg || 'Could not join quiz. Please try again.',
@@ -630,8 +720,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         });
       }
     }
-    // quizId intentionally excluded (stable id used inside smartJoinQuiz via quiz object); supabase stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     quiz,
     user,
@@ -642,7 +730,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     navigate,
     refreshEngagement,
     loadQuestions,
-    setQuizState,
   ]);
 
   const handleAnswerSelect = useCallback(
@@ -663,7 +750,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
           );
         if (error) throw error;
       } catch (error) {
-        console.error('Error saving answer:', error);
+        logger.error('Error saving answer:', error);
         // Queue silently; inform user first time only for this question
         const alreadyQueued = retryQueueRef.current.some((e) => e.questionId === questionId);
         if (!alreadyQueued) {
@@ -705,17 +792,13 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         return;
       }
 
-      // Use slot_id for slots, quiz_id for legacy
-      let query = supabase
+      // Always use quiz_id for quiz_participants table (it doesn't have slot_id column)
+      const effectiveQuizId = quiz?.id || quizId;
+      const { error } = await supabase
         .from('quiz_participants')
         .update({ status: 'completed' })
-        .eq('user_id', user.id);
-      if (slotId) {
-        query = query.eq('slot_id', slotId);
-      } else {
-        query = query.eq('quiz_id', quizId);
-      }
-      const { error } = await query;
+        .eq('user_id', user.id)
+        .eq('quiz_id', effectiveQuizId);
       if (error) throw error;
       toast({
         title: 'Quiz Completed!',
@@ -723,15 +806,15 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       });
       setQuizState('completed');
       try {
-        // For slots, pass slotId for results computation
-        await safeComputeResultsIfDue(supabase, slotId || quizId);
+        // For results computation, use the quiz ID
+        await safeComputeResultsIfDue(supabase, effectiveQuizId);
       } catch {
         /* ignore */
       }
       // Navigate to results - use slot path for slots
       navigate(slotId ? `/results/slot/${slotId}` : `/results/${quizId}`);
     } catch (error) {
-      console.error('Error submitting quiz:', error);
+      logger.error('Error submitting quiz:', error);
       toast({
         title: 'Submission Failed',
         description: 'Could not submit your answers. Please try again.',
@@ -740,7 +823,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
-  }, [submitting, user?.id, quizId, slotId, toast, navigate, flushRetryQueue]);
+  }, [submitting, user?.id, quiz?.id, quizId, slotId, toast, navigate, flushRetryQueue]);
 
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
@@ -765,13 +848,13 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     const key = slotId ? `slot:${slotId}` : `quiz:${quizId}`;
     if (autoSubmitDoneRef.current === key) return;
 
-    const hasAnswers = Object.keys(answersRef.current || {}).length > 0;
+    const hasAnswers = Object.keys(answers || {}).length > 0;
     const wasPlaying = participantStatus === 'joined';
     if (hasAnswers && wasPlaying && !submitting) {
       autoSubmitDoneRef.current = key;
       if (typeof handleSubmitRef.current === 'function') handleSubmitRef.current();
     }
-  }, [quizState, participantStatus, submitting, quizId, slotId]);
+  }, [quizState, participantStatus, submitting, quizId, slotId, answers]);
 
   const formatTime = useCallback((seconds) => {
     const minutes = Math.floor(seconds / 60);

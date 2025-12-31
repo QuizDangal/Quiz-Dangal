@@ -45,17 +45,29 @@ const Footer = () => {
             const isActive = stripSlash(location.pathname) === stripSlash(item.path);
             const isHome = stripSlash(item.path) === '/';
 
+            // Pre-compute class names to avoid nested ternaries
+            const getButtonClassName = () => {
+              if (isHome) {
+                return isActive ? 'qd-footer-home qd-footer-home-active' : 'qd-footer-home';
+              }
+              return isActive ? `qd-footer-item ${activeColor(item.path)}` : 'qd-footer-item';
+            };
+
+            const getIconClassName = () => {
+              if (isHome) {
+                return 'qd-footer-home-icon';
+              }
+              return isActive ? `qd-footer-icon ${activeColor(item.path)}` : 'qd-footer-icon text-white/80';
+            };
+
             return (
               <button
+                type="button"
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 onMouseEnter={() => prefetchRoute(item.path)}
                 onFocus={() => prefetchRoute(item.path)}
-                className={
-                  isHome
-                    ? `qd-footer-home ${isActive ? 'qd-footer-home-active' : ''}`
-                    : `qd-footer-item ${isActive ? activeColor(item.path) : ''}`
-                }
+                className={getButtonClassName()}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
@@ -64,11 +76,7 @@ const Footer = () => {
                   <Icon
                     size={isHome ? 28 : 24}
                     strokeWidth={isHome ? 3 : 2.6}
-                    className={
-                      isHome
-                        ? 'qd-footer-home-icon'
-                        : `qd-footer-icon ${isActive ? activeColor(item.path) : 'text-white/80'}`
-                    }
+                    className={getIconClassName()}
                     aria-hidden="true"
                   />
                 </span>

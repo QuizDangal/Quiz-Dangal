@@ -174,20 +174,14 @@ async function runRpcOrFallback(adminClient: ReturnType<typeof createClient>, qu
   return { ok: true as const, usedFallback: true as const };
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 Deno.serve(async (req: Request) => {
-  // Always handle OPTIONS first with simple headers
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
-  }
-
-  // Get dynamic CORS headers for actual requests
+  // Get dynamic CORS headers based on request origin
   const dynamicCors = makeCorsHeaders(req);
+
+  // Always handle OPTIONS first with proper origin-based headers
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 200, headers: dynamicCors });
+  }
 
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {

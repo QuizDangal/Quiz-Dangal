@@ -53,12 +53,12 @@ export default function GKQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/category/gk/', label: 'Play GK Quizzes' },
-        { href: '/current-affairs-quiz/', label: 'Current Affairs Quiz' },
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/gk-questions/', label: 'GK Questions' },
-        { href: '/general-knowledge-quiz/', label: 'General Knowledge Quiz' },
-        { href: '/india-quiz/', label: 'India Quiz' },
+        { to: '/category/gk/', label: 'Play GK Quizzes' },
+        { to: '/current-affairs-quiz/', label: 'Current Affairs Quiz' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/gk-questions/', label: 'GK Questions' },
+        { to: '/general-knowledge-quiz/', label: 'General Knowledge Quiz' },
+        { to: '/india-quiz/', label: 'India Quiz' },
       ]}
       faqs={[
         {

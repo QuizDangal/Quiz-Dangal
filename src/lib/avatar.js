@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 
 const AVATAR_BUCKET = 'avatars';
 
@@ -14,12 +15,12 @@ export async function getSignedAvatarUrl(path, expiresIn = 3600, client = supaba
       .from(AVATAR_BUCKET)
       .createSignedUrl(path, expiresIn);
     if (error) {
-      console.warn('Signed avatar URL fetch failed:', error);
+      logger.warn('Signed avatar URL fetch failed:', error);
       return '';
     }
     return data?.signedUrl || '';
   } catch (error) {
-    console.warn('Signed avatar URL fetch failed:', error);
+    logger.warn('Signed avatar URL fetch failed:', error);
     return '';
   }
 }
@@ -46,7 +47,7 @@ export async function getSignedAvatarUrls(paths, expiresIn = 3600, client = supa
       .from(AVATAR_BUCKET)
       .createSignedUrls(uniquePaths, expiresIn);
     if (error) {
-      console.warn('Signed avatar URLs batch fetch failed:', error);
+      logger.warn('Signed avatar URLs batch fetch failed:', error);
       return urlMap;
     }
 
@@ -57,7 +58,7 @@ export async function getSignedAvatarUrls(paths, expiresIn = 3600, client = supa
     }
     return urlMap;
   } catch (error) {
-    console.warn('Signed avatar URLs batch fetch failed:', error);
+    logger.warn('Signed avatar URLs batch fetch failed:', error);
     return new Map();
   }
 }

@@ -1,7 +1,9 @@
 {
   "name": "Quiz Dangal",
   "short_name": "Quiz Dangal",
-  "description": "India's Play & Win Quiz Arena",
+  "description": "India's #1 free quiz platform. Play daily GK, opinion, sports & movie quizzes. Earn coins, compete on leaderboards, and win rewards!",
+  "lang": "en-IN",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -35,9 +37,45 @@
   "scope": "/",
   "orientation": "portrait",
   "id": "quizdangal-pwa",
-  "categories": ["games", "entertainment", "education"],
+  "categories": ["games", "entertainment", "education", "trivia"],
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
-  "display_override": ["standalone", "minimal-ui"]
+  "display_override": ["standalone", "minimal-ui"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Play GK Quiz",
+      "short_name": "GK Quiz",
+      "description": "Start a General Knowledge quiz now",
+      "url": "/category/gk/?source=pwa_shortcut",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Opinion Polls",
+      "short_name": "Opinion",
+      "description": "Vote in trending opinion polls",
+      "url": "/category/opinion/?source=pwa_shortcut",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Leaderboards",
+      "short_name": "Leaders",
+      "description": "Check the top quiz players",
+      "url": "/leaderboards/?source=pwa_shortcut",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Wallet",
+      "short_name": "Wallet",
+      "description": "Check your coin balance",
+      "url": "/wallet/?source=pwa_shortcut",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [],
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

@@ -55,11 +55,11 @@ export default function EnglishQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/online-quiz/', label: 'Online Quiz' },
-        { href: '/category/opinion/', label: 'Opinion Quiz' },
-        { href: '/gk-quiz/', label: 'GK Quiz' },
-        { href: '/hindi-quiz/', label: 'Hindi Quiz' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/online-quiz/', label: 'Online Quiz' },
+        { to: '/category/opinion/', label: 'Opinion Quiz' },
+        { to: '/gk-quiz/', label: 'GK Quiz' },
+        { to: '/hindi-quiz/', label: 'Hindi Quiz' },
       ]}
       faqs={[
         {

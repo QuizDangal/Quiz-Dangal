@@ -1,7 +1,7 @@
 // Unified Admin panel (merged from former AdminClean). Single source of truth.
 // Keep this file focused and under control; add new panels as separate components if it grows.
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
+import SeoHead from '@/components/SEO';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { Plus, Trash2, RefreshCcw, ListChecks, Loader2, Eye, Settings } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,6 +13,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { formatDateTime } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import DailyScheduler from '@/components/admin/DailyScheduler';
 
 // ---------------- Constants & Helpers ----------------
@@ -120,7 +121,7 @@ function parseBulk(text, { allowZeroCorrect = false } = {}) {
 // ---------------- Component ----------------
 export default function Admin() {
   const { toast } = useToast();
-  const { userProfile, loading: authLoading, user } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'overview';
   const setTab = (t) => {
@@ -148,30 +149,11 @@ export default function Admin() {
   const [busyQuizId, setBusyQuizId] = useState(null);
   const [showQuestions, setShowQuestions] = useState(false);
   const opinion = form.category === 'opinion';
-  const adminEmails = useMemo(() => {
-    try {
-      const raw = String(import.meta.env.VITE_ADMIN_EMAILS || '').trim();
-      if (!raw) return new Set();
-      return new Set(
-        raw
-          .split(/[\s,]+/)
-          .map((entry) => entry.trim().toLowerCase())
-          .filter(Boolean),
-      );
-    } catch {
-      return new Set();
-    }
-  }, []);
   const role = String(userProfile?.role || '')
     .trim()
     .toLowerCase();
-  const email = String(user?.email || '')
-    .trim()
-    .toLowerCase();
-  const metadataRole = String(user?.app_metadata?.role || '')
-    .trim()
-    .toLowerCase();
-  const isAdmin = role === 'admin' || metadataRole === 'admin' || (email && adminEmails.has(email));
+  // UI gating only: rely on server-backed profile role.
+  const isAdmin = role === 'admin';
 
   const fetchQuizzes = useCallback(async () => {
     if (!isAdmin) {
@@ -342,7 +324,7 @@ export default function Admin() {
         throw new Error(info?.error || `HTTP ${res.status}`);
       }
     } catch (fnErr) {
-      console.warn('Edge bulk insert failed, falling back to direct RPC path', fnErr);
+      logger.warn('Edge bulk insert failed, falling back to direct RPC path', fnErr);
     }
 
     // Attempt direct RPC (older deployments)
@@ -353,12 +335,12 @@ export default function Admin() {
         p_mode: mode,
       });
       if (!error) return { ok: true };
-      console.warn(
+      logger.warn(
         'admin_bulk_upsert_questions RPC returned error, using manual inserts',
         error?.message,
       );
     } catch (rpcErr) {
-      console.warn('admin_bulk_upsert_questions RPC threw, using manual inserts', rpcErr);
+      logger.warn('admin_bulk_upsert_questions RPC threw, using manual inserts', rpcErr);
     }
 
     // Manual fallback (anon key must have insert rights via RLS)
@@ -421,7 +403,7 @@ export default function Admin() {
         // Swallow non-critical errors; idempotent award path may already have run
         try {
           if (import.meta.env?.DEV)
-            console.debug('compute_results_if_due failed; continuing', computeErr);
+            logger.debug('compute_results_if_due failed; continuing', computeErr);
         } catch {
           void 0;
         }
@@ -479,7 +461,7 @@ export default function Admin() {
       setPendingRedemptions(data || []);
     } catch (e) {
       setPendingRedemptions([]);
-      if (import.meta.env.DEV) console.debug('Fetch pending redemptions failed', e);
+      if (import.meta.env.DEV) logger.debug('Fetch pending redemptions failed', e);
     } finally {
       setLoadingRedemptions(false);
     }
@@ -521,10 +503,13 @@ export default function Admin() {
   if (!isAdmin) {
     return (
       <>
-        <Helmet>
-          <meta name="robots" content="noindex, nofollow" />
-          <link rel="canonical" href="https://quizdangal.com/admin/" />
-        </Helmet>
+        <SeoHead
+          title="Admin Access Required – Quiz Dangal"
+          description="Admin panel access requires appropriate permissions."
+          canonical="https://quizdangal.com/admin/"
+          robots="noindex, nofollow"
+          author="Quiz Dangal"
+        />
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-md w-full text-center shadow-sm">
             <h2 className="text-xl font-semibold text-red-500 mb-2">Admin access required</h2>
@@ -563,10 +548,13 @@ export default function Admin() {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl bg-white text-gray-900 rounded-2xl shadow-sm">
-      <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://quizdangal.com/admin/" />
-      </Helmet>
+      <SeoHead
+        title="Admin Dashboard – Quiz Dangal"
+        description="Quiz Dangal admin panel for managing quizzes, rewards, and notifications."
+        canonical="https://quizdangal.com/admin/"
+        robots="noindex, nofollow"
+        author="Quiz Dangal"
+      />
       <h1 className="text-2xl font-bold mb-6 text-gray-900">Admin Dashboard</h1>
       {!hasSupabaseConfig && (
         <div className="mb-6 text-sm text-amber-600">
@@ -627,8 +615,9 @@ export default function Admin() {
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Title</Label>
+                      <Label htmlFor="quiz-title">Title</Label>
                       <Input
+                        id="quiz-title"
                         value={form.title}
                         onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                         placeholder="Daily Quiz"
@@ -669,8 +658,9 @@ export default function Admin() {
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Start Time</Label>
+                      <Label htmlFor="quiz-start-time">Start Time</Label>
                       <Input
+                        id="quiz-start-time"
                         type="datetime-local"
                         value={form.start_time}
                         onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))}
@@ -678,8 +668,9 @@ export default function Admin() {
                       />
                     </div>
                     <div>
-                      <Label>End Time</Label>
+                      <Label htmlFor="quiz-end-time">End Time</Label>
                       <Input
+                        id="quiz-end-time"
                         type="datetime-local"
                         value={form.end_time}
                         onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))}

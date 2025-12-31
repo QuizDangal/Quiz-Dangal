@@ -4,15 +4,24 @@ import { Smile, Shield, BookOpen, Star } from 'lucide-react';
 
 export default function QuizForKids() {
   const features = [
-    { icon: Smile, title: 'Fun & Engaging', desc: 'Colorful, interactive quizzes that kids will love' },
-    { icon: Shield, title: 'Family-Friendly', desc: 'Safe, appropriate content for young learners' },
+    { icon: Smile, title: 'Fun & Engaging', desc: 'Colorful, interactive quizzes that families will love' },
+    { icon: Shield, title: 'Family-Friendly', desc: 'Safe, appropriate content supervised by parents' },
     { icon: BookOpen, title: 'Educational', desc: 'Learn while playing with age-appropriate questions' },
-    { icon: Star, title: 'Rewarding', desc: 'Earn coins and celebrate achievements' },
+    { icon: Star, title: 'Rewarding', desc: 'Earn coins and celebrate achievements together' },
   ];
 
   const additionalContent = (
     <>
-      <h2 className="text-xl font-bold text-white mb-4">Quiz Categories for Kids</h2>
+      {/* Parental Guidance Notice */}
+      <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl p-4 mb-6">
+        <h3 className="font-bold text-amber-300 mb-2">👨‍👩‍👧 Parental Guidance Required</h3>
+        <p className="text-sm text-slate-300 leading-relaxed">
+          <strong>Important:</strong> If you&apos;re a minor, please use Quiz Dangal under parental/guardian supervision.
+          Parents/guardians are responsible for ensuring appropriate use and monitoring activity.
+        </p>
+      </div>
+
+      <h2 className="text-xl font-bold text-white mb-4">Quiz Categories for Family Play</h2>
       <div className="grid gap-4 md:grid-cols-2 text-sm text-slate-300">
         <div className="bg-slate-800/50 rounded-xl p-4">
           <h3 className="font-semibold text-white mb-2">🌍 General Knowledge</h3>
@@ -55,24 +64,24 @@ export default function QuizForKids() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/quiz-questions/', label: 'Quiz Questions' },
-        { href: '/category/opinion/', label: 'Opinion Quizzes' },
-        { href: '/category/movies/', label: 'Movie Quizzes' },
-        { href: '/gk-quiz/', label: 'GK Quiz' },
-        { href: '/quiz-game/', label: 'Quiz Game' },
+        { to: '/quiz-questions/', label: 'Quiz Questions' },
+        { to: '/category/opinion/', label: 'Opinion Quizzes' },
+        { to: '/category/movies/', label: 'Movie Quizzes' },
+        { to: '/gk-quiz/', label: 'GK Quiz' },
+        { to: '/quiz-game/', label: 'Quiz Game' },
       ]}
       faqs={[
         {
-          question: 'Is Quiz Dangal made specifically for children?',
-          answer: 'Quiz Dangal is a general quiz platform suitable for all ages. Many of our quizzes are family-friendly and appropriate for kids. We recommend parents explore categories with children to find suitable content. Opinion polls and movie quizzes are especially kid-friendly.',
+          question: 'Can kids play Quiz Dangal?',
+          answer: 'Quiz Dangal can be enjoyed as family-friendly quiz content. For minors, we recommend using the app under parental/guardian supervision and reviewing our Terms and Privacy Policy together.',
         },
         {
-          question: 'Is the content safe for kids?',
-          answer: 'Yes! All our content is moderated and family-friendly. We don\'t have any adult, violent, or inappropriate content. Parents can feel comfortable letting kids explore our quiz categories.',
+          question: 'Is Quiz Dangal safe for kids to play with parents?',
+          answer: 'Absolutely! All our content is moderated and family-friendly. We don\'t have any adult, violent, or inappropriate content. Parents can play alongside their children for a fun family quiz time.',
         },
         {
-          question: 'What age group is this suitable for?',
-          answer: 'Quiz Dangal works well for school-age children (8+) who can read and understand questions. Younger kids can play with parent assistance. The opinion polls are great for all ages since there\'s no right or wrong answer.',
+          question: 'What categories are best for family play?',
+          answer: 'Opinion polls and movie quizzes are especially great for families since there\'s no pressure to get the "right" answer in opinion polls. GK quizzes covering animals, planets, and fun facts are also popular for educational family time.',
         },
         {
           question: 'Can kids earn rewards?',

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import {
   Coins,
@@ -19,7 +20,7 @@ import {
   Gamepad2,
   Clock,
 } from 'lucide-react';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 
 const Wallet = () => {
   const { user, userProfile } = useAuth();
@@ -53,10 +54,10 @@ const Wallet = () => {
         .neq('amount', 0)
         .order('created_at', { ascending: false })
         .limit(10);
-      if (error) console.error(error);
+      if (error) logger.error('Wallet transactions fetch error:', error);
       setTransactions(data || []);
     } catch (e) {
-      console.error(e);
+      logger.error('Wallet transactions exception:', e);
     } finally {
       setLoading(false);
     }
@@ -105,13 +106,13 @@ const Wallet = () => {
 
   const txMeta = (type) => {
     const t = String(type || '').toLowerCase();
-    if (t.includes('ref')) return { icon: UserPlus, color: 'sky' };
-    if (t.includes('quiz') || t.includes('prize') || t.includes('reward')) return { icon: Trophy, color: 'emerald' };
-    if (t.includes('credit') || t.includes('daily')) return { icon: Coins, color: 'amber' };
-    if (t.includes('refund')) return { icon: RefreshCcw, color: 'indigo' };
-    if (t.includes('purchase')) return { icon: ShoppingBag, color: 'fuchsia' };
-    if (t.includes('debit') || t.includes('join')) return { icon: LogOut, color: 'rose' };
-    return { icon: WalletIcon, color: 'slate' };
+    if (t.includes('ref')) return { icon: UserPlus, bgClass: 'bg-sky-500/20', textClass: 'text-sky-400' };
+    if (t.includes('quiz') || t.includes('prize') || t.includes('reward')) return { icon: Trophy, bgClass: 'bg-emerald-500/20', textClass: 'text-emerald-400' };
+    if (t.includes('credit') || t.includes('daily')) return { icon: Coins, bgClass: 'bg-amber-500/20', textClass: 'text-amber-400' };
+    if (t.includes('refund')) return { icon: RefreshCcw, bgClass: 'bg-indigo-500/20', textClass: 'text-indigo-400' };
+    if (t.includes('purchase')) return { icon: ShoppingBag, bgClass: 'bg-fuchsia-500/20', textClass: 'text-fuchsia-400' };
+    if (t.includes('debit') || t.includes('join')) return { icon: LogOut, bgClass: 'bg-rose-500/20', textClass: 'text-rose-400' };
+    return { icon: WalletIcon, bgClass: 'bg-slate-500/20', textClass: 'text-slate-400' };
   };
 
   const containerVariants = {
@@ -126,11 +127,13 @@ const Wallet = () => {
 
   return (
     <div className="relative pt-14 pb-4">
-      <SEO
+      <SeoHead
         title="Wallet – Quiz Dangal"
         description="View your Quiz Dangal wallet balance, recent transactions, and referral earnings."
         canonical="https://quizdangal.com/wallet/"
         robots="noindex, nofollow"
+        author="Quiz Dangal"
+        datePublished="2025-01-01"
       />
       
       <m.div
@@ -250,8 +253,8 @@ const Wallet = () => {
                     className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full bg-${meta.color}-500/20 flex items-center justify-center`}>
-                        <Icon className={`w-4 h-4 text-${meta.color}-400`} />
+                      <div className={`w-9 h-9 rounded-full ${meta.bgClass} flex items-center justify-center`}>
+                        <Icon className={`w-4 h-4 ${meta.textClass}`} />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-200 capitalize">{t.type || 'Transaction'}</p>

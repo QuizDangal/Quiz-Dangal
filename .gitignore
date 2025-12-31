@@ -16,6 +16,7 @@ public/logo-*.webp
 supabase/sql/*.sql
 !supabase/sql/README.md
 !supabase/migrations/**/*.sql
+!supabase/sql/*.sql
 
 # Env files
 *.env

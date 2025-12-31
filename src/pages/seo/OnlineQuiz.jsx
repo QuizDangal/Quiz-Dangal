@@ -47,12 +47,12 @@ export default function OnlineQuiz() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/', label: 'Home' },
-        { href: '/quiz-game/', label: 'Quiz Game' },
-        { href: '/quiz-competition/', label: 'Quiz Competition' },
-        { href: '/category/gk/', label: 'GK Quizzes' },
-        { href: '/quiz-app/', label: 'Quiz App' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/', label: 'Home' },
+        { to: '/quiz-game/', label: 'Quiz Game' },
+        { to: '/quiz-competition/', label: 'Quiz Competition' },
+        { to: '/category/gk/', label: 'GK Quizzes' },
+        { to: '/quiz-app/', label: 'Quiz App' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
       ]}
       faqs={[
         {

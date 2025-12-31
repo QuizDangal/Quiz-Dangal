@@ -1,24 +1,26 @@
 User-agent: *
-# Allow all public routes by default
-Allow: /
-
-# Disallow private/authenticated or dynamic routes
 Disallow: /login
 Disallow: /admin
-Disallow: /admin/
-Disallow: /admin/*
 Disallow: /reset-password
 Disallow: /profile
 Disallow: /wallet
 Disallow: /rewards
+Disallow: /redemptions
 Disallow: /my-quizzes
 Disallow: /quiz/
 Disallow: /results/
 Disallow: /refer
 Disallow: /debug/
+Disallow: /notifications-debug
+Disallow: /assets/
 
-# Sitemap location
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
 Sitemap: https://quizdangal.com/sitemap.xml
-
-# Gentle crawl-delay
-Crawl-delay: 1

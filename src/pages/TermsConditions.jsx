@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import SEO from '@/components/SEO';
+import SeoHead from '@/components/SEO';
 import {
   Shield,
   Users,
@@ -29,171 +29,171 @@ const sections = [
     icon: Users,
     title: '1. Eligibility & User Requirements',
     content: [
-      '<strong>Age Requirement:</strong> You must be at least 18 years of age to create an account and use Quiz Dangal. By registering, you confirm that you meet this age requirement.',
-      '<strong>Accurate Information:</strong> You must provide accurate, current, and complete information during registration. Providing false information may result in account suspension.',
-      '<strong>One Account Per User:</strong> Each user is permitted only one account. Creating multiple accounts, fake accounts, or duplicate registrations is strictly prohibited and will result in immediate ban.',
-      '<strong>Geographic Eligibility:</strong> Quiz Dangal is available to users in India. By using the platform, you confirm that you are accessing it from a permitted location.',
-      '<strong>Legal Capacity:</strong> You must have the legal capacity to enter into binding agreements. If you are registering on behalf of an organization, you represent that you have authority to bind that organization.',
+      { lead: 'Age Requirement:', body: 'You must be at least 18 years of age to create an account and use Quiz Dangal. By registering, you confirm that you meet this age requirement.' },
+      { lead: 'Accurate Information:', body: 'You must provide accurate, current, and complete information during registration. Providing false information may result in account suspension.' },
+      { lead: 'One Account Per User:', body: 'Each user is permitted only one account. Creating multiple accounts, fake accounts, or duplicate registrations is strictly prohibited and will result in immediate ban.' },
+      { lead: 'Geographic Eligibility:', body: 'Quiz Dangal is available to users in India. By using the platform, you confirm that you are accessing it from a permitted location.' },
+      { lead: 'Legal Capacity:', body: 'You must have the legal capacity to enter into binding agreements. If you are registering on behalf of an organization, you represent that you have authority to bind that organization.' },
     ],
   },
   {
     icon: Shield,
     title: '2. Account Registration & Security',
     content: [
-      '<strong>Unique Credentials:</strong> Register with a unique username and email address. Your username will be visible to other users on leaderboards and during quizzes.',
-      '<strong>Password Security:</strong> Choose a strong password and keep it confidential. We recommend using a combination of uppercase, lowercase, numbers, and special characters.',
-      '<strong>Account Responsibility:</strong> You are responsible for all activities that occur under your account. Never share your login credentials with anyone.',
-      '<strong>Unauthorized Access:</strong> If you suspect unauthorized access to your account, contact us immediately at support@quizdangal.com. We are not liable for losses due to compromised credentials.',
-      '<strong>Account Verification:</strong> We may require email or phone verification to ensure account security. Failure to complete verification may limit access to certain features.',
+      { lead: 'Unique Credentials:', body: 'Register with a unique username and email address. Your username will be visible to other users on leaderboards and during quizzes.' },
+      { lead: 'Password Security:', body: 'Choose a strong password and keep it confidential. We recommend using a combination of uppercase, lowercase, numbers, and special characters.' },
+      { lead: 'Account Responsibility:', body: 'You are responsible for all activities that occur under your account. Never share your login credentials with anyone.' },
+      { lead: 'Unauthorized Access:', body: 'If you suspect unauthorized access to your account, contact us immediately at support@quizdangal.com. We are not liable for losses due to compromised credentials.' },
+      { lead: 'Account Verification:', body: 'We may require email or phone verification to ensure account security. Failure to complete verification may limit access to certain features.' },
     ],
   },
   {
     icon: FileText,
     title: '3. Quiz Gameplay Rules',
     content: [
-      '<strong>Skill-Based Competition:</strong> Quiz Dangal is a game of skill. Winners are determined solely based on knowledge, accuracy of answers, and speed of response—not chance or luck.',
-      '<strong>Quiz Timing:</strong> Each quiz has a fixed start time and end time. You must join before the quiz starts and submit your answers before the deadline. Late submissions are automatically invalidated.',
-      '<strong>Answer Submission:</strong> Once you submit an answer, it cannot be changed. Review your answers carefully before submitting. All answer selections are final.',
-      '<strong>Results Declaration:</strong> Quiz results are calculated after the quiz ends and are final. We use automated systems to ensure fair and accurate scoring.',
-      '<strong>No Appeals on Results:</strong> Once results are declared, they cannot be appealed or changed unless a technical error is identified by our team.',
-      '<strong>Quiz Modifications:</strong> We reserve the right to modify, postpone, or cancel any quiz due to technical issues, unforeseen circumstances, or policy violations detected during the quiz.',
+      { lead: 'Skill-Based Competition:', body: 'Quiz Dangal is a game of skill. Winners are determined solely based on knowledge, accuracy of answers, and speed of response—not chance or luck.' },
+      { lead: 'Quiz Timing:', body: 'Each quiz has a fixed start time and end time. You must join before the quiz starts and submit your answers before the deadline. Late submissions are automatically invalidated.' },
+      { lead: 'Answer Submission:', body: 'Once you submit an answer, it cannot be changed. Review your answers carefully before submitting. All answer selections are final.' },
+      { lead: 'Results Declaration:', body: 'Quiz results are calculated after the quiz ends and are final. We use automated systems to ensure fair and accurate scoring.' },
+      { lead: 'No Appeals on Results:', body: 'Once results are declared, they cannot be appealed or changed unless a technical error is identified by our team.' },
+      { lead: 'Quiz Modifications:', body: 'We reserve the right to modify, postpone, or cancel any quiz due to technical issues, unforeseen circumstances, or policy violations detected during the quiz.' },
     ],
   },
   {
     icon: CreditCard,
     title: '4. Rewards, Coins & Wallet System',
     content: [
-      '<strong>Free Participation:</strong> All quizzes on Quiz Dangal are currently free to enter. There are no entry fees or pay-to-play requirements.',
-      '<strong>Earning Coins:</strong> You can earn coins by answering quiz questions correctly, maintaining daily streaks, referring friends, and participating in special events.',
-      '<strong>Coin Value:</strong> Coins are virtual rewards for in-app use only. They have no monetary value outside Quiz Dangal and cannot be exchanged for cash or transferred to other users.',
-      '<strong>Reward Redemption:</strong> Accumulated coins can be redeemed for rewards as listed in our redemption section. Reward availability may change without prior notice.',
-      '<strong>Non-Refundable:</strong> Coins and rewards once credited to your account are non-refundable. No exceptions apply.',
-      '<strong>Expiration:</strong> Coins may expire if your account remains inactive for an extended period. We will notify you before any expiration occurs.',
-      '<strong>Forfeiture:</strong> Coins earned through violations of terms (fake accounts, cheating, etc.) will be forfeited immediately upon detection.',
+      { lead: 'Free Participation:', body: 'All quizzes on Quiz Dangal are currently free to enter. There are no entry fees or pay-to-play requirements.' },
+      { lead: 'Earning Coins:', body: 'You can earn coins by answering quiz questions correctly, maintaining daily streaks, referring friends, and participating in special events.' },
+      { lead: 'Coin Value:', body: 'Coins are virtual rewards for in-app use only. They have no monetary value outside Quiz Dangal and cannot be exchanged for cash or transferred to other users.' },
+      { lead: 'Reward Redemption:', body: 'Accumulated coins can be redeemed for rewards as listed in our redemption section. Reward availability may change without prior notice.' },
+      { lead: 'Non-Refundable:', body: 'Coins and rewards once credited to your account are non-refundable. No exceptions apply.' },
+      { lead: 'Expiration:', body: 'Coins may expire if your account remains inactive for an extended period. We will notify you before any expiration occurs.' },
+      { lead: 'Forfeiture:', body: 'Coins earned through violations of terms (fake accounts, cheating, etc.) will be forfeited immediately upon detection.' },
     ],
   },
   {
     icon: Award,
     title: '5. Referral & Earn Program',
     content: [
-      '<strong>Referral Eligibility:</strong> Registered users can invite friends to join Quiz Dangal using their unique referral code or link.',
-      '<strong>Referral Rewards:</strong> When a new user signs up using your referral code and meets the qualification criteria, both you and the new user may receive bonus coins.',
-      '<strong>Qualification Criteria:</strong> Referred users must complete registration, verify their account, and participate in at least one quiz to be considered a valid referral.',
-      '<strong>Misuse Prevention:</strong> Self-referrals, fake accounts for referral farming, or any form of abuse of the referral program is strictly prohibited.',
-      '<strong>Consequences of Abuse:</strong> Detected misuse of the referral program will result in forfeiture of all referral rewards, account suspension, or permanent ban.',
-      '<strong>Program Changes:</strong> We reserve the right to modify, suspend, or terminate the referral program at any time without prior notice.',
+      { lead: 'Referral Eligibility:', body: 'Registered users can invite friends to join Quiz Dangal using their unique referral code or link.' },
+      { lead: 'Referral Rewards:', body: 'When a new user signs up using your referral code and meets the qualification criteria, both you and the new user may receive bonus coins.' },
+      { lead: 'Qualification Criteria:', body: 'Referred users must complete registration, verify their account, and participate in at least one quiz to be considered a valid referral.' },
+      { lead: 'Misuse Prevention:', body: 'Self-referrals, fake accounts for referral farming, or any form of abuse of the referral program is strictly prohibited.' },
+      { lead: 'Consequences of Abuse:', body: 'Detected misuse of the referral program will result in forfeiture of all referral rewards, account suspension, or permanent ban.' },
+      { lead: 'Program Changes:', body: 'We reserve the right to modify, suspend, or terminate the referral program at any time without prior notice.' },
     ],
   },
   {
     icon: AlertTriangle,
     title: '6. Responsible Usage',
     content: [
-      '<strong>Entertainment Purpose:</strong> Quiz Dangal is designed for entertainment and learning. It should be enjoyed responsibly as a fun activity.',
-      '<strong>Not Gambling:</strong> Quiz Dangal is NOT a gambling platform. There is no element of chance—all outcomes are based purely on skill and knowledge.',
-      '<strong>Time Management:</strong> We encourage users to manage their time responsibly. Quiz Dangal should not interfere with work, studies, or personal responsibilities.',
-      '<strong>Mental Health:</strong> If you feel that playing quizzes is negatively affecting your mental health or daily life, we encourage you to take a break.',
-      '<strong>Support Resources:</strong> If you need help managing your usage, please reach out to our support team for guidance.',
+      { lead: 'Entertainment Purpose:', body: 'Quiz Dangal is designed for entertainment and learning. It should be enjoyed responsibly as a fun activity.' },
+      { lead: 'Not Gambling:', body: 'Quiz Dangal is NOT a gambling platform. There is no element of chance—all outcomes are based purely on skill and knowledge.' },
+      { lead: 'Time Management:', body: 'We encourage users to manage their time responsibly. Quiz Dangal should not interfere with work, studies, or personal responsibilities.' },
+      { lead: 'Mental Health:', body: 'If you feel that playing quizzes is negatively affecting your mental health or daily life, we encourage you to take a break.' },
+      { lead: 'Support Resources:', body: 'If you need help managing your usage, please reach out to our support team for guidance.' },
     ],
   },
   {
     icon: EyeOff,
     title: '7. Fair Play & Anti-Cheating Policy',
     content: [
-      '<strong>Zero Tolerance:</strong> Quiz Dangal has a zero-tolerance policy for cheating, hacking, or any form of unfair advantage.',
-      '<strong>Prohibited Activities:</strong> Using bots, automated scripts, browser extensions, or any tools to manipulate quiz results is strictly prohibited.',
-      '<strong>Collusion:</strong> Sharing answers with other users during live quizzes or collaborating to gain unfair advantage is prohibited.',
-      '<strong>Multiple Device Abuse:</strong> Playing the same quiz from multiple devices or accounts simultaneously is not allowed.',
-      '<strong>Detection Systems:</strong> We employ advanced detection systems to identify suspicious activity. Flagged accounts will be investigated.',
-      '<strong>Consequences:</strong> Violations may result in immediate disqualification from quizzes, forfeiture of coins and rewards, temporary suspension, or permanent account ban.',
-      '<strong>No Compensation:</strong> Users banned for fair play violations are not entitled to any compensation for lost coins, rewards, or account data.',
+      { lead: 'Zero Tolerance:', body: 'Quiz Dangal has a zero-tolerance policy for cheating, hacking, or any form of unfair advantage.' },
+      { lead: 'Prohibited Activities:', body: 'Using bots, automated scripts, browser extensions, or any tools to manipulate quiz results is strictly prohibited.' },
+      { lead: 'Collusion:', body: 'Sharing answers with other users during live quizzes or collaborating to gain unfair advantage is prohibited.' },
+      { lead: 'Multiple Device Abuse:', body: 'Playing the same quiz from multiple devices or accounts simultaneously is not allowed.' },
+      { lead: 'Detection Systems:', body: 'We employ advanced detection systems to identify suspicious activity. Flagged accounts will be investigated.' },
+      { lead: 'Consequences:', body: 'Violations may result in immediate disqualification from quizzes, forfeiture of coins and rewards, temporary suspension, or permanent account ban.' },
+      { lead: 'No Compensation:', body: 'Users banned for fair play violations are not entitled to any compensation for lost coins, rewards, or account data.' },
     ],
   },
   {
     icon: Copyright,
     title: '8. Intellectual Property Rights',
     content: [
-      '<strong>Ownership:</strong> All content on Quiz Dangal—including quiz questions, graphics, logos, design elements, and software—is the intellectual property of Quiz Dangal or its licensors.',
-      '<strong>Limited License:</strong> You are granted a limited, non-exclusive, non-transferable license to use Quiz Dangal for personal, non-commercial purposes only.',
-      '<strong>Restrictions:</strong> You may not copy, reproduce, modify, distribute, or create derivative works from Quiz Dangal content without prior written permission.',
-      '<strong>User Content:</strong> By submitting any content (feedback, suggestions) to Quiz Dangal, you grant us a perpetual, royalty-free license to use such content.',
-      '<strong>Trademarks:</strong> Quiz Dangal and associated logos are trademarks. Use of our trademarks without permission is prohibited.',
+      { lead: 'Ownership:', body: 'All content on Quiz Dangal—including quiz questions, graphics, logos, design elements, and software—is the intellectual property of Quiz Dangal or its licensors.' },
+      { lead: 'Limited License:', body: 'You are granted a limited, non-exclusive, non-transferable license to use Quiz Dangal for personal, non-commercial purposes only.' },
+      { lead: 'Restrictions:', body: 'You may not copy, reproduce, modify, distribute, or create derivative works from Quiz Dangal content without prior written permission.' },
+      { lead: 'User Content:', body: 'By submitting any content (feedback, suggestions) to Quiz Dangal, you grant us a perpetual, royalty-free license to use such content.' },
+      { lead: 'Trademarks:', body: 'Quiz Dangal and associated logos are trademarks. Use of our trademarks without permission is prohibited.' },
     ],
   },
   {
     icon: Info,
     title: '9. Disclaimer & Limitation of Liability',
     content: [
-      '<strong>As-Is Service:</strong> Quiz Dangal is provided on an "as is" and "as available" basis without warranties of any kind, express or implied.',
-      '<strong>No Guarantee:</strong> We do not guarantee that the service will be uninterrupted, secure, error-free, or free from viruses or other harmful components.',
-      '<strong>Technical Issues:</strong> We are not liable for any technical failures, server downtime, connectivity issues, or data loss that may affect your quiz experience.',
-      '<strong>Indirect Damages:</strong> In no event shall Quiz Dangal be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform.',
-      '<strong>Maximum Liability:</strong> Our total liability for any claims arising from your use of Quiz Dangal shall not exceed the amount of coins you have in your account.',
-      '<strong>User Responsibility:</strong> You access and use Quiz Dangal at your own risk. We recommend keeping your device and software up-to-date for the best experience.',
+      { lead: 'As-Is Service:', body: 'Quiz Dangal is provided on an "as is" and "as available" basis without warranties of any kind, express or implied.' },
+      { lead: 'No Guarantee:', body: 'We do not guarantee that the service will be uninterrupted, secure, error-free, or free from viruses or other harmful components.' },
+      { lead: 'Technical Issues:', body: 'We are not liable for any technical failures, server downtime, connectivity issues, or data loss that may affect your quiz experience.' },
+      { lead: 'Indirect Damages:', body: 'In no event shall Quiz Dangal be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform.' },
+      { lead: 'Maximum Liability:', body: 'Our total liability for any claims arising from your use of Quiz Dangal shall not exceed the amount of coins you have in your account.' },
+      { lead: 'User Responsibility:', body: 'You access and use Quiz Dangal at your own risk. We recommend keeping your device and software up-to-date for the best experience.' },
     ],
   },
   {
     icon: Repeat,
     title: '10. Modifications & Updates',
     content: [
-      '<strong>Terms Updates:</strong> We reserve the right to modify these Terms & Conditions at any time. Changes will be posted on this page with an updated "Last Updated" date.',
-      '<strong>Feature Changes:</strong> Quiz Dangal may add, modify, or remove features, quizzes, or rewards at any time without prior notice.',
-      '<strong>Notification:</strong> For significant changes to these terms, we will attempt to notify users through the app or email. However, it is your responsibility to review these terms periodically.',
-      '<strong>Acceptance:</strong> Your continued use of Quiz Dangal after any changes constitutes your acceptance of the modified terms.',
+      { lead: 'Terms Updates:', body: 'We reserve the right to modify these Terms & Conditions at any time. Changes will be posted on this page with an updated "Last Updated" date.' },
+      { lead: 'Feature Changes:', body: 'Quiz Dangal may add, modify, or remove features, quizzes, or rewards at any time without prior notice.' },
+      { lead: 'Notification:', body: 'For significant changes to these terms, we will attempt to notify users through the app or email. However, it is your responsibility to review these terms periodically.' },
+      { lead: 'Acceptance:', body: 'Your continued use of Quiz Dangal after any changes constitutes your acceptance of the modified terms.' },
     ],
   },
   {
     icon: Scale,
     title: '11. Legal Compliance & Game of Skill',
     content: [
-      '<strong>Skill-Based Platform:</strong> Quiz Dangal is legally classified as a game of skill. Winners are determined by knowledge, accuracy, and speed—not by chance or luck.',
-      '<strong>Not Gambling:</strong> Quiz Dangal is explicitly NOT a gambling, betting, or wagering platform. No element of chance determines outcomes.',
-      '<strong>Indian Law Compliance:</strong> Quiz Dangal operates in compliance with applicable laws and regulations in India, including the Public Gambling Act (1867) exemptions for games of skill.',
-      '<strong>Age Verification:</strong> Users must be 18 years or older to participate in reward-based activities on Quiz Dangal.',
-      '<strong>Jurisdiction:</strong> These Terms shall be governed by and construed in accordance with the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Jaipur, Rajasthan.',
+      { lead: 'Skill-Based Platform:', body: 'Quiz Dangal is legally classified as a game of skill. Winners are determined by knowledge, accuracy, and speed—not by chance or luck.' },
+      { lead: 'Not Gambling:', body: 'Quiz Dangal is explicitly NOT a gambling, betting, or wagering platform. No element of chance determines outcomes.' },
+      { lead: 'Indian Law Compliance:', body: 'Quiz Dangal operates in compliance with applicable laws and regulations in India, including the Public Gambling Act (1867) exemptions for games of skill.' },
+      { lead: 'Age Verification:', body: 'Users must be 18 years or older to participate in reward-based activities on Quiz Dangal.' },
+      { lead: 'Jurisdiction:', body: 'These Terms shall be governed by and construed in accordance with the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Jaipur, Rajasthan.' },
     ],
   },
   {
     icon: CreditCard,
     title: '12. Refund & Cancellation Policy',
     content: [
-      '<strong>Free Service:</strong> All quiz entries on Quiz Dangal are currently free of charge. There are no payments required to participate.',
-      '<strong>No Refunds on Free Services:</strong> Since all services are free, there are no refunds applicable.',
-      '<strong>Coins & Rewards:</strong> Coins and rewards credited to your account are non-refundable under any circumstances, including account suspension or closure.',
-      '<strong>Future Paid Features:</strong> If paid features are introduced in the future, a detailed refund policy specific to those features will be published.',
-      '<strong>Disputes:</strong> For any billing or reward-related disputes, contact support@quizdangal.com within 7 days of the transaction.',
+      { lead: 'Free Service:', body: 'All quiz entries on Quiz Dangal are currently free of charge. There are no payments required to participate.' },
+      { lead: 'No Refunds on Free Services:', body: 'Since all services are free, there are no refunds applicable.' },
+      { lead: 'Coins & Rewards:', body: 'Coins and rewards credited to your account are non-refundable under any circumstances, including account suspension or closure.' },
+      { lead: 'Future Paid Features:', body: 'If paid features are introduced in the future, a detailed refund policy specific to those features will be published.' },
+      { lead: 'Disputes:', body: 'For any billing or reward-related disputes, contact support@quizdangal.com within 7 days of the transaction.' },
     ],
   },
   {
     icon: UserX,
     title: '13. Account Suspension & Termination',
     content: [
-      '<strong>Violation of Terms:</strong> We reserve the right to suspend or terminate accounts that violate these Terms & Conditions.',
-      '<strong>Immediate Suspension:</strong> Accounts engaged in cheating, fraud, abuse, or illegal activities may be suspended immediately without prior warning.',
-      '<strong>Investigation:</strong> Suspended accounts may be investigated. If violations are confirmed, suspension will become permanent.',
-      '<strong>Data Handling:</strong> Upon account termination, your personal data will be handled according to our Privacy Policy. Some data may be retained for legal purposes.',
-      '<strong>No Compensation:</strong> Terminated accounts are not entitled to any compensation for lost coins, rewards, or account data.',
-      '<strong>Reinstatement:</strong> In exceptional cases, terminated accounts may be reinstated after review. Contact support@quizdangal.com to request a review.',
+      { lead: 'Violation of Terms:', body: 'We reserve the right to suspend or terminate accounts that violate these Terms & Conditions.' },
+      { lead: 'Immediate Suspension:', body: 'Accounts engaged in cheating, fraud, abuse, or illegal activities may be suspended immediately without prior warning.' },
+      { lead: 'Investigation:', body: 'Suspended accounts may be investigated. If violations are confirmed, suspension will become permanent.' },
+      { lead: 'Data Handling:', body: 'Upon account termination, your personal data will be handled according to our Privacy Policy. Some data may be retained for legal purposes.' },
+      { lead: 'No Compensation:', body: 'Terminated accounts are not entitled to any compensation for lost coins, rewards, or account data.' },
+      { lead: 'Reinstatement:', body: 'In exceptional cases, terminated accounts may be reinstated after review. Contact support@quizdangal.com to request a review.' },
     ],
   },
   {
     icon: Lock,
     title: '14. Privacy & Data Protection',
     content: [
-      '<strong>Privacy Policy:</strong> Your privacy is important to us. Our collection, use, and protection of personal data is governed by our Privacy Policy.',
-      '<strong>Data Security:</strong> We implement industry-standard security measures to protect your data. See our Privacy Policy for details.',
-      '<strong>Third-Party Sharing:</strong> We do not sell your personal data. Limited sharing occurs only with service providers necessary for platform operation.',
-      '<strong>Your Rights:</strong> You have rights to access, correct, and delete your personal data as described in our Privacy Policy.',
+      { lead: 'Privacy Policy:', body: 'Your privacy is important to us. Our collection, use, and protection of personal data is governed by our Privacy Policy.' },
+      { lead: 'Data Security:', body: 'We implement industry-standard security measures to protect your data. See our Privacy Policy for details.' },
+      { lead: 'Third-Party Sharing:', body: 'We do not sell your personal data. Limited sharing occurs only with service providers necessary for platform operation.' },
+      { lead: 'Your Rights:', body: 'You have rights to access, correct, and delete your personal data as described in our Privacy Policy.' },
     ],
   },
   {
     icon: Gavel,
     title: '15. Dispute Resolution',
     content: [
-      '<strong>Contact First:</strong> For any disputes or concerns, first contact our support team at support@quizdangal.com. We aim to resolve issues amicably.',
-      '<strong>Mediation:</strong> If a dispute cannot be resolved through support, both parties agree to attempt mediation before pursuing legal action.',
-      '<strong>Arbitration:</strong> Disputes that cannot be resolved through mediation shall be settled by binding arbitration in Jaipur, Rajasthan, India.',
-      '<strong>Class Action Waiver:</strong> You agree to resolve disputes on an individual basis and waive any right to participate in class action lawsuits.',
-      '<strong>Governing Law:</strong> These Terms are governed by the laws of India. The courts of Jaipur, Rajasthan shall have exclusive jurisdiction.',
+      { lead: 'Contact First:', body: 'For any disputes or concerns, first contact our support team at support@quizdangal.com. We aim to resolve issues amicably.' },
+      { lead: 'Mediation:', body: 'If a dispute cannot be resolved through support, both parties agree to attempt mediation before pursuing legal action.' },
+      { lead: 'Arbitration:', body: 'Disputes that cannot be resolved through mediation shall be settled by binding arbitration in Jaipur, Rajasthan, India.' },
+      { lead: 'Class Action Waiver:', body: 'You agree to resolve disputes on an individual basis and waive any right to participate in class action lawsuits.' },
+      { lead: 'Governing Law:', body: 'These Terms are governed by the laws of India. The courts of Jaipur, Rajasthan shall have exclusive jurisdiction.' },
     ],
   },
 ];
@@ -216,10 +216,19 @@ const TermsConditions = () => {
     ],
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Terms & Conditions', item: 'https://quizdangal.com/terms-conditions/' },
+    ],
+  };
+
   return (
     <div className="min-h-screen pt-14 text-slate-100">
       <div className="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
-        <SEO
+        <SeoHead
           title="Terms & Conditions – Quiz Dangal | Rules, Policies & Guidelines"
           description="Complete Terms & Conditions for Quiz Dangal. Learn about eligibility, gameplay rules, fair play policies, rewards system, and user guidelines. Read before playing."
           canonical="https://quizdangal.com/terms-conditions/"
@@ -233,7 +242,10 @@ const TermsConditions = () => {
             'quiz dangal user agreement',
             'quiz dangal guidelines',
           ]}
-          jsonLd={[faqSchema]}
+          jsonLd={[faqSchema, breadcrumbSchema]}
+          author="Quiz Dangal"
+          datePublished="2025-01-01"
+          dateModified="2025-12-29"
         />
 
         {/* Header */}
@@ -308,10 +320,9 @@ const TermsConditions = () => {
                     className="flex items-start space-x-3"
                   >
                     <div className="w-1.5 h-1.5 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-full mt-2 flex-shrink-0" />
-                    <p 
-                      className="text-slate-300 text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: item }}
-                    />
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      <strong>{item.lead}</strong> {item.body}
+                    </p>
                   </div>
                 ))}
               </div>

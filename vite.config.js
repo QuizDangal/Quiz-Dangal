@@ -20,7 +20,10 @@ export default defineConfig({
 		host: true,     // Allow both localhost and network access
 		port: 5173,     // Default Vite port
 		headers: {
-			'Cross-Origin-Embedder-Policy': 'credentialless',
+			// Google Ads iframes don't support COEP, so we disable it
+			// Production uses _headers file with same setting
+			'Cross-Origin-Embedder-Policy': 'unsafe-none',
+			'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
 		},
 	},
 	resolve: {
@@ -39,12 +42,6 @@ export default defineConfig({
 		// If you ever see strange React runtime issues, you can remove manualChunks
 		// entirely and let Vite/Rollup pick safe defaults automatically.
 		rollupOptions: {
-			external: [
-				'@babel/parser',
-				'@babel/traverse',
-				'@babel/generator',
-				'@babel/types',
-			],
 			output: {
 				manualChunks: {
 					react: ['react', 'react-dom'],

@@ -10,23 +10,14 @@ function normalizeSlot(row) {
   const joined = Number(row.participants_joined ?? row.joined_count ?? row.joined ?? 0);
   const pre = Number(row.participants_pre ?? row.pre_joined_count ?? row.pre_joined ?? 0);
   const total = Number(row.participants_total ?? joined + pre);
+  
+  // Primary slot ID - prefer 'id' from view, fallback to common aliases
+  const slotId = row.id || row.slot_id || row.quiz_slot_id || null;
+  const quizId = row.quiz_id || row.quizid || null;
+  
   return {
-    slotId:
-      row.id ||
-      row.slot_id ||
-      row.slotid ||
-      row.slotID ||
-      row.slot_uuid ||
-      row.slot_uuid_id ||
-      row.slot_uuid_ref ||
-      row.quiz_slot_id ||
-      row.quiz_slot_uuid ||
-      row.slot_uuid_value ||
-      row.slot_ref ||
-      row.slot_reference ||
-      row.slot ||
-      null,
-    quizId: row.quiz_id || row.quizid || row.quiz_uuid || row.quiz_uuid_id || row.quiz || null,
+    slotId,
+    quizId,
     category: row.category || null,
     title: row.quiz_title || row.title || row.slot_title || null,
     start_time: row.start_time || row.slot_start || row.starts_at || null,
@@ -96,7 +87,8 @@ export async function fetchSlotsForCategory(supabase, category) {
             }
           }
         } catch (e) {
-          // Ignore RPC errors, just show 0 participants
+          // RPC may not exist on older schemas - log for debugging
+          logger.debug('get_engagement_counts_many RPC error (non-critical):', e?.message || e);
         }
       }
       

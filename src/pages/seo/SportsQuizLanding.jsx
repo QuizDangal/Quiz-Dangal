@@ -47,10 +47,10 @@ export default function SportsQuizLanding() {
       features={features}
       additionalContent={additionalContent}
       relatedLinks={[
-        { href: '/category/sports/', label: 'Play Sports Quizzes' },
-        { href: '/cricket-quiz/', label: 'Cricket Quiz' },
-        { href: '/leaderboards/', label: 'Leaderboards' },
-        { href: '/quiz-questions/', label: 'All Quiz Questions' },
+        { to: '/category/sports/', label: 'Play Sports Quizzes' },
+        { to: '/cricket-quiz/', label: 'Cricket Quiz' },
+        { to: '/leaderboards/', label: 'Leaderboards' },
+        { to: '/quiz-questions/', label: 'All Quiz Questions' },
       ]}
       faqs={[
         {
