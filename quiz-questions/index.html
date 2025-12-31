@@ -51,7 +51,8 @@
 	<meta name="msapplication-TileColor" content="#050508" />
 	<meta name="msapplication-navbutton-color" content="#050508" />
 	<meta name="description" content="Practice quiz questions across GK, sports, science, and more. Play free on Quiz Dangal and improve your score daily." />
-	<!-- Canonical URL: React Helmet handles this dynamically for all pages -->
+	<!-- Canonical URL: default for crawlers before JS; React Helmet updates per-route -->
+	<link rel="canonical" href="https://quizdangal.com/quiz-questions/" />
 	<!-- Hreflang for language/region targeting -->
 	<link rel="alternate" hreflang="en-IN" href="https://quizdangal.com/" />
 	<link rel="alternate" hreflang="en" href="https://quizdangal.com/" />
@@ -78,15 +79,7 @@
 	<meta name="twitter:title" content="Quiz Questions – Quiz Dangal" />
 	<meta name="twitter:description" content="Practice quiz questions across GK, sports, science, and more. Play free on Quiz Dangal and improve your score daily." />
 	<meta name="twitter:image" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
-	<!-- Dublin Core & Attribution Metadata -->
-	<meta name="DC.title" content="Quiz Dangal – Play Quiz & Win" />
-	<meta name="DC.creator" content="Quiz Dangal" />
-	<meta name="DC.subject" content="Quiz, Trivia, General Knowledge, Rewards" />
-	<meta name="DC.description" content="India's play-and-win quiz arena" />
-	<meta name="DC.publisher" content="Quiz Dangal" />
-	<meta name="DC.language" content="en-IN" />
-	<meta name="DC.type" content="Interactive" />
-	<meta name="DC.format" content="text/html" />
+	<!-- Attribution Metadata -->
 	<meta name="article:author" content="Quiz Dangal" />
 	<meta name="article:publisher" content="https://quizdangal.com/" />
 	<meta name="rating" content="General" />
@@ -115,8 +108,10 @@
 		(function () {
 			'use strict';
 			
-			// GA Measurement ID - can be overridden via window.__QUIZ_DANGAL_ENV__
-			var GA_ID = (window.__QUIZ_DANGAL_ENV__ && window.__QUIZ_DANGAL_ENV__.VITE_GA_ID) || 'G-98624Q56YT';
+			// GA Measurement ID - read at runtime so env-config.js can override safely
+			function getGAId() {
+				return (window.__QUIZ_DANGAL_ENV__ && window.__QUIZ_DANGAL_ENV__.VITE_GA_ID) || 'G-98624Q56YT';
+			}
 			
 			// gtag function at module scope
 			function gtag() {
@@ -137,6 +132,7 @@
 
 			function loadGA() {
 				if (globalThis.__qdGAReady) return;
+				var GA_ID = getGAId();
 				// GDPR compliance: Only load GA if user has accepted cookies
 				// CookieConsent component stores preference in localStorage
 				try {
@@ -266,7 +262,6 @@
   <link rel="modulepreload" crossorigin href="/assets/router-CWIfZQRv.js">
   <link rel="modulepreload" crossorigin href="/assets/icons-BNA5wz6Z.js">
   <link rel="stylesheet" crossorigin href="/assets/index-Df4YbRfZ.css">
-  <link rel="canonical" href="https://quizdangal.com/quiz-questions/" />
 </head>
 
 	<body>
