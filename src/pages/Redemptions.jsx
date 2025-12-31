@@ -26,7 +26,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
-import { isValidIndianPhone } from '@/lib/validation';
 // Removed Link import since we no longer show the Earn now link
 
 export default function Redemptions() {
@@ -253,55 +252,35 @@ export default function Redemptions() {
     }
     if (!rawIdentifier) {
       toast({
-        title: 'Enter payout details',
+        title: 'Add payout details',
         description: requiresWhatsApp
-          ? 'Please provide your WhatsApp number.'
-          : 'Please provide your UPI ID or phone number.',
+          ? 'Enter your WhatsApp number.'
+          : 'Enter your UPI ID or phone number.',
       });
       return;
     }
 
-    const normalizeIndianPhoneToE164 = (input) => {
-      const digits = String(input || '').replace(/\D/g, '');
-      if (!digits) return '';
-      // Accept +91XXXXXXXXXX, 91XXXXXXXXXX, or 10-digit Indian mobile
-      let ten = digits;
-      if (digits.length === 12 && digits.startsWith('91')) ten = digits.slice(2);
-      if (ten.length !== 10) return '';
-      if (!isValidIndianPhone(ten)) return '';
-      return `+91${ten}`;
-    };
-
     let identifierToSend = rawIdentifier;
-    if (requiresWhatsApp) {
-      const e164 = normalizeIndianPhoneToE164(rawIdentifier);
-      if (!e164) {
+    if (requiresWhatsApp || (payoutChannel || 'upi') === 'phone') {
+      // User requested: accept any number (keep minimal guard to avoid empty/non-number)
+      const digits = rawIdentifier.replace(/\D/g, '');
+      if (!digits) {
         toast({
-          title: 'Invalid WhatsApp number',
-          description: 'Please enter a valid Indian WhatsApp number (10 digits / +91XXXXXXXXXX).',
+          title: 'Enter a phone number',
+          description: 'Please enter digits only (any length).',
           variant: 'destructive',
         });
         return;
       }
-      identifierToSend = e164;
-    } else if ((payoutChannel || 'upi') === 'phone') {
-      const e164 = normalizeIndianPhoneToE164(rawIdentifier);
-      if (!e164) {
-        toast({
-          title: 'Invalid phone number',
-          description: 'Please enter a valid Indian mobile number (10 digits / +91XXXXXXXXXX).',
-          variant: 'destructive',
-        });
-        return;
-      }
-      identifierToSend = e164;
+      // Send as provided (trimmed). Backend stores as text.
+      identifierToSend = rawIdentifier;
     } else {
-      // UPI basic validation: name@bank (keep permissive to avoid rejecting valid handles)
+      // User requested: accept any UPI as long as it contains '@'
       const upi = rawIdentifier;
-      if (!/^[-\w.]{2,}@[a-zA-Z]{2,}$/i.test(upi)) {
+      if (!upi.includes('@')) {
         toast({
-          title: 'Invalid UPI ID',
-          description: 'Please enter a valid UPI ID (example: name@bank).',
+          title: 'Enter a UPI ID',
+          description: 'Use format like name@bank.',
           variant: 'destructive',
         });
         return;
@@ -728,10 +707,10 @@ export default function Redemptions() {
                     ? 'Phone Number'
                     : 'UPI ID';
                 const payoutPlaceholder = isVoucherReward
-                  ? 'Enter WhatsApp number (8-15 digits)'
+                  ? 'WhatsApp number'
                   : payoutChannel === 'phone'
-                    ? 'Enter phone number'
-                    : 'Enter UPI ID';
+                    ? 'Phone number'
+                    : 'UPI ID (name@bank)';
                 const payoutInputMode =
                   isVoucherReward || payoutChannel === 'phone' ? 'tel' : 'text';
                 return (
@@ -743,8 +722,8 @@ export default function Redemptions() {
                       <div className="w-full flex justify-center">
                         <DialogDescription className="text-slate-300 text-sm sm:text-base mt-1 max-w-[520px]">
                           {redeemStep === 'confirm'
-                            ? 'Enter payout details to submit your request.'
-                            : 'Submitted. Pending admin approval.'}
+                            ? 'Add payout details to submit.'
+                            : 'Submitted. Await admin approval.'}
                         </DialogDescription>
                       </div>
                     </DialogHeader>
@@ -776,7 +755,7 @@ export default function Redemptions() {
                                     className="w-full px-3 py-2 rounded-lg bg-slate-800/70 border border-slate-600 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                   />
                                   <p className="mt-2 text-[11px] text-slate-400">
-                                    Voucher code WhatsApp par share kiya jayega.
+                                    We’ll send the voucher on WhatsApp.
                                   </p>
                                 </div>
                               </div>
