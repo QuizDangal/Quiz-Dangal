@@ -383,6 +383,15 @@ const PublicLayout = () => {
               path="/category/:slug/"
               element={<CategoryTrailingSlashRedirect />}
             />
+
+            {/* Known protected routes: redirect to login instead of 404 */}
+            <Route path="/quiz/*" element={<LoginRedirect message="Please sign in to play quizzes." />} />
+            <Route path="/my-quizzes/*" element={<LoginRedirect message="Please sign in to view your quizzes." />} />
+            <Route path="/wallet/*" element={<LoginRedirect message="Please sign in to open Wallet." />} />
+            <Route path="/profile/*" element={<LoginRedirect message="Please sign in to open Profile." />} />
+            <Route path="/redemptions/*" element={<LoginRedirect message="Please sign in to redeem rewards." />} />
+            <Route path="/results/*" element={<LoginRedirect message="Please sign in to view results." />} />
+            <Route path="/admin/*" element={<LoginRedirect message="Please sign in to continue." />} />
             {/* For unknown routes show proper 404 page (SEO-friendly) */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -397,6 +406,12 @@ function CategoryTrailingSlashRedirect() {
   const { slug } = useParams();
   const safeSlug = String(slug || '').trim();
   return <Navigate to={safeSlug ? `/category/${safeSlug}` : '/category'} replace />;
+}
+
+function LoginRedirect({ message }) {
+  const location = useLocation();
+  const from = location.pathname + location.search + location.hash;
+  return <Navigate to="/login" replace state={{ from, message: message || 'Please sign in to continue.' }} />;
 }
 
 const MainLayout = () => {

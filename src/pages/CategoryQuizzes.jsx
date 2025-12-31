@@ -352,12 +352,11 @@ const CategoryQuizzes = () => {
         const et = q.end_time ? new Date(q.end_time).getTime() : 0;
         return acc + (st && et && nowHeader >= st && nowHeader < et ? 1 : 0);
       }, 0);
-  // Upcoming count: Legacy quizzes = all upcoming, Slot quizzes = within 5 min
+  // Upcoming count: show all upcoming (slot + legacy)
   const upcomingCount = liveItems.filter((slot) => {
     const st = slot.start_time ? new Date(slot.start_time).getTime() : 0;
     if (!st || nowHeader >= st) return false;
-    // Legacy: count all upcoming, Slot: count only within 5 min
-    return slot.isLegacy ? true : (st - nowHeader) <= 5 * 60 * 1000;
+    return true;
   }).length;
   const nextStartTs = slotSource
     ? liveItems
@@ -579,8 +578,8 @@ const CategoryQuizzes = () => {
 
   const canonical =
     typeof window !== 'undefined'
-      ? `${window.location.origin}/category/${slug}/`
-      : `https://quizdangal.com/category/${slug}/`;
+      ? `${window.location.origin}/category/${slug}`
+      : `https://quizdangal.com/category/${slug}`;
 
   return (
     <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
@@ -652,22 +651,18 @@ const CategoryQuizzes = () => {
                 const st = s.start_time ? new Date(s.start_time).getTime() : null;
                 const et = s.end_time ? new Date(s.end_time).getTime() : null;
                 const isLive = st && et && now >= st && now < et;
-                // Legacy quizzes: show ALL upcoming. Slot quizzes: show within 5 min only
                 const isUpcoming = st && now < st;
-                const isUpcomingSoon = isUpcoming && (st - now) <= 5 * 60 * 1000;
-                // Legacy quizzes show all upcoming, slot quizzes only within 5 min
-                return isLive || (s.isLegacy ? isUpcoming : isUpcomingSoon);
+                return isLive || isUpcoming;
               }).length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {/* Show LIVE + Legacy UPCOMING (any time) + Slot UPCOMING (within 5 min) */}
+                  {/* Show LIVE + UPCOMING */}
                   {slots.filter(s => {
                     const now = Date.now();
                     const st = s.start_time ? new Date(s.start_time).getTime() : null;
                     const et = s.end_time ? new Date(s.end_time).getTime() : null;
                     const isLive = st && et && now >= st && now < et;
                     const isUpcoming = st && now < st;
-                    const isUpcomingSoon = isUpcoming && (st - now) <= 5 * 60 * 1000;
-                    return isLive || (s.isLegacy ? isUpcoming : isUpcomingSoon);
+                    return isLive || isUpcoming;
                   }).map((slot) => renderSlotCard(slot, null))}
                 </div>
               ) : (
