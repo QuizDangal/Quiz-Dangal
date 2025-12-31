@@ -1,22 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
 
 <head>
 	<meta charset="UTF-8" />
+	<title>Quiz Competition – Quiz Dangal</title>
 	<!-- Google AdSense - defer loading to improve FCP -->
 	<meta name="google-adsense-account" content="ca-pub-6769428019015455">
 	<!-- Preconnect to critical origins for faster resource loading -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="preconnect" href="https://nlexqxyxugifjyogqato.supabase.co" crossorigin>
+	<link rel="preconnect" href="https://gcheopiqayyptfxowulv.supabase.co" crossorigin>
 	<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
 	<!-- Fonts loaded async to avoid render blocking - use media print trick for non-blocking -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 	<noscript>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 	</noscript>
-	<!-- AdSense loaded after page content for better performance -->
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6769428019015455" crossorigin="anonymous"></script>
 	<!-- Runtime env overrides (deferred; must run before app bundle) -->
 	<script defer src="/env-config.js"></script>
 	<!-- Must run before the app bundle to restore clean paths from 404 redirect -->
@@ -37,6 +36,8 @@
 	<!-- Security & privacy hardening (frontend-only, no backend dependency) -->
 	<meta name="referrer" content="strict-origin-when-cross-origin" />
 	<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+	<!-- Content-Security-Policy: frame-ancestors moved to _headers (meta tag doesn't support it) -->
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; frame-src https://pagead2.googlesyndication.com https://www.google.com https://*.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google;" />
 	<meta name="color-scheme" content="light dark" />
 	<!-- Permissions-Policy: allow notifications (for push), geolocation optional; block unused powerful features -->
 	<!-- Modern Permissions-Policy (Feature-Policy successor) -->
@@ -50,11 +51,17 @@
 	<meta name="msapplication-TileColor" content="#050508" />
 	<meta name="msapplication-navbutton-color" content="#050508" />
 	<meta name="description" content="Join quiz competitions and compete on leaderboards. Play daily rounds and win coins on Quiz Dangal." />
-	<meta name="keywords" content="Quiz Dangal, quizdangal, quiz, india quiz, indiaquiz, money quiz, moneyquiz, play and win, play & win, refer and earn, opinion based quiz, daily quiz India, online quiz contest, win rewards, leaderboards" />
-	<title>Quiz Competition – Quiz Dangal</title>
+	<!-- Canonical URL: React Helmet handles this dynamically for all pages -->
+	<!-- Hreflang for language/region targeting -->
+	<link rel="alternate" hreflang="en-IN" href="https://quizdangal.com/" />
+	<link rel="alternate" hreflang="en" href="https://quizdangal.com/" />
+	<link rel="alternate" hreflang="x-default" href="https://quizdangal.com/" />
 	<!-- Open Graph / Social share defaults -->
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Quiz Dangal" />
+	<meta property="og:locale" content="en_IN" />
+	<meta property="og:locale:alternate" content="hi_IN" />
+	<meta property="og:locale:alternate" content="en_US" />
 	<meta property="og:title" content="Quiz Competition – Quiz Dangal" />
 	<meta property="og:description" content="Join quiz competitions and compete on leaderboards. Play daily rounds and win coins on Quiz Dangal." />
 	<meta property="og:url" content="https://quizdangal.com/quiz-competition/" />
@@ -65,11 +72,27 @@
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 
-	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:site" content="@quizdangal" />
+	<meta name="twitter:creator" content="@quizdangal" />
 	<meta name="twitter:title" content="Quiz Competition – Quiz Dangal" />
 	<meta name="twitter:description" content="Join quiz competitions and compete on leaderboards. Play daily rounds and win coins on Quiz Dangal." />
 	<meta name="twitter:image" content="https://quizdangal.com/refer-earn-poster.png?v=1" />
+	<!-- Dublin Core & Attribution Metadata -->
+	<meta name="DC.title" content="Quiz Dangal – Play Quiz & Win" />
+	<meta name="DC.creator" content="Quiz Dangal" />
+	<meta name="DC.subject" content="Quiz, Trivia, General Knowledge, Rewards" />
+	<meta name="DC.description" content="India's play-and-win quiz arena" />
+	<meta name="DC.publisher" content="Quiz Dangal" />
+	<meta name="DC.language" content="en-IN" />
+	<meta name="DC.type" content="Interactive" />
+	<meta name="DC.format" content="text/html" />
+	<meta name="article:author" content="Quiz Dangal" />
+	<meta name="article:publisher" content="https://quizdangal.com/" />
+	<meta name="rating" content="General" />
+	<meta name="revisit-after" content="3 days" />
+	<meta name="distribution" content="global" />
+	<meta name="coverage" content="India" />
 	<style>
 		/* Critical CSS - inlined to avoid render blocking */
 		@font-face { font-display: swap; }
@@ -90,54 +113,61 @@
 	<!-- Google tag (gtag.js) - deferred for better performance -->
 	<script>
 		(function () {
-			function isLikelyAutomation() {
-				try {
-					var ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-					if (/lighthouse|pagespeed|headless|wrsparams|psi|speed insights/.test(ua)) return true;
-					if (navigator.webdriver === true) return true;
-					if (document.prerendering === true) return true;
-				} catch (e) {
-					// ignore
+			'use strict';
+			
+			// GA Measurement ID - can be overridden via window.__QUIZ_DANGAL_ENV__
+			var GA_ID = (window.__QUIZ_DANGAL_ENV__ && window.__QUIZ_DANGAL_ENV__.VITE_GA_ID) || 'G-98624Q56YT';
+			
+			// gtag function at module scope
+			function gtag() {
+				if (globalThis.dataLayer) {
+					globalThis.dataLayer.push(arguments);
 				}
+			}
+			
+			function isLikelyAutomation() {
+				var ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+				if (/lighthouse|pagespeed|headless|wrsparams|psi|speed insights/.test(ua)) return true;
+				if (navigator.webdriver === true) return true;
+				if (document.prerendering === true) return true;
 				return false;
 			}
 
 			if (isLikelyAutomation()) return;
 
 			function loadGA() {
+				if (globalThis.__qdGAReady) return;
+				// GDPR compliance: Only load GA if user has accepted cookies
+				// CookieConsent component stores preference in localStorage
 				try {
-					if (window.__qdGAReady) return;
-					window.__qdGAReady = true;
-					var s = document.createElement('script');
-					s.src = 'https://www.googletagmanager.com/gtag/js?id=G-98624Q56YT';
-					s.async = true;
-					document.head.appendChild(s);
-					s.onload = function () {
-						window.dataLayer = window.dataLayer || [];
-						function gtag() { dataLayer.push(arguments); }
-						window.gtag = gtag;
-						gtag('js', new Date());
-						gtag('config', 'G-98624Q56YT');
-					};
+					if (localStorage.getItem('qd_cookie_consent') !== 'accepted') return;
 				} catch (e) {
-					// ignore
+					// localStorage not available (private mode, etc.) - don't load GA
+					return;
 				}
+				globalThis.__qdGAReady = true;
+				var s = document.createElement('script');
+				s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+				s.async = true;
+				document.head.appendChild(s);
+				s.onload = function () {
+					globalThis.dataLayer = globalThis.dataLayer || [];
+					globalThis.gtag = gtag;
+					gtag('js', new Date());
+					gtag('config', GA_ID);
+				};
 			}
 
 			function scheduleGA() {
-				try {
-					if ('requestIdleCallback' in window) {
-						window.requestIdleCallback(loadGA, { timeout: 4000 });
-					} else {
-						setTimeout(loadGA, 6000);
-					}
-				} catch (e) {
+				if ('requestIdleCallback' in globalThis) {
+					globalThis.requestIdleCallback(loadGA, { timeout: 4000 });
+				} else {
 					setTimeout(loadGA, 6000);
 				}
 			}
 
 			// Defer GA until after first interaction (or a long timeout) to keep initial paint fast.
-			window.addEventListener('load', function () {
+			globalThis.addEventListener('load', function () {
 				var warmed = false;
 				function warm() {
 					if (warmed) return;
@@ -145,97 +175,124 @@
 					scheduleGA();
 				}
 				var opts = { once: true, passive: true };
-				window.addEventListener('pointerdown', warm, opts);
-				window.addEventListener('touchstart', warm, opts);
-				window.addEventListener('keydown', warm, { once: true });
+				globalThis.addEventListener('pointerdown', warm, opts);
+				globalThis.addEventListener('touchstart', warm, opts);
+				globalThis.addEventListener('keydown', warm, { once: true });
+				// Fallback: warm GA after 12s if no user interaction (keeps initial paint fast)
 				setTimeout(warm, 12000);
 			});
 		})();
 	</script>
 	
-	<!-- Structured Data: WebSite + Organization + WebApplication -->
+	<!-- Structured Data: WebSite (minimal for index.html, full schemas in React components) -->
 	<script type="application/ld+json">
 	  {
 	    "@context": "https://schema.org",
 	    "@type": "WebSite",
 	    "name": "Quiz Dangal",
+	    "alternateName": "QuizDangal",
 	    "url": "https://quizdangal.com/",
+	    "inLanguage": ["en-IN", "hi-IN"],
+	    "publisher": {
+	      "@type": "Organization",
+	      "name": "Quiz Dangal"
+	    },
 	    "potentialAction": {
 	      "@type": "SearchAction",
-	      "target": "https://quizdangal.com/search?q={search_term_string}",
+	      "target": "https://quizdangal.com/?q={search_term_string}",
 	      "query-input": "required name=search_term_string"
 	    }
 	  }
 	</script>
-		<script type="application/ld+json">
-			{
-				"@context": "https://schema.org",
-				"@type": "Organization",
-				"name": "Quiz Dangal",
-				"url": "https://quizdangal.com/",
-				"logo": "https://quizdangal.com/android-chrome-512x512.png",
-				"sameAs": [
-					"https://www.instagram.com/quizdangal?igsh=eGF1OGE4NGgzY2Ry",
-					"https://www.facebook.com/profile.php?id=61576614092243",
-					"https://x.com/quizdangal?t=6XBXmd0n87YTF8JstqrKVQ&s=09"
-				]
-			}
-		</script>
+	<!-- Speakable Content for Voice Assistants & AI -->
 	<script type="application/ld+json">
 	  {
 	    "@context": "https://schema.org",
-	    "@type": "WebApplication",
-	    "name": "Quiz Dangal",
+	    "@type": "WebPage",
+	    "name": "Quiz Dangal - India's #1 Free Quiz Platform",
 	    "url": "https://quizdangal.com/",
-	    "applicationCategory": "Game",
-	    "operatingSystem": "Web",
-	    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+	    "description": "Quiz Dangal is India's leading free-to-play quiz platform where users can participate in daily quizzes, earn coins, and win rewards.",
+	    "speakable": {
+	      "@type": "SpeakableSpecification",
+	      "cssSelector": ["[data-speakable]", "h1", ".qdh-title", ".qdh-faq-section"]
+	    },
+	    "mainEntity": {
+	      "@type": "FAQPage",
+	      "mainEntity": [
+	        {
+	          "@type": "Question",
+	          "name": "What is Quiz Dangal?",
+	          "acceptedAnswer": {
+	            "@type": "Answer",
+	            "text": "Quiz Dangal is India's #1 daily quiz platform where you can play opinion polls, GK, sports & movie quizzes to earn coins and compete on national leaderboards. It's 100% free and works on all devices."
+	          }
+	        },
+	        {
+	          "@type": "Question",
+	          "name": "How do I earn coins on Quiz Dangal?",
+	          "acceptedAnswer": {
+	            "@type": "Answer",
+	            "text": "You can earn coins in 4 ways: correct answers, speed bonus, daily login streak bonus, and referrals. Redeem coins for exciting prizes in the Rewards section."
+	          }
+	        },
+	        {
+	          "@type": "Question",
+	          "name": "Is Quiz Dangal free to use?",
+	          "acceptedAnswer": {
+	            "@type": "Answer",
+	            "text": "Yes, Quiz Dangal is 100% free forever. There are no entry fees, subscriptions, or in-app purchases required to play quizzes and earn rewards."
+	          }
+	        }
+	      ]
+	    }
 	  }
 	</script>
-  <script type="module" crossorigin src="/assets/index-4159bffa.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/react-63c462fe.js">
-  <link rel="modulepreload" crossorigin href="/assets/supabase-24c2e735.js">
-  <link rel="modulepreload" crossorigin href="/assets/router-5fd03704.js">
-  <link rel="modulepreload" crossorigin href="/assets/icons-d9b262e9.js">
-  <link rel="stylesheet" href="/assets/index-d9b75248.css">
+	<!-- Knowledge Graph / Brand Entity -->
+	<script type="application/ld+json">
+	  {
+	    "@context": "https://schema.org",
+	    "@type": "Brand",
+	    "name": "Quiz Dangal",
+	    "alternateName": ["QuizDangal", "Quiz Dangal India"],
+	    "description": "India's premier free-to-play quiz and rewards platform offering daily quizzes, leaderboards, and coin-based rewards.",
+	    "url": "https://quizdangal.com/",
+	    "logo": "https://quizdangal.com/android-chrome-512x512.png",
+	    "slogan": "Play. Compete. Win."
+	  }
+	</script>
+  <script type="module" crossorigin src="/assets/index-IZyh5gpM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/react-MKCYUrdX.js">
+  <link rel="modulepreload" crossorigin href="/assets/supabase-cQshKuiM.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-CWIfZQRv.js">
+  <link rel="modulepreload" crossorigin href="/assets/icons-BNA5wz6Z.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-Df4YbRfZ.css">
   <link rel="canonical" href="https://quizdangal.com/quiz-competition/" />
 </head>
 
 	<body>
-		<a href="#app-main" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
-	<!-- Primary heading is inside static-loader for FCP, and will be in React app after mount -->
+		<a href="#app-main" class="skip-link">Skip to main content</a>
 
-	<!-- Static fallback content for FCP/LCP - visible until React renders -->
-	<div id="root">
-		<div
-			id="static-loader"
-			style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(180deg,#050508 0%,#0a0a12 50%,#08080f 100%);color:#fff;"
-		>
-			<main id="app-main" tabindex="-1" role="main" aria-label="Quiz Dangal">
-				<div style="max-width:680px;text-align:center;">
-					<div style="width:80px;height:80px;margin:0 auto 20px;border-radius:9999px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-						<picture>
-							<source type="image/webp" srcset="/logo-96.webp 1x, /android-chrome-192x192.png 2x" />
-							<source type="image/png" srcset="/logo-96.png 1x, /android-chrome-192x192.png 2x" />
-							<img src="/logo-96.png" alt="Quiz Dangal" width="80" height="80" decoding="async" fetchpriority="high" style="display:block;width:80px;height:80px;object-fit:cover;" />
-						</picture>
-					</div>
-					<h1 data-prerender-title style="margin:0 0 8px;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;color:#fff;">Quiz Competition – Quiz Dangal</h1>
-					<p data-prerender-desc style="margin:0 0 20px;opacity:0.85;line-height:1.5;font-size:15px;">Join quiz competitions and compete on leaderboards. Play daily rounds and win coins on Quiz Dangal.</p>
-					<div style="display:flex;justify-content:center;">
-						<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-					</div>
-				</div>
-			</main>
-		</div>
+	<!-- React mount point -->
+	<div id="root"></div>
+
+	<!-- Static loader (sibling to #root) - React will fade this out smoothly -->
+	<div
+		id="static-loader"
+		style="position:fixed;inset:0;z-index:9999;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#050508 0%,#0a0a12 50%,#08080f 100%);transition:opacity 0.15s ease-out;"
+	>
+		<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
 	</div>
+
 	<!-- No-JS fallback -->
 	<noscript>
+		<h1 class="sr-only">Quiz Dangal</h1>
 		<style>#static-loader{display:flex !important;}</style>
 	</noscript>
-	
+
 	<script defer src="/modulepreload-polyfill.js"></script>
 	<script defer src="/sw-register.js"></script>
+	<!-- AdSense at body end for better performance -->
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6769428019015455" crossorigin="anonymous"></script>
 </body>
 
 </html>

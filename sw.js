@@ -30,7 +30,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.warn('Precache partial failure:', err);
+        // Swallow precache errors silently; PWA will still work with network
         return Promise.resolve();
       });
     })
@@ -124,20 +124,53 @@ self.addEventListener('message', (event) => {
 
 // Push Notification Event Listener
 self.addEventListener('push', function(event) {
+  // Sanitize push data to prevent XSS and injection attacks
+  function sanitizePushData(data) {
+    if (!data || typeof data !== 'object') return null;
+    const safe = {};
+    // Only allow specific string fields
+    ['title', 'body', 'type', 'quizId'].forEach(key => {
+      if (data[key] && typeof data[key] === 'string') {
+        safe[key] = String(data[key]).slice(0, 500); // limit length
+      }
+    });
+    // Stricter URL validation: only allow relative paths or same-origin URLs
+    if (data.url && typeof data.url === 'string') {
+      const urlStr = String(data.url).slice(0, 500);
+      // Only allow relative paths starting with / or same-origin absolute URLs
+      if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
+        // Relative path - allowed
+        safe.url = urlStr;
+      } else {
+        try {
+          const parsed = new URL(urlStr, self.location.origin);
+          // Only allow same-origin URLs
+          if (parsed.origin === self.location.origin) {
+            safe.url = parsed.pathname + parsed.search + parsed.hash;
+          }
+        } catch {
+          // Invalid URL - skip
+        }
+      }
+    }
+    return safe;
+  }
+
   // Avoid logging raw payloads in production; parse best-effort
   let raw = null;
   try { raw = event?.data || null; } catch { raw = null; }
 
   let pushData;
   try {
-    pushData = raw ? raw.json() : null;
+    const parsed = raw ? raw.json() : null;
+    pushData = sanitizePushData(parsed);
   } catch (e) {
     pushData = null;
   }
   if (!pushData) {
     pushData = {
       title: 'Quiz Dangal',
-      body: raw ? (()=>{ try { return raw.text(); } catch { return 'You have a new message.'; } })() : 'You have a new message.',
+      body: raw ? (()=>{ try { return String(raw.text()).slice(0, 500); } catch { return 'You have a new message.'; } })() : 'You have a new message.',
     };
   }
 

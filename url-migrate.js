@@ -15,6 +15,18 @@
       if (!cleanUrl.startsWith('/')) cleanUrl = '/' + cleanUrl;
       window.history.replaceState({}, '', cleanUrl);
     }
+
+    // Normalize trailing slash for category pages to reduce duplicate content.
+    // Example: /category/opinion/ -> /category/opinion
+    try {
+      var path = window.location.pathname || '';
+      if (path.startsWith('/category/') && path.length > '/category/'.length && path.endsWith('/')) {
+        var normalized = path.slice(0, -1);
+        window.history.replaceState({}, '', normalized + window.location.search + window.location.hash);
+      }
+    } catch (e2) {
+      // ignore
+    }
   } catch (e) {
     // ignore
   }

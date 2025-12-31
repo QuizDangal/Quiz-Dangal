@@ -1,0 +1,2 @@
+# Canonicalize category URLs (avoid duplicate-content)
+/category/:slug/  /category/:slug  301!
