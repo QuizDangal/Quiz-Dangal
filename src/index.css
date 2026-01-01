@@ -2286,7 +2286,7 @@ div:focus-visible:not([tabindex]) {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: min(420px, 96vw);
+  max-width: min(460px, 96vw);
   max-height: none;
   display: flex;
   flex-direction: column;
@@ -2969,11 +2969,11 @@ div:focus-visible:not([tabindex]) {
 /* Large phones / Small tablets */
 @media (min-width: 480px) and (max-width: 639px) {
   .qdh-container {
-    padding: 50px 20px 65px;
+    padding: 50px 14px 65px;
   }
   
   .qdh-main {
-    max-width: 440px;
+    max-width: 520px;
   }
   
   .qdh-title-text {

@@ -339,7 +339,6 @@ const Home = () => {
               const StepIcon = item.icon;
               return (
                 <div key={item.step} className="qdh-step-card" style={{ '--step-delay': `${idx * 0.1}s` }}>
-                  {item.highlight && <div className="qdh-step-badge">{item.highlight}</div>}
                   <div className={`qdh-step-icon-box bg-gradient-to-br ${item.gradient}`}>
                     <StepIcon className="w-6 h-6 text-white" strokeWidth={2.5} />
                     <div className="qdh-step-glow" />
