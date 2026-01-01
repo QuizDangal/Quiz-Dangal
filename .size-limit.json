@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "path": "dist/assets/*.js",
+      "limit": "350 kB",
+      "gzip": true
+    },
+    {
+      "path": "dist/assets/react-*.js",
+      "limit": "50 kB",
+      "gzip": true,
+      "name": "React bundle"
+    },
+    {
+      "path": "dist/assets/router-*.js",
+      "limit": "20 kB",
+      "gzip": true,
+      "name": "Router bundle"
+    },
+    {
+      "path": "dist/assets/supabase-*.js",
+      "limit": "60 kB",
+      "gzip": true,
+      "name": "Supabase bundle"
+    },
+    {
+      "path": "dist/assets/motion-*.js",
+      "limit": "40 kB",
+      "gzip": true,
+      "name": "Framer Motion bundle"
+    },
+    {
+      "path": "dist/assets/icons-*.js",
+      "limit": "30 kB",
+      "gzip": true,
+      "name": "Lucide Icons bundle"
+    }
+  ]
+}

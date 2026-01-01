@@ -16,6 +16,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './vitest.setup.js',
     globals: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/e2e/**',
+      '**/*.spec.js',
+    ],
     coverage: {
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: './coverage',
@@ -26,6 +32,7 @@ export default defineConfig({
         'public/**',
         'scripts/**',
         'supabase/**',
+        'e2e/**',
         'vitest.config.*',
         'vite.config.*',
         'tailwind.config.*',
