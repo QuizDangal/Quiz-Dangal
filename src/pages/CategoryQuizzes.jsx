@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
-import { supabase } from '@/lib/customSupabaseClient';
+import { getSupabase } from '@/lib/customSupabaseClient';
 import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
@@ -81,6 +81,8 @@ const isSlotUpcomingWindow = (slot) => {
   return Date.now() < start;
 };
 
+const UPCOMING_SOON_WINDOW_MS = 5 * 60 * 1000; // show only the next upcoming when it's within 5 minutes
+
 const CategoryQuizzes = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -97,24 +99,35 @@ const CategoryQuizzes = () => {
 
   // Slot mode state
   const [slots, setSlots] = useState([]);
-  const [slotMode, setSlotMode] = useState('detect'); // detect | slots | legacy
+  const [slotMode, setSlotMode] = useState('legacy'); // slots | legacy
   const [categoryAutoEnabled, setCategoryAutoEnabled] = useState(true);
+  const [slotLoadError, setSlotLoadError] = useState(null);
 
   const pollIntervalMs = 20000; // 20s for slot refresh
 
   const loadSlots = useCallback(async () => {
-    if (!supabase) return;
     try {
-      const { slots: s, mode, auto } = await fetchSlotsForCategory(supabase, slug);
+      const sb = await getSupabase();
+      if (!sb) {
+        setSlots([]);
+        setCategoryAutoEnabled(true);
+        setSlotMode('legacy');
+        setSlotLoadError('Supabase is not configured.');
+        return;
+      }
+
+      const { slots: s, mode, auto } = await fetchSlotsForCategory(sb, slug);
       // Always set slots regardless of mode - fetchSlotsForCategory now returns merged results
       setSlots(s);
       setCategoryAutoEnabled(auto);
+      setSlotLoadError(null);
       if (mode === 'slots' || mode === 'legacy') {
         setSlotMode('slots'); // Use slots UI for both - they're unified now
       } else {
         setSlotMode('legacy');
       }
-    } catch {
+    } catch (e) {
+      setSlotLoadError(formatSupabaseError(e) || e?.message || 'Could not load category quizzes.');
       setSlotMode('legacy');
     }
   }, [slug]);
@@ -166,12 +179,14 @@ const CategoryQuizzes = () => {
   useEffect(() => {
     const run = async () => {
       try {
+        const sb = await getSupabase();
+        if (!sb) return;
         const ids = (quizzes || []).map((q) => q.id);
         if (!ids.length) {
           setCounts({});
           return;
         }
-        const { data, error } = await supabase.rpc('get_engagement_counts_many', {
+        const { data, error } = await sb.rpc('get_engagement_counts_many', {
           p_quiz_ids: ids,
         });
         if (error) throw error;
@@ -211,10 +226,15 @@ const CategoryQuizzes = () => {
         return;
       }
       try {
+        const sb = await getSupabase();
+        if (!sb) {
+          setJoinedMap({});
+          return;
+        }
         const map = {};
         
         // Fetch participation status by quiz_id
-        const { data, error } = await supabase
+        const { data, error } = await sb
           .from('quiz_participants')
           .select('quiz_id,status')
           .eq('user_id', user.id)
@@ -254,6 +274,16 @@ const CategoryQuizzes = () => {
       navigate('/login');
       return;
     }
+
+    const sb = await getSupabase();
+    if (!sb) {
+      toast({
+        title: 'Setup required',
+        description: 'Supabase is not configured for this app.',
+        variant: 'destructive',
+      });
+      return;
+    }
     // Get the identifier (slotId for slots, id for legacy quizzes)
     const qId = q.slotId || q.id;
 
@@ -290,7 +320,7 @@ const CategoryQuizzes = () => {
       /* ignore push errors */
     }
     try {
-      const result = await smartJoinQuiz({ supabase, quiz: q, user });
+      const result = await smartJoinQuiz({ supabase: sb, quiz: q, user });
       if (result.status === 'error') throw result.error;
       if (result.status === 'already') {
         setJoinedMap((prev) => ({ ...prev, [qId]: 'joined' }));
@@ -345,6 +375,35 @@ const CategoryQuizzes = () => {
   const nowHeader = Date.now();
   const slotSource = slotMode === 'slots';
   const liveItems = slotSource ? slots : quizzes || [];
+
+  // Slot display policy: show all LIVE, and only the single NEXT upcoming when it is soon.
+  const liveSlots = (slots || []).filter((s) => {
+    const st = slotStartMs(s);
+    const et = slotEndMs(s);
+    const now = nowHeader;
+    return (st && et && now >= st && now < et) || String(s?.status || '').toLowerCase() === 'active';
+  });
+  const nextUpcomingSlot = (() => {
+    const upcoming = (slots || [])
+      .filter((s) => {
+        const st = slotStartMs(s);
+        if (!st) return false;
+        return st > nowHeader;
+      })
+      .sort((a, b) => (slotStartMs(a) || 0) - (slotStartMs(b) || 0));
+    return upcoming[0] || null;
+  })();
+  const nextUpcomingIsSoon = (() => {
+    const st = nextUpcomingSlot ? slotStartMs(nextUpcomingSlot) : null;
+    if (!st) return false;
+    const delta = st - nowHeader;
+    return delta > 0 && delta <= UPCOMING_SOON_WINDOW_MS;
+  })();
+  const displaySlots = [...liveSlots];
+  if (nextUpcomingSlot && nextUpcomingIsSoon) {
+    const alreadyInLive = displaySlots.some((s) => s?.slotId && s.slotId === nextUpcomingSlot.slotId);
+    if (!alreadyInLive) displaySlots.push(nextUpcomingSlot);
+  }
   const activeCount = slotSource
     ? liveItems.filter((slot) => isSlotLiveWindow(slot)).length
     : liveItems.reduce((acc, q) => {
@@ -352,12 +411,8 @@ const CategoryQuizzes = () => {
         const et = q.end_time ? new Date(q.end_time).getTime() : 0;
         return acc + (st && et && nowHeader >= st && nowHeader < et ? 1 : 0);
       }, 0);
-  // Upcoming count: show all upcoming (slot + legacy)
-  const upcomingCount = liveItems.filter((slot) => {
-    const st = slot.start_time ? new Date(slot.start_time).getTime() : 0;
-    if (!st || nowHeader >= st) return false;
-    return true;
-  }).length;
+  // Upcoming count: show only one upcoming slot (when it is soon)
+  const upcomingCount = slotSource ? (nextUpcomingSlot && nextUpcomingIsSoon ? 1 : 0) : 0;
   const nextStartTs = slotSource
     ? liveItems
         .map((slot) => slotStartMs(slot))
@@ -578,8 +633,8 @@ const CategoryQuizzes = () => {
 
   const canonical =
     typeof window !== 'undefined'
-      ? `${window.location.origin}/category/${slug}`
-      : `https://quizdangal.com/category/${slug}`;
+      ? `${window.location.origin}/category/${slug}/`
+      : `https://quizdangal.com/category/${slug}/`;
 
   return (
     <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
@@ -633,6 +688,14 @@ const CategoryQuizzes = () => {
           </div>
         </div>
 
+        {import.meta.env.DEV && slotLoadError && (
+          <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/50 p-3 sm:p-4 text-xs sm:text-sm text-slate-300">
+            <div className="font-semibold text-slate-200">Category load issue</div>
+            <div className="mt-1 break-words">{slotLoadError}</div>
+            <div className="mt-2 text-[11px] text-slate-400">slug: {String(slug || '')} • mode: {String(slotMode)} • slots: {(slots || []).length}</div>
+          </div>
+        )}
+
       {slotMode === 'slots' ? (
         <>
           {loading ? (
@@ -646,24 +709,10 @@ const CategoryQuizzes = () => {
             </div>
           ) : (
             <>
-              {slots.filter(s => {
-                const now = Date.now();
-                const st = s.start_time ? new Date(s.start_time).getTime() : null;
-                const et = s.end_time ? new Date(s.end_time).getTime() : null;
-                const isLive = st && et && now >= st && now < et;
-                const isUpcoming = st && now < st;
-                return isLive || isUpcoming;
-              }).length > 0 ? (
+              {displaySlots.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {/* Show LIVE + UPCOMING */}
-                  {slots.filter(s => {
-                    const now = Date.now();
-                    const st = s.start_time ? new Date(s.start_time).getTime() : null;
-                    const et = s.end_time ? new Date(s.end_time).getTime() : null;
-                    const isLive = st && et && now >= st && now < et;
-                    const isUpcoming = st && now < st;
-                    return isLive || isUpcoming;
-                  }).map((slot) => renderSlotCard(slot, null))}
+                  {/* Show LIVE slots + only the next UPCOMING (soon) */}
+                  {displaySlots.map((slot) => renderSlotCard(slot, null))}
                 </div>
               ) : (
                 <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6 text-center text-sm sm:text-base text-slate-400">

@@ -255,7 +255,7 @@ const Home = () => {
       // Supabase warmup failed - non-blocking, continue to category page
       if (import.meta.env?.DEV) console.debug('Supabase warmup failed:', e?.message);
     }
-    navigate(`/category/${id}`);
+    navigate(`/category/${id}/`);
   }, [navigate]);
 
   return (

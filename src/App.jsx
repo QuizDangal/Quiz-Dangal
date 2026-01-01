@@ -253,7 +253,7 @@ function App() {
                     <Route path="/quiz/slot/:slotId" element={<Quiz />} />
                     {/* Canonicalize category routes (avoid duplicate-content URLs) */}
                     <Route
-                      path="/category/:slug"
+                      path="/category/:slug/"
                       element={
                         <Page>
                           <CategoryQuizzes />
@@ -261,7 +261,7 @@ function App() {
                       }
                     />
                     <Route
-                      path="/category/:slug/"
+                      path="/category/:slug"
                       element={<CategoryTrailingSlashRedirect />}
                     />
                     <Route path="/results/:id" element={<Results />} />
@@ -372,7 +372,7 @@ const PublicLayout = () => {
             {policyRoutes}
             {/* Publicly accessible category pages for SEO */}
             <Route
-              path="/category/:slug"
+              path="/category/:slug/"
               element={
                 <Page>
                   <CategoryQuizzes />
@@ -380,7 +380,7 @@ const PublicLayout = () => {
               }
             />
             <Route
-              path="/category/:slug/"
+              path="/category/:slug"
               element={<CategoryTrailingSlashRedirect />}
             />
 
@@ -405,7 +405,7 @@ const PublicLayout = () => {
 function CategoryTrailingSlashRedirect() {
   const { slug } = useParams();
   const safeSlug = String(slug || '').trim();
-  return <Navigate to={safeSlug ? `/category/${safeSlug}` : '/category'} replace />;
+  return <Navigate to={safeSlug ? `/category/${safeSlug}/` : '/category/'} replace />;
 }
 
 function LoginRedirect({ message }) {

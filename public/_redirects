@@ -1,2 +1,5 @@
-# Canonicalize category URLs (avoid duplicate-content)
-/category/:slug/  /category/:slug  301!
+# Canonicalize category URLs (match prerendered directory routes)
+/category/:slug  /category/:slug/  301!
+
+# SPA fallback for deep links (quiz, wallet, profile, etc.)
+/*  /index.html  200
