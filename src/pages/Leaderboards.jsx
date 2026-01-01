@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, ChevronDown, Trophy, Crown } from 'lucide-react';
+import { Loader2, Trophy, Crown } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -51,7 +51,6 @@ export default function Leaderboards() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAll, setShowAll] = useState(false);
 
   const loadLeaderboard = useCallback(async (p) => {
     // Check cache first (5 min TTL) - reduces RPC calls on free tier
@@ -514,7 +513,7 @@ export default function Leaderboards() {
             </div>
           ) : (
             <m.div layout className="divide-y divide-slate-700/50">
-              {(showAll ? rows : rows.slice(0, 5)).map((r, i) => {
+              {rows.map((r, i) => {
                 const rank = r.rank || i + 1;
                 const highlight = myRank === rank;
                 const top3 = rank <= 3;
@@ -558,23 +557,6 @@ export default function Leaderboards() {
                   </m.div>
                 );
               })}
-              
-              {/* Show More/Less Button */}
-              {rows.length > 5 && (
-                <div className="py-2 flex justify-center bg-slate-800/20">
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(!showAll)}
-                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
-                  >
-                    {showAll ? (
-                      <>Show less</>
-                    ) : (
-                      <>Show All Players <ChevronDown className="w-3 h-3" /></>
-                    )}
-                  </button>
-                </div>
-              )}
             </m.div>
           )}
         </div>
@@ -584,19 +566,22 @@ export default function Leaderboards() {
           <h2 className="text-xl font-bold text-white mb-4">About Quiz Dangal Leaderboards</h2>
           <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
             <p>
-              The Quiz Dangal Leaderboard showcases the top quiz players from across India. Our ranking system is designed to reward knowledge, speed, and consistency. Every correct answer you give in our daily quizzes contributes to your leaderboard score.
+              The Quiz Dangal Leaderboard showcases the top quiz players from across India. Our ranking system is designed to reward knowledge, speed, and consistency. Every correct answer you give in our daily quizzes contributes to your leaderboard score. Whether you are a casual player or a competitive quiz enthusiast, the leaderboard gives you a platform to showcase your skills.
             </p>
             <p>
-              <strong className="text-white">How Rankings Work:</strong> Your leaderboard score is calculated based on the accuracy of your answers, the speed at which you respond, and your participation streak. The faster and more accurately you answer, the higher you climb. Players are ranked across three time periods — All-time, Monthly, and Weekly — so everyone has a chance to shine.
+              <strong className="text-white">How Rankings Work:</strong> Your leaderboard score is calculated based on the accuracy of your answers, the speed at which you respond, and your participation streak. The faster and more accurately you answer, the higher you climb. Players are ranked across three time periods — All-time, Monthly, and Weekly — so everyone has a chance to shine. New players can quickly rise through the weekly rankings, while consistent performers dominate the all-time charts.
             </p>
             <p>
-              <strong className="text-white">Compete & Win:</strong> Climbing the leaderboard is not just about bragging rights. Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls, General Knowledge, Sports, or Movies, every quiz counts toward your ranking.
+              <strong className="text-white">Compete & Win:</strong> Climbing the leaderboard is not just about bragging rights. Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls, General Knowledge, Sports, or Movies, every quiz counts toward your ranking. The more quizzes you play, the more opportunities you have to earn points and climb higher.
             </p>
             <p>
-              <strong className="text-white">Fair Play Guaranteed:</strong> We monitor all quiz activity to ensure fair competition. Bot accounts, multiple accounts, and cheating are strictly prohibited. Our automated systems detect suspicious patterns to maintain a level playing field for genuine players.
+              <strong className="text-white">Fair Play Guaranteed:</strong> We monitor all quiz activity to ensure fair competition. Bot accounts, multiple accounts, and cheating are strictly prohibited. Our automated systems detect suspicious patterns to maintain a level playing field for genuine players. We believe in rewarding real knowledge and skill, not shortcuts.
             </p>
             <p>
-              Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing now, answer correctly, beat the clock, and see your name rise on the leaderboard!
+              <strong className="text-white">Categories That Count:</strong> Quiz Dangal offers multiple quiz categories including Opinion Polls, General Knowledge (GK), Sports Trivia, and Bollywood Movies. Each category contributes equally to your overall leaderboard score. Diversify your quiz participation to maximize your points and stay ahead of the competition.
+            </p>
+            <p>
+              Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing now, answer correctly, beat the clock, and see your name rise on the leaderboard! Check back regularly to track your progress and see how you compare against other players from across India.
             </p>
           </div>
         </section>
