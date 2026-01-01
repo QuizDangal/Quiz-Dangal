@@ -122,6 +122,70 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// ============================================================
+// Background Sync for offline answer queue
+// ============================================================
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-answers') {
+    event.waitUntil(syncAnswerQueue());
+  }
+});
+
+async function syncAnswerQueue() {
+  try {
+    // Get pending answers from IndexedDB
+    const db = await openAnswerDB();
+    const tx = db.transaction('pending-answers', 'readonly');
+    const store = tx.objectStore('pending-answers');
+    const pending = await promisifyRequest(store.getAll());
+    
+    if (!pending || pending.length === 0) return;
+    
+    // Try to sync each answer
+    for (const item of pending) {
+      try {
+        const response = await fetch('/api/sync-answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item),
+        });
+        
+        if (response.ok) {
+          // Remove from pending queue
+          const deleteTx = db.transaction('pending-answers', 'readwrite');
+          const deleteStore = deleteTx.objectStore('pending-answers');
+          deleteStore.delete(item.id);
+        }
+      } catch (e) {
+        // Will retry on next sync
+      }
+    }
+  } catch (e) {
+    // IndexedDB or sync failed - will retry
+  }
+}
+
+function openAnswerDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('qd-offline', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('pending-answers')) {
+        db.createObjectStore('pending-answers', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+  });
+}
+
+function promisifyRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 // Push Notification Event Listener
 self.addEventListener('push', function(event) {
   // Sanitize push data to prevent XSS and injection attacks
