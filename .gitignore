@@ -8,6 +8,10 @@ coverage
 .DS_Store
 *.log
 
+# Playwright test outputs
+playwright-report/
+test-results/
+
 # Generated logo variants (created by scripts/generate-maskable-icons.mjs)
 public/logo-*.png
 public/logo-*.webp
