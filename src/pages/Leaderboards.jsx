@@ -251,6 +251,7 @@ export default function Leaderboards() {
         </div>
 
         {/* Top 3 Champions */}
+        <h2 className="sr-only">Top 3 Quiz Champions</h2>
         <AnimatePresence>
           {!loading && !error && rows.length >= 1 && (
             <m.div 
@@ -476,7 +477,8 @@ export default function Leaderboards() {
           </m.div>
         )}
 
-        {/* Player List */}
+        {/* Full Leaderboard Rankings */}
+        <h2 className="sr-only">Full Leaderboard Rankings</h2>
         <div className="rounded-xl bg-slate-800/30 backdrop-blur-sm border border-slate-700/40 overflow-hidden">
           {loading ? (
             <div className="py-16 flex flex-col items-center text-slate-400">
@@ -576,7 +578,30 @@ export default function Leaderboards() {
             </m.div>
           )}
         </div>
+
+        {/* SEO Content Section */}
+        <section className="mt-8 bg-slate-800/30 backdrop-blur-sm border border-slate-700/40 rounded-xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4">About Quiz Dangal Leaderboards</h2>
+          <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
+            <p>
+              The Quiz Dangal Leaderboard showcases the top quiz players from across India. Our ranking system is designed to reward knowledge, speed, and consistency. Every correct answer you give in our daily quizzes contributes to your leaderboard score.
+            </p>
+            <p>
+              <strong className="text-white">How Rankings Work:</strong> Your leaderboard score is calculated based on the accuracy of your answers, the speed at which you respond, and your participation streak. The faster and more accurately you answer, the higher you climb. Players are ranked across three time periods — All-time, Monthly, and Weekly — so everyone has a chance to shine.
+            </p>
+            <p>
+              <strong className="text-white">Compete & Win:</strong> Climbing the leaderboard is not just about bragging rights. Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls, General Knowledge, Sports, or Movies, every quiz counts toward your ranking.
+            </p>
+            <p>
+              <strong className="text-white">Fair Play Guaranteed:</strong> We monitor all quiz activity to ensure fair competition. Bot accounts, multiple accounts, and cheating are strictly prohibited. Our automated systems detect suspicious patterns to maintain a level playing field for genuine players.
+            </p>
+            <p>
+              Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing now, answer correctly, beat the clock, and see your name rise on the leaderboard!
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   );
 }
+

@@ -12,7 +12,8 @@ Disallow: /results/
 Disallow: /refer
 Disallow: /debug/
 Disallow: /notifications-debug
-Disallow: /assets/
+
+# Note: /assets/ is NOT blocked - Google needs CSS/JS to render pages correctly
 
 User-agent: AhrefsBot
 Disallow: /
