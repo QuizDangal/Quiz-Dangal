@@ -325,6 +325,16 @@ const Home = () => {
           <div className="qdh-decor-line" />
         </div>
 
+        {/* Section Divider */}
+        <div className="qdh-section-divider">
+          <div className="qdh-divider-lines">
+            <div className="qdh-divider-icon">
+              <Star className="w-5 h-5" />
+            </div>
+          </div>
+          <span className="qdh-divider-label">Explore More</span>
+        </div>
+
         {/* How It Works Section */}
         <section className="qdh-how-it-works">
           <h2 className="qdh-section-title">
@@ -382,7 +392,7 @@ const Home = () => {
             <Link to="/privacy-policy/">Privacy</Link>
             <Link to="/terms-conditions/">Terms</Link>
           </div>
-          <p className="qdh-footer-copy">© {new Date().getFullYear()} Quiz Dangal. All rights reserved. 🇮🇳 Made in India</p>
+          <p className="qdh-footer-copy">© {new Date().getFullYear()} Quiz Dangal 🇮🇳 Made in India</p>
         </footer>
 
       </main>

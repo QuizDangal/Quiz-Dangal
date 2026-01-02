@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, Trophy, Crown } from 'lucide-react';
+import { Loader2, Trophy, Crown, ChevronDown } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -51,6 +51,7 @@ export default function Leaderboards() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAbout, setShowAbout] = useState(false);
 
   const loadLeaderboard = useCallback(async (p) => {
     // Check cache first (5 min TTL) - reduces RPC calls on free tier
@@ -561,10 +562,27 @@ export default function Leaderboards() {
           )}
         </div>
 
-        {/* SEO Content Section */}
-        <section className="mt-8 bg-slate-800/30 backdrop-blur-sm border border-slate-700/40 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">About Quiz Dangal Leaderboards</h2>
-          <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
+        {/* SEO Content Section - Collapsible */}
+        <section className="mt-8 bg-slate-800/30 backdrop-blur-sm border border-slate-700/40 rounded-xl overflow-hidden">
+          <button 
+            type="button"
+            onClick={() => setShowAbout(!showAbout)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-700/20 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-white">About Quiz Dangal Leaderboards</h2>
+            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${showAbout ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <AnimatePresence>
+            {showAbout && (
+              <m.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 pb-6 space-y-4 text-slate-300 text-sm leading-relaxed">
             <p>
               The Quiz Dangal Leaderboard showcases the top quiz players from across India. Our ranking system is designed to reward knowledge, speed, and consistency. Every correct answer you give in our daily quizzes contributes to your leaderboard score. Whether you are a casual player or a competitive quiz enthusiast, the leaderboard gives you a platform to showcase your skills.
             </p>
@@ -584,6 +602,9 @@ export default function Leaderboards() {
               Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing now, answer correctly, beat the clock, and see your name rise on the leaderboard! Check back regularly to track your progress and see how you compare against other players from across India.
             </p>
           </div>
+              </m.div>
+            )}
+          </AnimatePresence>
         </section>
       </div>
     </div>
