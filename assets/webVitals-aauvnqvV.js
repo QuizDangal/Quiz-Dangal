@@ -1,1 +1,0 @@
-import{_ as i}from"./supabase-BMIB7Fuo.js";import{l as r}from"./index-Bvf66Ja4.js";import"./react-DQQtrPfG.js";import"./router-D53U3OCX.js";import"./icons-r1jlw6dZ.js";async function p(){try{return}catch(o){}}export{p as initWebVitals};
