@@ -1,0 +1,95 @@
+# Quiz Dangal - Custom HTTP Headers for SEO & Security
+# These headers are applied by Netlify
+
+# ===== PRIVATE PAGES - Block from Search Engines =====
+/login
+  X-Robots-Tag: noindex, nofollow
+
+/login/*
+  X-Robots-Tag: noindex, nofollow
+
+/admin
+  X-Robots-Tag: noindex, nofollow
+
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+
+/reset-password
+  X-Robots-Tag: noindex, nofollow
+
+/reset-password/*
+  X-Robots-Tag: noindex, nofollow
+
+/profile
+  X-Robots-Tag: noindex, nofollow
+
+/profile/*
+  X-Robots-Tag: noindex, nofollow
+
+/wallet
+  X-Robots-Tag: noindex, nofollow
+
+/wallet/*
+  X-Robots-Tag: noindex, nofollow
+
+/rewards
+  X-Robots-Tag: noindex, nofollow
+
+/rewards/*
+  X-Robots-Tag: noindex, nofollow
+
+/redemptions
+  X-Robots-Tag: noindex, nofollow
+
+/redemptions/*
+  X-Robots-Tag: noindex, nofollow
+
+/my-quizzes
+  X-Robots-Tag: noindex, nofollow
+
+/my-quizzes/*
+  X-Robots-Tag: noindex, nofollow
+
+/refer
+  X-Robots-Tag: noindex, nofollow
+
+/refer/*
+  X-Robots-Tag: noindex, nofollow
+
+# ===== DYNAMIC ROUTES =====
+/quiz/*
+  X-Robots-Tag: noindex, nofollow
+
+/results/*
+  X-Robots-Tag: noindex, nofollow
+
+# ===== DEBUG ROUTES =====
+/debug/*
+  X-Robots-Tag: noindex, nofollow
+
+/notifications-debug
+  X-Robots-Tag: noindex, nofollow
+
+/notifications-debug/*
+  X-Robots-Tag: noindex, nofollow
+
+# ===== TECHNICAL FILES =====
+/404.html
+  X-Robots-Tag: noindex, nofollow
+
+/sw.js
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+
+/sw-register.js
+  X-Robots-Tag: noindex, nofollow
+
+/*.json
+  X-Robots-Tag: noindex, nofollow
+
+# ===== GLOBAL SECURITY HEADERS =====
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

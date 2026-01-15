@@ -1,20 +1,52 @@
+# Quiz Dangal robots.txt
+# Last updated: 2026-01-15
+
 User-agent: *
+
+# ===== PRIVATE USER PAGES (Never crawl) =====
 Disallow: /login
+Disallow: /login/
 Disallow: /admin
+Disallow: /admin/
 Disallow: /reset-password
+Disallow: /reset-password/
 Disallow: /profile
+Disallow: /profile/
 Disallow: /wallet
+Disallow: /wallet/
 Disallow: /rewards
+Disallow: /rewards/
 Disallow: /redemptions
+Disallow: /redemptions/
 Disallow: /my-quizzes
+Disallow: /my-quizzes/
+Disallow: /refer
+Disallow: /refer/
+
+# ===== DYNAMIC/APP ROUTES (User-specific, session-based) =====
 Disallow: /quiz/
 Disallow: /results/
-Disallow: /refer
+
+# ===== DEBUG/DEV ROUTES =====
 Disallow: /debug/
 Disallow: /notifications-debug
+Disallow: /notifications-debug/
+
+# ===== TECHNICAL FILES =====
+Disallow: /sw.js
+Disallow: /sw-register.js
+Disallow: /modulepreload-polyfill.js
+Disallow: /url-migrate.js
+Disallow: /env-config.js
+Disallow: /*.json$
+Disallow: /404.html
 
 # Note: /assets/ is NOT blocked - Google needs CSS/JS to render pages correctly
 
+# ===== CRAWL RATE LIMIT =====
+Crawl-delay: 1
+
+# ===== BLOCK AGGRESSIVE BOTS =====
 User-agent: AhrefsBot
 Disallow: /
 
@@ -24,4 +56,17 @@ Disallow: /
 User-agent: MJ12bot
 Disallow: /
 
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+# ===== SITEMAP =====
 Sitemap: https://quizdangal.com/sitemap.xml

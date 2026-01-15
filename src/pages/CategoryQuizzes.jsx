@@ -28,6 +28,18 @@ function categoryMeta(slug = '') {
       from: 'from-indigo-600/30',
       to: 'to-fuchsia-600/30',
       ring: 'ring-fuchsia-500/30',
+      description: 'Share your views and see if the majority agrees with you! Opinion quizzes on Quiz Dangal challenge your perspective on trending topics, current affairs, and popular debates.',
+      features: [
+        'Vote on trending topics and debates',
+        'See how your opinion matches the majority',
+        'Win prizes for popular opinions',
+        'New opinion polls every 10 minutes',
+      ],
+      faqs: [
+        { q: 'How do opinion quizzes work?', a: 'Answer questions based on your personal opinion. Points are awarded based on how your answers align with the majority response.' },
+        { q: 'When are new opinion quizzes available?', a: 'New opinion quizzes go live every 10 minutes, 24 hours a day. Each quiz lasts 5 minutes.' },
+        { q: 'Can I win real prizes?', a: 'Yes! Top performers in each quiz can win cash prizes and coins that can be redeemed.' },
+      ],
     };
   if (s.includes('gk'))
     return {
@@ -37,6 +49,18 @@ function categoryMeta(slug = '') {
       from: 'from-emerald-600/30',
       to: 'to-teal-600/30',
       ring: 'ring-emerald-500/30',
+      description: 'Test your General Knowledge with Quiz Dangal! From history to science, geography to current affairs - challenge yourself with diverse GK questions and compete for prizes.',
+      features: [
+        'Questions from history, science, geography & more',
+        'Competitive leaderboards with real prizes',
+        'Learn while you play and earn',
+        'Fresh GK questions every 10 minutes',
+      ],
+      faqs: [
+        { q: 'What topics are covered in GK quizzes?', a: 'Our GK quizzes cover a wide range of topics including history, geography, science, sports, politics, arts, and current affairs.' },
+        { q: 'How often are new GK quizzes added?', a: 'New GK quizzes are scheduled every 10 minutes throughout the day. Each quiz runs for 5 minutes.' },
+        { q: 'Are GK quiz answers verified?', a: 'Yes, all GK questions and answers are carefully verified for accuracy before being added to our platform.' },
+      ],
     };
   if (s.includes('sport'))
     return {
@@ -46,6 +70,18 @@ function categoryMeta(slug = '') {
       from: 'from-orange-600/30',
       to: 'to-red-600/30',
       ring: 'ring-orange-500/30',
+      description: 'Are you a true sports fan? Test your knowledge of Cricket, Football, Olympics, and more! Quiz Dangal sports quizzes cover everything from legendary matches to current tournaments.',
+      features: [
+        'Cricket, Football, Olympics & more',
+        'Questions on legends and current stars',
+        'Live sports trivia during matches',
+        'Win prizes with your sports knowledge',
+      ],
+      faqs: [
+        { q: 'Which sports are covered?', a: 'We cover all major sports including Cricket, Football, Tennis, Badminton, Hockey, Olympics, Wrestling, and more.' },
+        { q: 'Are there quizzes during live matches?', a: 'Yes! We often run special quizzes during major sporting events and tournaments with extra prizes.' },
+        { q: 'How can I improve my sports knowledge?', a: 'Play our quizzes regularly! Each question comes with the correct answer, helping you learn while you compete.' },
+      ],
     };
   if (s.includes('movie'))
     return {
@@ -55,6 +91,18 @@ function categoryMeta(slug = '') {
       from: 'from-violet-600/30',
       to: 'to-indigo-600/30',
       ring: 'ring-violet-500/30',
+      description: 'Bollywood, Hollywood, regional cinema - how well do you know your movies? Quiz Dangal movie quizzes test your knowledge of actors, directors, dialogues, and iconic scenes.',
+      features: [
+        'Bollywood, Hollywood & regional films',
+        'Questions on actors, directors & dialogues',
+        'Guess the movie from scenes or songs',
+        'Special quizzes on new releases',
+      ],
+      faqs: [
+        { q: 'What kind of movie questions are asked?', a: 'Questions range from identifying actors, famous dialogues, movie plots, songs, directors, awards, and box office facts.' },
+        { q: 'Are regional movies covered?', a: 'Yes! We include questions from South Indian, Bengali, Marathi, and other regional film industries.' },
+        { q: 'How do I join a movie quiz?', a: 'Simply click on any upcoming or live quiz on this page and press the JOIN button. The quiz will start at the scheduled time.' },
+      ],
     };
   return {
     title: `${slug} Quizzes`,
@@ -63,6 +111,18 @@ function categoryMeta(slug = '') {
     from: 'from-sky-600/30',
     to: 'to-indigo-600/30',
     ring: 'ring-sky-500/30',
+    description: 'Challenge yourself with exciting quizzes on Quiz Dangal! Compete with players across India and win real prizes.',
+    features: [
+      'New quizzes every 10 minutes',
+      'Win cash prizes and coins',
+      'Compete on leaderboards',
+      'Play anytime, anywhere',
+    ],
+    faqs: [
+      { q: 'How do I join a quiz?', a: 'Click on any upcoming quiz and press JOIN. The quiz will start at the scheduled time.' },
+      { q: 'How long is each quiz?', a: 'Each quiz lasts 5 minutes with a 5 minute break between quizzes.' },
+      { q: 'Is it free to play?', a: 'Yes! You can join and play quizzes for free. Some premium quizzes may have entry fees with bigger prizes.' },
+    ],
   };
 }
 
@@ -636,6 +696,9 @@ const CategoryQuizzes = () => {
       ? `${window.location.origin}/category/${slug}/`
       : `https://quizdangal.com/category/${slug}/`;
 
+  // Always index - we now have rich static content (FAQ, features, how-it-works) even when no quizzes are live
+  // This ensures Google sees valuable content regardless of when it crawls
+
   return (
     <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
       <SeoHead
@@ -646,7 +709,7 @@ const CategoryQuizzes = () => {
         alternateLocales={['hi_IN', 'en_US']}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-01-15"
         jsonLd={[{
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
@@ -715,8 +778,95 @@ const CategoryQuizzes = () => {
                   {displaySlots.map((slot) => renderSlotCard(slot, null))}
                 </div>
               ) : (
-                <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6 text-center text-sm sm:text-base text-slate-400">
-                  No quizzes scheduled yet.
+                /* Rich static content when no quizzes are live - helps SEO & AdSense */
+                <div className="space-y-6">
+                  {/* Next quiz coming soon banner */}
+                  <div className="rounded-xl sm:rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-900/40 to-violet-900/40 p-4 sm:p-6 text-center">
+                    <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-indigo-400" />
+                    <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Next Quiz Starting Soon!</h2>
+                    <p className="text-sm sm:text-base text-slate-300 mb-3">
+                      Quizzes run every 10 minutes. The next {meta.title.replace(' Quizzes', '')} quiz will start shortly.
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-400">
+                      Refresh this page or wait for the countdown to appear.
+                    </p>
+                  </div>
+
+                  {/* Category description */}
+                  {meta.description && (
+                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
+                      <h2 className="text-base sm:text-lg font-semibold text-white mb-3">About {meta.title}</h2>
+                      <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                        {meta.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Features grid */}
+                  {meta.features && meta.features.length > 0 && (
+                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
+                      <h2 className="text-base sm:text-lg font-semibold text-white mb-4">Why Play {meta.title}?</h2>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {meta.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800/50">
+                            <span className="text-emerald-400 mt-0.5">✓</span>
+                            <span className="text-sm text-slate-300">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FAQ Section */}
+                  {meta.faqs && meta.faqs.length > 0 && (
+                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
+                      <h2 className="text-base sm:text-lg font-semibold text-white mb-4">Frequently Asked Questions</h2>
+                      <div className="space-y-4">
+                        {meta.faqs.map((faq, idx) => (
+                          <div key={idx} className="border-b border-slate-700/50 pb-4 last:border-0 last:pb-0">
+                            <h3 className="text-sm sm:text-base font-medium text-white mb-2">{faq.q}</h3>
+                            <p className="text-sm text-slate-400">{faq.a}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* How it works */}
+                  <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
+                    <h2 className="text-base sm:text-lg font-semibold text-white mb-4">How Quiz Dangal Works</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
+                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-indigo-600/30 flex items-center justify-center text-xl">1</div>
+                        <h3 className="font-medium text-white mb-1">Join a Quiz</h3>
+                        <p className="text-xs text-slate-400">Click JOIN when a quiz is live or upcoming</p>
+                      </div>
+                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
+                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-violet-600/30 flex items-center justify-center text-xl">2</div>
+                        <h3 className="font-medium text-white mb-1">Answer Questions</h3>
+                        <p className="text-xs text-slate-400">You have 5 minutes to answer all questions</p>
+                      </div>
+                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
+                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-emerald-600/30 flex items-center justify-center text-xl">3</div>
+                        <h3 className="font-medium text-white mb-1">Win Prizes</h3>
+                        <p className="text-xs text-slate-400">Top 3 players win cash prizes & coins</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quiz schedule info */}
+                  <div className="rounded-xl sm:rounded-2xl border border-amber-500/20 bg-amber-900/10 p-4 sm:p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">📅</span>
+                      <div>
+                        <h3 className="font-medium text-amber-200 mb-1">Quiz Schedule</h3>
+                        <p className="text-sm text-slate-300">
+                          {meta.title} run every 10 minutes, 24 hours a day. Each quiz is 5 minutes long with a 5 minute break between quizzes. 
+                          Check back regularly for the next live quiz!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </>
@@ -732,8 +882,27 @@ const CategoryQuizzes = () => {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-muted-foreground py-16">
-          No quizzes in this category yet.
+        /* Rich static content for non-slot mode empty state */
+        <div className="space-y-6">
+          <div className="rounded-xl sm:rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-900/40 to-violet-900/40 p-4 sm:p-6 text-center">
+            <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-indigo-400" />
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Quizzes Coming Soon!</h2>
+            <p className="text-sm sm:text-base text-slate-300">
+              {meta.description || `New ${meta.title} are added regularly. Check back soon!`}
+            </p>
+          </div>
+          {meta.features && (
+            <div className="rounded-xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-white mb-3">What to Expect</h2>
+              <ul className="space-y-2">
+                {meta.features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                    <span className="text-emerald-400">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

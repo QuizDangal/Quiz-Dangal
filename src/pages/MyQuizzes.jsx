@@ -15,115 +15,7 @@ import {
 import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
 // LeaderboardDisplay removed (unused)
-
-const GoldTrophy = ({ size = 72, centered = false, fitParent = false }) => {
-  const px = typeof size === 'number' ? `${size}px` : size;
-  const intrinsicSize =
-    typeof size === 'number' ? size : Number.parseInt(String(size || ''), 10) || 96;
-  const [srcIdx, setSrcIdx] = useState(0);
-  const sources = [
-    `${import.meta.env.BASE_URL}Trophy.png`, // provided image (preferred)
-    `${import.meta.env.BASE_URL}trophy.png`, // lowercase fallback just in case
-    `${import.meta.env.BASE_URL}trophy-question.png`,
-    `${import.meta.env.BASE_URL}trophy-question.webp`,
-  ];
-  const src = sources[srcIdx] || sources[0];
-
-  // Directly use provided transparent image; no processing to ensure perfect blending
-  return (
-    <div
-      className={`relative trophy-float pointer-events-none${centered ? '' : ' mx-auto mb-4'}`}
-      style={{ width: fitParent ? '100%' : px, height: fitParent ? '100%' : px }}
-    >
-      <div className="trophy-sway w-full h-full">
-        <div className="trophy-pulse w-full h-full">
-          {srcIdx >= 0 ? (
-            <img
-              src={src}
-              alt="Trophy"
-              className="w-full h-full object-contain select-none"
-              width={intrinsicSize}
-              height={intrinsicSize}
-              style={{
-                backgroundColor: 'transparent',
-                display: 'block',
-                maxWidth: '96px',
-                maxHeight: '96px',
-              }}
-              loading="eager"
-              decoding="async"
-              sizes="(max-width: 640px) 64px, 96px"
-              onError={() => {
-                const next = srcIdx + 1;
-                if (next < sources.length) setSrcIdx(next);
-                else setSrcIdx(-1);
-              }}
-            />
-          ) : (
-            <svg
-              viewBox="0 0 128 128"
-              width="100%"
-              height="100%"
-              preserveAspectRatio="xMidYMid meet"
-              aria-hidden
-            >
-              <defs>
-                <linearGradient id="qdTg" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#ffe795" />
-                  <stop offset="45%" stopColor="#ffd34d" />
-                  <stop offset="75%" stopColor="#f0a700" />
-                  <stop offset="100%" stopColor="#b86a00" />
-                </linearGradient>
-                <linearGradient id="qdQM" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#6d28d9" />
-                  <stop offset="100%" stopColor="#7c3aed" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M28 30c-10 0-18 10-16 20 2 10 14 14 24 11"
-                fill="none"
-                stroke="#f0b000"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M100 30c10 0 18 10 16 20-2 10-14 14-24 11"
-                fill="none"
-                stroke="#f0b000"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M28 22h72c0 24-10 36-26 41v9c0 7-6 13-14 13s-14-6-14-13v-9C38 58 28 46 28 22Z"
-                fill="url(#qdTg)"
-              />
-              <rect x="56" y="72" width="16" height="10" rx="3" fill="url(#qdTg)" />
-              <rect x="44" y="82" width="40" height="12" rx="4" fill="url(#qdTg)" />
-              <rect x="36" y="94" width="56" height="10" rx="5" fill="url(#qdTg)" />
-              <text
-                x="64"
-                y="46"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="32"
-                fontWeight="900"
-                fill="url(#qdQM)"
-                stroke="#2b1a59"
-                strokeWidth="3"
-                paintOrder="stroke fill"
-              >
-                ?
-              </text>
-            </svg>
-          )}
-        </div>
-      </div>
-      {/* overlays removed to avoid altering section background */}
-    </div>
-  );
-};
+// GoldTrophy removed (unused)
 
 const MyQuizzes = () => {
   const navigate = useNavigate();
@@ -579,182 +471,187 @@ const MyQuizzes = () => {
 
   if (quizzes.length === 0) {
     return (
-      <div className="relative pt-14 mx-auto max-w-5xl px-4 py-2">
-        {/* Animated Background */}
+      <div className="fixed inset-0 flex items-center justify-center overflow-hidden">
+        {/* Original Animated Background Orbs */}
         <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
           <m.div 
-            className="absolute top-10 -left-10 w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/25 via-pink-500/20 to-purple-600/25 blur-[80px]"
-            animate={{ x: [0, 40, 0], y: [0, 30, 0], scale: [1, 1.2, 1] }}
+            className="absolute top-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-br from-orange-500/20 via-pink-500/15 to-purple-600/20 blur-[80px]"
+            animate={{ x: [0, 30, 0], y: [0, 20, 0], scale: [1, 1.1, 1] }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <m.div 
-            className="absolute top-1/3 -right-10 w-72 h-72 rounded-full bg-gradient-to-br from-violet-600/25 via-blue-500/20 to-cyan-500/25 blur-[90px]"
-            animate={{ x: [0, -35, 0], y: [0, 40, 0], scale: [1.1, 1, 1.1] }}
+            className="absolute top-1/3 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-violet-600/20 via-blue-500/15 to-cyan-500/20 blur-[90px]"
+            animate={{ x: [0, -25, 0], y: [0, 30, 0], scale: [1.1, 1, 1.1] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           <m.div 
-            className="absolute bottom-20 left-1/3 w-56 h-56 rounded-full bg-gradient-to-br from-emerald-500/20 via-teal-500/15 to-cyan-500/20 blur-[70px]"
-            animate={{ x: [0, 25, 0], y: [0, -25, 0], scale: [1, 1.15, 1] }}
+            className="absolute bottom-40 left-1/4 w-56 h-56 rounded-full bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-cyan-500/15 blur-[70px]"
+            animate={{ x: [0, 20, 0], y: [0, -20, 0], scale: [1, 1.15, 1] }}
             transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
           />
         </div>
-        
-        <div className="container mx-auto px-4 py-2 max-w-lg relative z-10">
-          <div className="flex items-start justify-center pt-2">
-              <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative text-center text-slate-100 p-2"
-              >
-                {/* Animated Header */}
-                <m.div 
-                  className="mb-4"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <div className="inline-flex items-center gap-3">
-                    <m.div
-                      animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <Trophy className="w-9 h-9 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.7)]" />
-                    </m.div>
-                    <h1 className="text-3xl font-black bg-gradient-to-r from-orange-300 via-pink-300 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
-                      My Quizzes
-                    </h1>
-                  </div>
-                </m.div>
 
-                {/* Premium Empty State Card */}
-                <m.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="relative max-w-sm mx-auto"
-                >
-                  {/* Animated Floating Orbs */}
-                  <m.div 
-                    className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 opacity-25 blur-2xl"
-                    animate={{ scale: [1, 1.3, 1], x: [0, 10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  <m.div 
-                    className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 opacity-25 blur-2xl"
-                    animate={{ scale: [1.2, 1, 1.2], x: [0, -10, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  
-                  <div className="relative rounded-3xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(251,146,60,0.15), rgba(236,72,153,0.15), rgba(168,85,247,0.15))', padding: '2px' }}>
-                    <div className="rounded-3xl bg-gradient-to-b from-slate-800/95 to-slate-900/98 backdrop-blur-xl px-6 py-10 overflow-hidden relative">
-                      {/* Animated border glow */}
-                      <m.div 
-                        className="absolute inset-0 rounded-3xl"
-                        style={{ background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.4), rgba(168,85,247,0.3), transparent)' }}
-                        animate={{ x: ['-100%', '100%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
-                      />
-                      
-                      {/* Sparkle particles */}
-                      <m.div 
-                        className="absolute top-4 right-8 w-2 h-2 rounded-full bg-orange-400"
-                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: 0 }}
-                      />
-                      <m.div 
-                        className="absolute top-12 left-6 w-1.5 h-1.5 rounded-full bg-pink-400"
-                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                      />
-                      <m.div 
-                        className="absolute bottom-16 right-6 w-1 h-1 rounded-full bg-violet-400"
-                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                      />
-                      <m.div 
-                        className="absolute top-1/2 left-4 w-1.5 h-1.5 rounded-full bg-cyan-400"
-                        animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
-                      />
-                      
-                      {/* Trophy with animated ring */}
-                      <div className="relative mx-auto mb-6 w-24 h-24">
-                        <m.div 
-                          className="absolute inset-0 rounded-full"
-                          style={{ border: '2px dashed', borderImage: 'linear-gradient(135deg, #f97316, #ec4899, #8b5cf6) 1' }}
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-                        />
-                        <m.div 
-                          className="absolute inset-2 rounded-full bg-gradient-to-br from-orange-400 via-pink-500 to-violet-500 p-[3px]"
-                          animate={{ scale: [1, 1.08, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          <div className="w-full h-full rounded-full grid place-items-center bg-slate-900">
-                            <m.div
-                              animate={{ rotate: [0, 10, -10, 0] }}
-                              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                          >
-                            <GoldTrophy centered fitParent />
-                          </m.div>
-                        </div>
-                      </m.div>
-                    </div>
+        {/* Content */}
+        <m.div 
+          className="relative z-10 text-center px-6"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* 3D Isometric Illustration */}
+          <m.div 
+            className="relative w-44 h-44 mx-auto mb-5"
+            animate={{ 
+              y: [0, -10, 0],
+              rotateY: [0, 5, 0, -5, 0]
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {/* Animated Glow behind */}
+            <m.div 
+              className="absolute inset-0 bg-gradient-to-b from-violet-500/40 via-pink-500/30 to-cyan-500/20 blur-3xl scale-150"
+              animate={{ 
+                opacity: [0.5, 0.8, 0.5],
+                scale: [1.4, 1.6, 1.4]
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            
+            <svg viewBox="0 0 160 160" className="w-full h-full relative z-10" fill="none">
+              <defs>
+                {/* Gradients */}
+                <linearGradient id="isoTop" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#c4b5fd"/>
+                  <stop offset="100%" stopColor="#a78bfa"/>
+                </linearGradient>
+                <linearGradient id="isoLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7c3aed"/>
+                  <stop offset="100%" stopColor="#5b21b6"/>
+                </linearGradient>
+                <linearGradient id="isoRight" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#8b5cf6"/>
+                  <stop offset="100%" stopColor="#6d28d9"/>
+                </linearGradient>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#fcd34d"/>
+                  <stop offset="50%" stopColor="#fbbf24"/>
+                  <stop offset="100%" stopColor="#f59e0b"/>
+                </linearGradient>
+                <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#f472b6"/>
+                  <stop offset="100%" stopColor="#ec4899"/>
+                </linearGradient>
+                <linearGradient id="lineGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#22d3ee"/>
+                  <stop offset="100%" stopColor="#06b6d4"/>
+                </linearGradient>
+                <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#7c3aed" floodOpacity="0.35"/>
+                </filter>
+              </defs>
+              
+              {/* 3D Isometric Clipboard */}
+              <g filter="url(#softShadow)" transform="translate(80, 85)">
+                {/* Back face (left) */}
+                <path d="M-35 -50 L-35 45 L0 65 L0 -30 Z" fill="url(#isoLeft)"/>
+                {/* Back face (right) */}
+                <path d="M0 -30 L0 65 L35 45 L35 -50 Z" fill="url(#isoRight)"/>
+                {/* Top face */}
+                <path d="M-35 -50 L0 -70 L35 -50 L0 -30 Z" fill="url(#isoTop)"/>
+                
+                {/* Clip holder - 3D */}
+                <g transform="translate(0, -60)">
+                  <path d="M-12 -8 L0 -14 L12 -8 L12 4 L0 10 L-12 4 Z" fill="url(#goldGrad)"/>
+                  <ellipse cx="0" cy="-2" rx="4" ry="3" fill="#92400e"/>
+                </g>
+                
+                {/* Content lines on front face */}
+                <g transform="translate(-25, -25)">
+                  <rect x="0" y="0" width="28" height="4" rx="2" fill="url(#lineGrad1)" opacity="0.9">
+                    <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+                  </rect>
+                  <rect x="0" y="12" width="22" height="4" rx="2" fill="#a78bfa" opacity="0.8">
+                    <animate attributeName="opacity" values="1;0.6;1" dur="2.2s" repeatCount="indefinite"/>
+                  </rect>
+                  <rect x="0" y="24" width="25" height="4" rx="2" fill="url(#lineGrad2)" opacity="0.85">
+                    <animate attributeName="opacity" values="0.7;1;0.7" dur="1.8s" repeatCount="indefinite"/>
+                  </rect>
+                  <rect x="0" y="36" width="18" height="4" rx="2" fill="#fbbf24" opacity="0.75">
+                    <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.5s" repeatCount="indefinite"/>
+                  </rect>
+                </g>
+                
+                {/* Question mark */}
+                <text x="5" y="35" fontSize="24" fontWeight="bold" fill="#ddd6fe" opacity="0.4">?</text>
+              </g>
+              
+              {/* Floating elements */}
+              <g>
+                {/* Star */}
+                <path d="M130 30 L132 36 L138 38 L132 40 L130 46 L128 40 L122 38 L128 36 Z" fill="#fbbf24">
+                  <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+                  <animateTransform attributeName="transform" type="rotate" from="0 130 38" to="360 130 38" dur="6s" repeatCount="indefinite"/>
+                </path>
+                
+                {/* Small star */}
+                <path d="M25 50 L26.5 54 L31 55.5 L26.5 57 L25 61 L23.5 57 L19 55.5 L23.5 54 Z" fill="#ec4899">
+                  <animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite"/>
+                  <animateTransform attributeName="transform" type="rotate" from="360 25 55.5" to="0 25 55.5" dur="5s" repeatCount="indefinite"/>
+                </path>
+                
+                {/* Dots */}
+                <circle cx="140" cy="100" r="4" fill="#22d3ee">
+                  <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="20" cy="110" r="3" fill="#f472b6">
+                  <animate attributeName="r" values="2;4;2" dur="2.5s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="1;0.5;1" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="135" cy="130" r="2.5" fill="#a78bfa">
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="1.5s" repeatCount="indefinite"/>
+                </circle>
+              </g>
+            </svg>
+          </m.div>
 
-                      <h3 className="text-2xl font-black bg-gradient-to-r from-orange-300 via-pink-300 to-violet-400 bg-clip-text text-transparent">
-                        No Quizzes Yet
-                      </h3>
-                      <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-                        Start your journey! Join your first quiz and climb the leaderboard.
-                      </p>
+          {/* Text */}
+          <m.p 
+            className="text-base text-slate-400 mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            No Quizzes Joined
+          </m.p>
 
-                      {/* Animated Feature chips */}
-                      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                        {[
-                          { icon: '🎯', text: 'Daily Quizzes', gradient: 'from-orange-500/20 to-pink-500/10', border: 'border-orange-500/40', textColor: 'text-orange-300' },
-                          { icon: '🪙', text: 'Win Coins', gradient: 'from-amber-500/20 to-yellow-500/10', border: 'border-amber-500/40', textColor: 'text-amber-300' },
-                          { icon: '🏆', text: 'Leaderboards', gradient: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-500/40', textColor: 'text-emerald-300' },
-                        ].map((chip, i) => (
-                          <m.span 
-                            key={chip.text}
-                            className={`px-3 py-1.5 rounded-full border ${chip.border} bg-gradient-to-r ${chip.gradient} ${chip.textColor} text-xs font-semibold`}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + i * 0.1 }}
-                            whileHover={{ scale: 1.08, y: -2 }}
-                          >
-                            {chip.icon} {chip.text}
-                          </m.span>
-                        ))}
-                      </div>
-
-                      {/* Premium Explore button */}
-                      <m.button
-                        onClick={() => navigate('/')}
-                        className="relative mt-6 w-full py-3.5 rounded-xl text-white font-bold text-sm overflow-hidden group"
-                        style={{ 
-                          background: 'linear-gradient(135deg, #f97316 0%, #ec4899 35%, #8b5cf6 65%, #6366f1 100%)',
-                          backgroundSize: '200% 100%',
-                          boxShadow: '0 4px 20px rgba(236, 72, 153, 0.35), 0 0 30px -5px rgba(139, 92, 246, 0.3)'
-                        }}
-                        whileHover={{ scale: 1.02, backgroundPosition: '100% 50%' }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <span className="relative z-10">🚀 Explore Quizzes</span>
-                        <m.div 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                          animate={{ x: ['-100%', '100%'] }}
-                          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
-                        />
-                      </m.button>
-                    </div>
-                  </div>
-                </m.div>
-              </m.div>
-            </div>
-          </div>
-        </div>
+          {/* Button */}
+          <m.button
+            onClick={() => navigate('/')}
+            className="relative px-8 py-3.5 rounded-xl font-semibold text-white overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #7c3aed, #db2777, #ea580c)',
+              boxShadow: '0 8px 32px -8px rgba(124, 58, 237, 0.5)',
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            whileHover={{ scale: 1.02, boxShadow: '0 12px 40px -8px rgba(124, 58, 237, 0.6)' }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {/* Shimmer */}
+            <m.div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12"
+              animate={{ x: ['-200%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 2 }}
+            />
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <span>🎯</span>
+              <span>Explore Quizzes</span>
+            </span>
+          </m.button>
+        </m.div>
+      </div>
     );
   }
 

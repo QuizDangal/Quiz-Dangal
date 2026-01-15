@@ -9,7 +9,12 @@
  * - Auto-updates lastmod dates
  * - Supports hreflang for multilingual SEO
  * - Proper priority and changefreq settings
- * - Extensible for dynamic routes
+ * - Only includes PUBLIC, indexable pages
+ * 
+ * IMPORTANT: Never add private/user pages here:
+ * - /login, /profile, /wallet, /redemptions, /my-quizzes
+ * - /quiz/:id, /results/:id (dynamic user routes)
+ * - /admin, /debug, /refer
  */
 
 import { writeFileSync } from 'fs';
@@ -23,48 +28,50 @@ const SITE_URL = 'https://quizdangal.com';
 const today = new Date().toISOString().split('T')[0];
 
 /**
- * Static pages configuration
- * Add new pages here as the site grows
+ * Static pages configuration - ONLY PUBLIC INDEXABLE PAGES
+ * DO NOT add user-specific or private routes here!
+ * 
+ * lastmod: Only update when actual content changes on the page
  */
 const staticPages = [
-  // High priority pages
-  { path: '/', priority: 1.0, changefreq: 'weekly', hreflang: ['en', 'hi', 'x-default'] },
-  { path: '/leaderboards/', priority: 0.8, changefreq: 'weekly' },
+  // ===== HIGH PRIORITY - Main landing pages =====
+  { path: '/', priority: 1.0, changefreq: 'daily', lastmod: '2026-01-15', hreflang: ['en', 'hi', 'x-default'] }, // Updated: sections removed
+  { path: '/leaderboards/', priority: 0.8, changefreq: 'daily', lastmod: '2025-12-29' },
   
-  // SEO landing pages
-  { path: '/play-win-quiz-app/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/opinion-quiz-app/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/refer-earn-quiz-app/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-questions/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-questions-with-answers/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/gk-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/gk-questions/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/general-knowledge-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/hindi-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/english-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/online-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/science-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/current-affairs-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/maths-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-game/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-competition/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-app/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/quiz-for-kids/', priority: 0.6, changefreq: 'weekly' },
-  { path: '/india-quiz/', priority: 0.6, changefreq: 'weekly' },
-  { path: '/sports-quiz/', priority: 0.7, changefreq: 'weekly' },
-  { path: '/cricket-quiz/', priority: 0.7, changefreq: 'weekly' },
+  // ===== SEO LANDING PAGES - Quiz keywords =====
+  { path: '/play-win-quiz-app/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/opinion-quiz-app/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/refer-earn-quiz-app/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-questions/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-questions-with-answers/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/gk-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/gk-questions/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/general-knowledge-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/hindi-quiz/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/english-quiz/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/online-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/science-quiz/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/current-affairs-quiz/', priority: 0.8, changefreq: 'daily', lastmod: '2025-12-29' },
+  { path: '/maths-quiz/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-game/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-competition/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-app/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/quiz-for-kids/', priority: 0.6, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/india-quiz/', priority: 0.7, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/sports-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
+  { path: '/cricket-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2025-12-29' },
   
-  // Category pages (daily updated)
-  { path: '/category/opinion', priority: 0.7, changefreq: 'daily' },
-  { path: '/category/gk', priority: 0.7, changefreq: 'daily' },
-  { path: '/category/sports', priority: 0.6, changefreq: 'daily' },
-  { path: '/category/movies', priority: 0.6, changefreq: 'daily' },
+  // ===== CATEGORY PAGES - Updated with rich static content =====
+  { path: '/category/opinion/', priority: 0.8, changefreq: 'daily', lastmod: '2026-01-15' }, // Updated: static content added
+  { path: '/category/gk/', priority: 0.8, changefreq: 'daily', lastmod: '2026-01-15' }, // Updated: static content added
+  { path: '/category/sports/', priority: 0.7, changefreq: 'daily', lastmod: '2026-01-15' }, // Updated: static content added
+  { path: '/category/movies/', priority: 0.7, changefreq: 'daily', lastmod: '2026-01-15' }, // Updated: static content added
   
-  // Info pages
-  { path: '/about-us/', priority: 0.6, changefreq: 'monthly' },
-  { path: '/contact-us/', priority: 0.6, changefreq: 'monthly' },
-  { path: '/terms-conditions/', priority: 0.5, changefreq: 'yearly' },
-  { path: '/privacy-policy/', priority: 0.5, changefreq: 'yearly' },
+  // ===== INFORMATIONAL PAGES =====
+  { path: '/about-us/', priority: 0.5, changefreq: 'monthly', lastmod: '2025-12-29' },
+  { path: '/contact-us/', priority: 0.5, changefreq: 'monthly', lastmod: '2025-12-29' },
+  { path: '/terms-conditions/', priority: 0.3, changefreq: 'yearly', lastmod: '2025-12-29' },
+  { path: '/privacy-policy/', priority: 0.3, changefreq: 'yearly', lastmod: '2025-12-29' },
 ];
 
 /**

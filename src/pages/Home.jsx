@@ -1,13 +1,11 @@
 // 🔥 QUIZ DANGAL - Ultimate Gaming Home
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import SeoHead from '@/components/SEO';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   MessageSquare, Brain, Trophy, Clapperboard, 
-  Crown, ArrowRight, Star, 
-  UserPlus, Gamepad2, HelpCircle,
-  Sparkles, Zap
+  Crown, ArrowRight
 } from 'lucide-react';
 import { getSupabase } from '@/lib/customSupabaseClient';
 
@@ -114,7 +112,7 @@ const HOME_JSON_LD = [
     author: { '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
     publisher: { '@type': 'Organization', name: 'Quiz Dangal' },
     datePublished: '2025-01-01',
-    dateModified: '2025-12-29',
+    dateModified: '2026-01-15',
     inLanguage: ['en-IN', 'hi-IN'],
     featureList: 'Daily Quizzes, Opinion Polls, GK Quizzes, Sports Quizzes, Movie Quizzes, Leaderboards, Coin Rewards, Referral Program',
     audience: { '@type': 'PeopleAudience', suggestedMinAge: 18 },
@@ -177,48 +175,6 @@ const CategoryCard = ({ cat, index, onPlay }) => {
   );
 };
 
-// How It Works Steps
-const HOW_IT_WORKS = [
-  { step: 1, icon: UserPlus, title: '🚀 Sign Up Free', desc: 'Create your account in just 10 seconds - 100% free, no payment ever!', gradient: 'from-emerald-400 to-cyan-500', highlight: 'FREE' },
-  { step: 2, icon: Gamepad2, title: '🎮 Pick a Quiz', desc: 'Choose from 4 exciting categories - Opinion, GK, Sports & Movies', gradient: 'from-violet-500 to-purple-600', highlight: '4 CATEGORIES' },
-  { step: 3, icon: Zap, title: '⚡ Play & Score', desc: 'Answer fast & correctly to earn maximum coins. Speed = More Points!', gradient: 'from-amber-400 to-orange-500', highlight: 'SPEED BONUS' },
-  { step: 4, icon: Trophy, title: '🏆 Win Rewards', desc: 'Climb leaderboards, maintain streaks & redeem coins for real prizes!', gradient: 'from-pink-500 to-rose-500', highlight: 'REAL PRIZES' },
-];
-
-// FAQ Accordion Item - with Schema.org microdata for AI/LLM citation
-const FAQItem = ({ question, answer, isOpen, onClick, index }) => {
-  const answerId = `faq-answer-${index}`;
-  
-  return (
-    <div 
-      className={`qdh-faq-item ${isOpen ? 'qdh-faq-open' : ''}`}
-    >
-      <button 
-        type="button"
-        className="qdh-faq-question" 
-        onClick={onClick}
-        aria-expanded={isOpen}
-        aria-controls={answerId}
-      >
-        <div className="qdh-faq-q-content">
-          <span className="qdh-faq-number">{index + 1}</span>
-          <span className="qdh-faq-q-text">{question}</span>
-        </div>
-        <div className={`qdh-faq-chevron ${isOpen ? 'qdh-chevron-open' : ''}`}>
-          <ArrowRight className="w-4 h-4" />
-        </div>
-      </button>
-      <div 
-        id={answerId}
-        className={`qdh-faq-answer ${isOpen ? 'qdh-answer-open' : ''}`} 
-        data-speakable="true"
-      >
-        <p>{answer}</p>
-      </div>
-    </div>
-  );
-};
-
 // PropTypes
 CategoryCard.propTypes = {
   cat: PropTypes.shape({
@@ -232,18 +188,9 @@ CategoryCard.propTypes = {
   onPlay: PropTypes.func.isRequired,
 };
 
-FAQItem.propTypes = {
-  question: PropTypes.string.isRequired,
-  answer: PropTypes.string.isRequired,
-  isOpen: PropTypes.bool.isRequired,
-  onClick: PropTypes.func.isRequired,
-  index: PropTypes.number.isRequired,
-};
-
 const Home = () => {
   const navigate = useNavigate();
-  const [mounted, setMounted] = useState(false);
-  const [openFAQ, setOpenFAQ] = useState(null);
+  const [mounted, setMounted] = React.useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 100);
@@ -269,7 +216,7 @@ const Home = () => {
         jsonLd={HOME_JSON_LD}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-01-15"
       />
 
       {/* Animated background elements */}
@@ -305,9 +252,7 @@ const Home = () => {
           
           {/* Animated subtitle */}
           <div className="qdh-subtitle">
-            <Star className="qdh-subtitle-star" />
             <span>India&apos;s #1 Quiz Arena</span>
-            <Star className="qdh-subtitle-star" />
           </div>
         </section>
 
@@ -325,65 +270,6 @@ const Home = () => {
           <div className="qdh-decor-line" />
         </div>
 
-        {/* Section Divider */}
-        <div className="qdh-section-divider">
-          <div className="qdh-divider-lines">
-            <div className="qdh-divider-icon">
-              <Star className="w-5 h-5" />
-            </div>
-          </div>
-          <span className="qdh-divider-label">Explore More</span>
-        </div>
-
-        {/* How It Works Section */}
-        <section className="qdh-how-it-works">
-          <h2 className="qdh-section-title">
-            <div className="qdh-section-icon">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <span>How To Play & Win</span>
-          </h2>
-          <p className="qdh-section-subtitle">🎯 Start earning rewards in just 4 easy steps!</p>
-          <div className="qdh-steps-grid">
-            {HOW_IT_WORKS.map((item, idx) => {
-              const StepIcon = item.icon;
-              return (
-                <div key={item.step} className="qdh-step-card" style={{ '--step-delay': `${idx * 0.1}s` }}>
-                  <div className={`qdh-step-icon-box bg-gradient-to-br ${item.gradient}`}>
-                    <StepIcon className="w-6 h-6 text-white" strokeWidth={2.5} />
-                    <div className="qdh-step-glow" />
-                  </div>
-                  <h3 className="qdh-step-title">{item.title}</h3>
-                  <p className="qdh-step-desc">{item.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="qdh-faq-section">
-          <h2 className="qdh-section-title">
-            <div className="qdh-section-icon">
-              <HelpCircle className="w-5 h-5" />
-            </div>
-            <span>Got Questions?</span>
-          </h2>
-          <p className="qdh-section-subtitle">💡 Everything you need to know about Quiz Dangal</p>
-          <div className="qdh-faq-list">
-            {HOME_FAQ_ENTRIES.map((item, index) => (
-              <FAQItem
-                key={item.question}
-                question={item.question}
-                answer={item.answer}
-                isOpen={openFAQ === index}
-                onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
-                index={index}
-              />
-            ))}
-          </div>
-        </section>
-
         {/* Footer Links */}
         <footer className="qdh-footer">
           <div className="qdh-footer-links">
@@ -392,12 +278,12 @@ const Home = () => {
             <Link to="/privacy-policy/">Privacy</Link>
             <Link to="/terms-conditions/">Terms</Link>
           </div>
-          <p className="qdh-footer-copy">© {new Date().getFullYear()} Quiz Dangal 🇮🇳 Made in India</p>
+          <p className="qdh-footer-copy">© {new Date().getFullYear()} Quiz Dangal</p>
         </footer>
 
       </main>
 
-      {/* Hidden SEO Content */}
+      {/* Hidden SEO Content - keeps FAQ schema for search engines */}
       <div className="sr-only">
         {HOME_FAQ_ENTRIES.map((item) => (
           <div key={item.question}><h3>{item.question}</h3><p>{item.answer}</p></div>

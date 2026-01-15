@@ -13,6 +13,12 @@ test.describe('Login Page', () => {
   test('should show validation errors for empty form', async ({ page }) => {
     await page.goto('/login');
     
+    // Dismiss cookie popup if visible
+    const cookieAccept = page.locator('button:has-text("Accept")');
+    if (await cookieAccept.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await cookieAccept.click();
+    }
+    
     // Try to submit empty form
     const submitButton = page.locator('button[type="submit"]');
     await submitButton.click();

@@ -211,8 +211,6 @@ function App() {
             <meta name="author" content="Quiz Dangal" />
             <meta name="creator" content="Quiz Dangal" />
             <meta name="publisher" content="Quiz Dangal" />
-            <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-            <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
             <meta name="rating" content="General" />
             <meta name="distribution" content="global" />
             <meta name="revisit-after" content="3 days" />
