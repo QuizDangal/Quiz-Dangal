@@ -26,7 +26,7 @@ const Login = () => {
   const auth = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { signUp, signIn } = auth;
+  const { signUp, signIn, user } = auth;
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +44,13 @@ const Login = () => {
   // Get redirect path from state (if user was redirected from protected route)
   const redirectTo = location.state?.from || '/';
   const loginMessage = location.state?.message;
+
+  // If user is already logged in, redirect to home
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   // Show message if redirected from a page requiring login
   useEffect(() => {
