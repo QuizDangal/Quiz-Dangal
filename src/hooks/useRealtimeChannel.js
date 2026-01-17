@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
 // - Optional telemetry logging (env flag VITE_REALTIME_DEBUG or debug prop)
 // Parameters (existing kept backwards compatible):
 // enabled, channelName, event, schema, table, filter, onChange, joinTimeoutMs
-// New optional params: maxRetries, baseDelayMs, maxDelayMs, debug
+// New optional params: maxRetries, baseDelayMs, maxDelayMs, debug, changes
 export function useRealtimeChannel({
   enabled = true,
   channelName,
@@ -23,6 +23,9 @@ export function useRealtimeChannel({
   baseDelayMs = 800,
   maxDelayMs = 10000,
   debug,
+  // Optional: multiple postgres_changes bindings on a single channel.
+  // Each item: { event?: string, schema?: string, table: string, filter?: string }
+  changes,
 }) {
   const attemptRef = useRef(0);
   const removedRef = useRef(false);
@@ -30,11 +33,21 @@ export function useRealtimeChannel({
   const cleanupTimerRef = useRef(null);
   const channelRef = useRef(null);
   const supabaseRef = useRef(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     if (!enabled) return;
     if (!hasSupabaseConfig) return;
-    if (!channelName || !table) return;
+    if (!channelName) return;
+
+    const hasSingleBinding = Boolean(table);
+    const hasMultiBindings = Array.isArray(changes) && changes.length > 0;
+    if (!hasSingleBinding && !hasMultiBindings) return;
+
     if (typeof window === 'undefined') return;
 
     const runtimeEnv =
@@ -114,16 +127,33 @@ export function useRealtimeChannel({
       let ch;
       try {
         log('subscribe start', channelName, 'attempt', attempt);
-        ch = sb
-          .channel(channelName, { config: { broadcast: { ack: false } } })
-          .on('postgres_changes', { event, schema, table, filter }, () => {
+        ch = sb.channel(channelName, { config: { broadcast: { ack: false } } });
+
+        if (hasMultiBindings) {
+          for (const binding of changes) {
+            if (!binding?.table) continue;
+            const bEvent = binding.event ?? '*';
+            const bSchema = binding.schema ?? 'public';
+            const bFilter = binding.filter;
+            ch = ch.on('postgres_changes', { event: bEvent, schema: bSchema, table: binding.table, filter: bFilter }, (payload) => {
+              try {
+                onChangeRef.current && onChangeRef.current(payload);
+              } catch {
+                /* ignore */
+              }
+            });
+          }
+        } else {
+          ch = ch.on('postgres_changes', { event, schema, table, filter }, (payload) => {
             try {
-              onChange && onChange();
+              onChangeRef.current && onChangeRef.current(payload);
             } catch {
               /* ignore */
             }
-          })
-          .subscribe((status) => {
+          });
+        }
+
+        ch = ch.subscribe((status) => {
             log('status', channelName, status, 'attempt', attemptRef.current);
             if (status === 'SUBSCRIBED') {
               // Channel joined; clear join timeout
@@ -187,12 +217,12 @@ export function useRealtimeChannel({
     schema,
     table,
     filter,
-    onChange,
     joinTimeoutMs,
     maxRetries,
     baseDelayMs,
     maxDelayMs,
     debug,
+    changes,
   ]);
 }
 

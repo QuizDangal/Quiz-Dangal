@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { m } from '@/lib/motion-lite';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,8 @@ const MyQuizzes = () => {
   const [_nowTick, setNowTick] = useState(0); // lightweight re-render driver for countdown/progress (prefixed to satisfy lint)
 
   const computeAttemptedRef = useRef(new Set());
+  const notifiedResultsRef = useRef(new Set());
+  const refreshTimerRef = useRef(null);
 
   // joinAndPlay removed
 
@@ -254,15 +256,63 @@ const MyQuizzes = () => {
   
   const realtimeActive = realtimeEnabled && realtimeConditionsOk && !!user && !!hasSupabaseConfig;
 
-  // Subscribe to quiz_results INSERT (when results are computed)
-  useRealtimeChannel({
-    enabled: realtimeActive,
-    channelName: 'myquizzes-results-channel',
-    event: 'INSERT',
-    table: 'quiz_results',
-    onChange: () => {
+  const scheduleRefresh = useCallback(() => {
+    try {
+      if (refreshTimerRef.current) return;
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTimerRef.current = null;
+        fetchMyQuizzes();
+      }, 650);
+    } catch {
+      // Fallback: if timers fail, do a direct refresh
       fetchMyQuizzes();
+    }
+  }, [fetchMyQuizzes]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    };
+  }, []);
+
+  // IMPORTANT: never subscribe to entire tables here.
+  // We subscribe only to the current user's visible quiz_ids / slot_ids.
+  const myQuizzesRealtimeChanges = useMemo(() => {
+    try {
+      const quizIds = Array.from(
+        new Set((quizzes || []).map((q) => q?.id).filter(Boolean)),
+      ).slice(0, 40);
+      const slotIds = Array.from(
+        new Set((quizzes || []).map((q) => q?.slot_id).filter(Boolean)),
+      ).slice(0, 40);
+
+      const changes = [];
+      for (const quizId of quizIds) {
+        changes.push({ event: '*', table: 'quiz_results', filter: `quiz_id=eq.${quizId}` });
+      }
+      for (const slotId of slotIds) {
+        // quiz_slots primary key is expected to be `id`.
+        changes.push({ event: 'UPDATE', table: 'quiz_slots', filter: `id=eq.${slotId}` });
+      }
+      return changes;
+    } catch {
+      return [];
+    }
+  }, [quizzes]);
+
+  useRealtimeChannel({
+    enabled: realtimeActive && myQuizzesRealtimeChanges.length > 0,
+    channelName: user?.id ? `myquizzes-${user.id}` : 'myquizzes',
+    changes: myQuizzesRealtimeChanges,
+    onChange: (payload) => {
+      scheduleRefresh();
       try {
+        if (payload?.table !== 'quiz_results') return;
+        const quizId = payload?.new?.quiz_id || payload?.old?.quiz_id;
+        if (!quizId) return;
+        if (notifiedResultsRef.current.has(quizId)) return;
+        notifiedResultsRef.current.add(quizId);
         if (
           typeof window !== 'undefined' &&
           'Notification' in window &&
@@ -275,30 +325,6 @@ const MyQuizzes = () => {
       } catch {
         /* ignore */
       }
-    },
-    joinTimeoutMs: 5000,
-  });
-
-  // Subscribe to quiz_results UPDATE (when leaderboard is updated)
-  useRealtimeChannel({
-    enabled: realtimeActive,
-    channelName: 'myquizzes-results-update-channel',
-    event: 'UPDATE',
-    table: 'quiz_results',
-    onChange: () => {
-      fetchMyQuizzes();
-    },
-    joinTimeoutMs: 5000,
-  });
-
-  // Subscribe to quiz_slots changes (status updates)
-  useRealtimeChannel({
-    enabled: realtimeActive,
-    channelName: 'myquizzes-slots-channel',
-    event: '*',
-    table: 'quiz_slots',
-    onChange: () => {
-      fetchMyQuizzes();
     },
     joinTimeoutMs: 5000,
   });
