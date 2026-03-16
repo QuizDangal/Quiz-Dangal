@@ -35,6 +35,28 @@ const ROUTES = [
   { path: '/category/gk', title: 'GK Quizzes – Quiz Dangal', description: 'Sharpen your general knowledge with live and upcoming GK quizzes on Quiz Dangal.' },
 ];
 
+const LEGACY_REDIRECTS = [
+  { from: '/quiz-questions', to: '/play-win-quiz-app/' },
+  { from: '/quiz-questions-with-answers', to: '/play-win-quiz-app/' },
+  { from: '/online-quiz', to: '/play-win-quiz-app/' },
+  { from: '/quiz-game', to: '/play-win-quiz-app/' },
+  { from: '/quiz-competition', to: '/play-win-quiz-app/' },
+  { from: '/quiz-app', to: '/play-win-quiz-app/' },
+  { from: '/quiz-for-kids', to: '/play-win-quiz-app/' },
+  { from: '/gk-questions', to: '/gk-quiz/' },
+  { from: '/general-knowledge-quiz', to: '/gk-quiz/' },
+  { from: '/science-quiz', to: '/gk-quiz/' },
+  { from: '/current-affairs-quiz', to: '/gk-quiz/' },
+  { from: '/maths-quiz', to: '/gk-quiz/' },
+  { from: '/india-quiz', to: '/gk-quiz/' },
+  { from: '/sports-quiz', to: '/gk-quiz/' },
+  { from: '/cricket-quiz', to: '/gk-quiz/' },
+  { from: '/hindi-quiz', to: '/gk-quiz/' },
+  { from: '/english-quiz', to: '/gk-quiz/' },
+  { from: '/category/sports', to: '/category/gk/' },
+  { from: '/category/movies', to: '/category/gk/' },
+];
+
 const distDir = path.resolve('dist');
 const srcIndex = path.join(distDir, 'index.html');
 
@@ -70,6 +92,9 @@ function replaceHead(html, { title, description, url, robots }) {
   } else {
     out = out.replace('</head>', `  <link rel="canonical" href="${url}" />\n</head>`);
   }
+  out = out.replace(/<link\s+rel="alternate"\s+hreflang="en-IN"[^>]*>/i, `<link rel="alternate" hreflang="en-IN" href="${url}" />`);
+  out = out.replace(/<link\s+rel="alternate"\s+hreflang="en"[^>]*>/i, `<link rel="alternate" hreflang="en" href="${url}" />`);
+  out = out.replace(/<link\s+rel="alternate"\s+hreflang="x-default"[^>]*>/i, `<link rel="alternate" hreflang="x-default" href="${url}" />`);
   // og tags
   out = out.replace(/<meta\s+property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeHtml(title)}" />`);
   out = out.replace(/<meta\s+property="og:description"[^>]*>/i, `<meta property="og:description" content="${escapeHtml(description)}" />`);
@@ -77,6 +102,10 @@ function replaceHead(html, { title, description, url, robots }) {
   // twitter tags
   out = out.replace(/<meta\s+name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${escapeHtml(title)}" />`);
   out = out.replace(/<meta\s+name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${escapeHtml(description)}" />`);
+  out = out.replace(
+    /<script type="application\/ld\+json">\s*\{[\s\S]*?"@type": "WebPage"[\s\S]*?<\/script>/i,
+    `<script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "WebPage",\n    "name": "${escapeHtml(title)}",\n    "url": "${url}",\n    "description": "${escapeHtml(description)}",\n    "speakable": {\n      "@type": "SpeakableSpecification",\n      "cssSelector": ["[data-speakable]", "h1", ".qdh-title", ".qdh-faq-section"]\n    }\n  }\n</script>`
+  );
   return out;
 }
 
@@ -93,6 +122,31 @@ function replaceStaticLoaderCopy(html, { title, description }) {
     `<p$1>${escapeHtml(description)}</p>`,
   );
   return out;
+}
+
+function buildRedirectHtml(baseHtml, { from, to }) {
+  const sourceUrl = toUrl(from);
+  const targetUrl = toUrl(to);
+  let html = replaceHead(baseHtml, {
+    title: 'Redirecting… | Quiz Dangal',
+    description: `This page has moved to ${targetUrl}`,
+    url: targetUrl,
+    robots: 'noindex, follow',
+  });
+  html = replaceStaticLoaderCopy(html, {
+    title: 'Redirecting you to the right page',
+    description: `This page has moved. Opening ${targetUrl}`,
+  });
+  if (!html.includes('http-equiv="refresh"')) {
+    html = html.replace('</head>', `  <meta http-equiv="refresh" content="0; url=${targetUrl}" />\n  <script>window.location.replace(${JSON.stringify(targetUrl)});</script>\n</head>`);
+  }
+  html = html.replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${targetUrl}" />`);
+  html = html.replace(/<meta\s+property="og:url"[^>]*>/i, `<meta property="og:url" content="${targetUrl}" />`);
+  html = html.replace(/<meta\s+name="robots"[^>]*>/i, `<meta name="robots" content="noindex, follow" />`);
+  return html.replace(
+    /<script type="application\/ld\+json">\s*\{[\s\S]*?"@type": "WebPage"[\s\S]*?<\/script>/i,
+    `<script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "WebPage",\n    "name": "Redirecting… | Quiz Dangal",\n    "url": "${sourceUrl}",\n    "description": "This page has moved permanently.",\n    "mainEntityOfPage": "${targetUrl}"\n  }\n</script>`
+  );
 }
 
 function escapeHtml(s) {
@@ -129,6 +183,14 @@ async function main() {
     await ensureDir(outDir);
     await fs.writeFile(outPath, html, 'utf8');
     console.log(`prerender: wrote ${outPath}`);
+  }
+
+  for (const redirect of LEGACY_REDIRECTS) {
+    const outDir = path.join(distDir, redirect.from.replace(/^\//, ''));
+    const outPath = path.join(outDir, 'index.html');
+    await ensureDir(outDir);
+    await fs.writeFile(outPath, buildRedirectHtml(baseHtml, redirect), 'utf8');
+    console.log(`prerender: wrote redirect ${outPath} -> ${redirect.to}`);
   }
 }
 

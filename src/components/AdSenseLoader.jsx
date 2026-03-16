@@ -20,10 +20,6 @@ function isAdEligiblePath(pathname) {
     '/refer-earn-quiz-app/',
     '/category/opinion/',
     '/category/gk/',
-    '/about-us/',
-    '/contact-us/',
-    '/terms-conditions/',
-    '/privacy-policy/',
   ].includes(path);
 }
 

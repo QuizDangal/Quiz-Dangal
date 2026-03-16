@@ -964,11 +964,7 @@ const CategoryQuizzes = () => {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.04, type: 'spring', stiffness: 100, damping: 14 }}
-                onClick={() => navigate(`/quiz/${q.id}`)}
-                className="group cursor-pointer"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quiz/${q.id}`); }}
+                className="group"
               >
                 <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
                   isActive 
