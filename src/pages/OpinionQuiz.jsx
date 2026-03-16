@@ -53,7 +53,7 @@ export default function OpinionQuiz() {
         }]}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-03-16"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">
@@ -91,15 +91,7 @@ export default function OpinionQuiz() {
           <Link to="/category/gk/" className="text-indigo-300 underline">
             GK
           </Link>
-          ,{' '}
-          <Link to="/category/sports/" className="text-indigo-300 underline">
-            Sports
-          </Link>
-          , and{' '}
-          <Link to="/category/movies/" className="text-indigo-300 underline">
-            Movies
-          </Link>
-          . You can also switch to our{' '}
+          . During IPL season, match mood, captain calls, and fan sentiment show up as live opinion polls alongside social and current-affairs topics. You can also switch to our{' '}
           <Link to="/play-win-quiz-app/" className="text-indigo-300 underline">
             Play & Win
           </Link>{' '}
@@ -120,6 +112,7 @@ export default function OpinionQuiz() {
             <li>Real-time vote breakdown</li>
             <li>No negative marking or pressure</li>
             <li>New topics daily</li>
+            <li>Regular IPL and trending India polls</li>
           </ul>
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
   formatSupabaseError,
 } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy, Play, ChevronRight } from 'lucide-react';
+import { Users, MessageSquare, Brain, Clock, Trophy, Play, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SeoHead from '@/components/SEO';
@@ -49,79 +49,38 @@ function categoryMeta(slug = '') {
       from: 'from-emerald-600/30',
       to: 'to-teal-600/30',
       ring: 'ring-emerald-500/30',
-      description: 'Test your General Knowledge with Quiz Dangal! From history to science, geography to current affairs - challenge yourself with diverse GK questions and compete for prizes.',
+      description: 'Test your General Knowledge with Quiz Dangal. From current affairs and Indian history to IPL season sports awareness and science, every GK round is built for real daily players.',
       features: [
-        'Questions from history, science, geography & more',
+        'Questions from current affairs, history, science and geography',
+        'IPL season and cricket awareness blended into live GK rounds',
         'Competitive leaderboards with real prizes',
         'Learn while you play and earn',
         'Fresh GK questions every 10 minutes',
       ],
       faqs: [
-        { q: 'What topics are covered in GK quizzes?', a: 'Our GK quizzes cover a wide range of topics including history, geography, science, sports, politics, arts, and current affairs.' },
+        { q: 'What topics are covered in GK quizzes?', a: 'Our GK quizzes cover current affairs, Indian history, geography, science, polity, economy, and IPL-season sports awareness.' },
         { q: 'How often are new GK quizzes added?', a: 'New GK quizzes are scheduled every 10 minutes throughout the day. Each quiz runs for 5 minutes.' },
         { q: 'Are GK quiz answers verified?', a: 'Yes, all GK questions and answers are carefully verified for accuracy before being added to our platform.' },
       ],
     };
-  if (s.includes('sport'))
-    return {
-      title: 'Sports Quizzes',
-      emoji: '🏆',
-      Icon: Trophy,
-      from: 'from-orange-600/30',
-      to: 'to-red-600/30',
-      ring: 'ring-orange-500/30',
-      description: 'Are you a true sports fan? Test your knowledge of Cricket, Football, Olympics, and more! Quiz Dangal sports quizzes cover everything from legendary matches to current tournaments.',
-      features: [
-        'Cricket, Football, Olympics & more',
-        'Questions on legends and current stars',
-        'Live sports trivia during matches',
-        'Win prizes with your sports knowledge',
-      ],
-      faqs: [
-        { q: 'Which sports are covered?', a: 'We cover all major sports including Cricket, Football, Tennis, Badminton, Hockey, Olympics, Wrestling, and more.' },
-        { q: 'Are there quizzes during live matches?', a: 'Yes! We often run special quizzes during major sporting events and tournaments with extra prizes.' },
-        { q: 'How can I improve my sports knowledge?', a: 'Play our quizzes regularly! Each question comes with the correct answer, helping you learn while you compete.' },
-      ],
-    };
-  if (s.includes('movie'))
-    return {
-      title: 'Movie Quizzes',
-      emoji: '🎬',
-      Icon: Clapperboard,
-      from: 'from-violet-600/30',
-      to: 'to-indigo-600/30',
-      ring: 'ring-violet-500/30',
-      description: 'Bollywood, Hollywood, regional cinema - how well do you know your movies? Quiz Dangal movie quizzes test your knowledge of actors, directors, dialogues, and iconic scenes.',
-      features: [
-        'Bollywood, Hollywood & regional films',
-        'Questions on actors, directors & dialogues',
-        'Guess the movie from scenes or songs',
-        'Special quizzes on new releases',
-      ],
-      faqs: [
-        { q: 'What kind of movie questions are asked?', a: 'Questions range from identifying actors, famous dialogues, movie plots, songs, directors, awards, and box office facts.' },
-        { q: 'Are regional movies covered?', a: 'Yes! We include questions from South Indian, Bengali, Marathi, and other regional film industries.' },
-        { q: 'How do I join a movie quiz?', a: 'Simply click on any upcoming or live quiz on this page and press the JOIN button. The quiz will start at the scheduled time.' },
-      ],
-    };
   return {
-    title: `${slug} Quizzes`,
+    title: 'GK Quizzes',
     emoji: '⭐',
     Icon: MessageSquare,
     from: 'from-sky-600/30',
     to: 'to-indigo-600/30',
     ring: 'ring-sky-500/30',
-    description: 'Challenge yourself with exciting quizzes on Quiz Dangal! Compete with players across India and win real prizes.',
+    description: 'Quiz Dangal currently focuses on Opinion and GK categories. Unsupported category URLs are redirected to active public quiz sections.',
     features: [
+      'Opinion Quiz and GK Quiz are live across the platform',
       'New quizzes every 10 minutes',
       'Win cash prizes and coins',
       'Compete on leaderboards',
-      'Play anytime, anywhere',
     ],
     faqs: [
-      { q: 'How do I join a quiz?', a: 'Click on any upcoming quiz and press JOIN. The quiz will start at the scheduled time.' },
+      { q: 'Which categories are active on Quiz Dangal?', a: 'Quiz Dangal currently focuses on Opinion Quiz and GK Quiz as the two active public categories.' },
       { q: 'How long is each quiz?', a: 'Each quiz lasts 5 minutes with a 5 minute break between quizzes.' },
-      { q: 'Is it free to play?', a: 'Yes! You can join and play quizzes for free. Some premium quizzes may have entry fees with bigger prizes.' },
+      { q: 'Is it free to play?', a: 'Yes. You can join and play public quizzes for free and track your performance on the leaderboard.' },
     ],
   };
 }

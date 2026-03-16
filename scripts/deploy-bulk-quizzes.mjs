@@ -104,10 +104,10 @@ async function main() {
     // Find all *_144_bilingual_*.json matching day suffix from date
     const daySuffix = String(parseInt(targetDate.split('-')[2], 10));
     const entries = fs.readdirSync(bulkDir);
-    const pattern = new RegExp(`^(gk|sports|movies|opinion)_144_bilingual_${daySuffix}\\.json$`, 'i');
+    const pattern = new RegExp(`^(gk|opinion)_144_bilingual_${daySuffix}\\.json$`, 'i');
     for (const e of entries) {
       if (pattern.test(e)) {
-        const cat = e.match(/^(gk|sports|movies|opinion)/i)?.[1]?.toLowerCase();
+        const cat = e.match(/^(gk|opinion)/i)?.[1]?.toLowerCase();
         filesToDeploy.push({ file: path.join('bulk', e), category: cat });
       }
     }
@@ -201,7 +201,7 @@ async function main() {
 
 function inferCategory(filePath) {
   const base = path.basename(filePath).toLowerCase();
-  const m = base.match(/^(gk|sports|movies|opinion)/);
+  const m = base.match(/^(gk|opinion)/);
   if (!m) throw new Error(`Cannot infer category from: ${filePath}`);
   return m[1];
 }

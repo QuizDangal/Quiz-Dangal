@@ -63,7 +63,7 @@ function generateDaySchedule() {
 }
 
 const PRIZES = [121, 71, 51];
-const CATEGORIES = ['gk', 'sports', 'movies', 'opinion'];
+const CATEGORIES = ['gk', 'opinion'];
 
 // -------------------- Main --------------------
 async function main() {

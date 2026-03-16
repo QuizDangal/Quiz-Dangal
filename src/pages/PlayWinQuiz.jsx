@@ -13,7 +13,7 @@ export default function PlayWinQuiz() {
         name: 'How does Play & Win work on Quiz Dangal?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Play & Win lets you compete in daily quizzes across Opinion, GK, Sports, and Movies categories. Answer questions accurately and quickly to earn coins and climb leaderboards.',
+          text: 'Play & Win lets you compete in daily Opinion and GK quizzes. Answer questions accurately and quickly to earn coins, climb leaderboards, and join special IPL-season opinion and current affairs rounds.',
         },
       },
       {
@@ -59,7 +59,7 @@ export default function PlayWinQuiz() {
         }]}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-03-16"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent pt-14">
@@ -112,15 +112,11 @@ export default function PlayWinQuiz() {
           <Link to="/category/gk/" className="text-indigo-300 underline">
             GK
           </Link>
-          ,{' '}
-          <Link to="/category/sports/" className="text-indigo-300 underline">
-            Sports
-          </Link>
-          ,{' '}
-          <Link to="/category/movies/" className="text-indigo-300 underline">
-            Movies
-          </Link>
-          . Invite friends via{' '}
+          . During IPL season, most cricket and current affairs moments are covered inside{' '}
+          <Link to="/category/gk/" className="text-indigo-300 underline">
+            GK
+          </Link>{' '}
+          and opinion rounds. Invite friends via{' '}
           <Link to="/refer-earn-quiz-app/" className="text-indigo-300 underline">
             Refer & Earn
           </Link>
@@ -137,6 +133,7 @@ export default function PlayWinQuiz() {
             <li>Fast rounds and instant results</li>
             <li>Earn coins and redeem rewards</li>
             <li>Transparent scoring and fair gameplay</li>
+            <li>IPL season topics inside GK and Opinion instead of thin extra pages</li>
           </ul>
         </div>
       </div>

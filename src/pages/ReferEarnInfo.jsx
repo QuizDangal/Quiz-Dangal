@@ -58,7 +58,7 @@ export default function ReferEarnInfo() {
         }]}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-03-16"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">

@@ -194,7 +194,7 @@ export default function Leaderboards() {
         ]}
         author="Quiz Dangal"
         datePublished="2025-01-01"
-        dateModified="2025-12-29"
+        dateModified="2026-03-16"
         jsonLd={[{
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
@@ -489,7 +489,7 @@ export default function Leaderboards() {
                     <strong className="text-slate-200">How Rankings Work:</strong> Your leaderboard score is calculated based on the accuracy of your answers, the speed at which you respond, and your participation streak. The faster and more accurately you answer, the higher you climb. Players are ranked across three time periods — All-time, Monthly, and Weekly — so everyone has a chance to shine.
                   </p>
                   <p>
-                    <strong className="text-slate-200">Compete & Win:</strong> Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls, General Knowledge, Sports, or Movies, every quiz counts toward your ranking.
+                    <strong className="text-slate-200">Compete & Win:</strong> Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls or General Knowledge, every real quiz round counts toward your ranking.
                   </p>
                   <p>
                     <strong className="text-slate-200">Fair Play Guaranteed:</strong> We monitor all quiz activity to ensure fair competition. Bot accounts, multiple accounts, and cheating are strictly prohibited. Our automated systems detect suspicious patterns to maintain a level playing field for genuine players.

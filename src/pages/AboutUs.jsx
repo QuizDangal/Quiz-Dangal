@@ -14,7 +14,7 @@ const AboutUs = () => {
     {
       icon: Target,
       title: 'Daily Quizzes Across Categories',
-      description: 'Fresh opinion polls, general knowledge, sports, and entertainment quizzes added every single day. Never run out of new challenges to test your knowledge.',
+      description: 'Fresh opinion polls and general knowledge quizzes go live every day. IPL trends, current affairs, and India-first topics are covered inside these two active formats.',
     },
     {
       icon: Trophy,
@@ -73,7 +73,7 @@ const AboutUs = () => {
     {
       step: 2,
       title: 'Choose Your Quiz Category',
-      description: 'Browse from Opinion, GK, Sports, Movies, and more. Pick what interests you and start your quiz journey.',
+      description: 'Choose between Opinion Quiz and GK Quiz. Both formats are updated daily with India-first topics, including IPL season conversations and current affairs.',
     },
     {
       step: 3,
@@ -95,9 +95,7 @@ const AboutUs = () => {
   // Quiz categories
   const categories = [
     { icon: MessageSquare, name: 'Opinion Polls', desc: 'Share your views on trending topics' },
-    { icon: Brain, name: 'General Knowledge', desc: 'Test your knowledge across subjects' },
-    { icon: Trophy, name: 'Sports', desc: 'Cricket, football, Olympics & more' },
-    { icon: Star, name: 'Entertainment', desc: 'Movies, music, celebrities & pop culture' },
+    { icon: Brain, name: 'General Knowledge', desc: 'Test your knowledge across current affairs, history, science, and IPL-season awareness' },
   ];
 
   // FAQ data for schema
@@ -166,7 +164,7 @@ const AboutUs = () => {
       'https://www.facebook.com/profile.php?id=61576614092243',
       'https://x.com/quizdangal',
     ],
-    knowsAbout: ['quizzes', 'trivia', 'general knowledge', 'opinion polls', 'sports quizzes', 'movie quizzes', 'rewards', 'leaderboards', 'gaming'],
+    knowsAbout: ['quizzes', 'trivia', 'general knowledge', 'opinion polls', 'ipl quiz trends', 'current affairs', 'rewards', 'leaderboards', 'gaming'],
     slogan: 'Play. Compete. Win.',
     numberOfEmployees: {
       '@type': 'QuantitativeValue',
@@ -183,7 +181,7 @@ const AboutUs = () => {
       <div className="container mx-auto px-4 py-4 space-y-8 max-w-5xl">
         <SeoHead
           title="About Us - Quiz Dangal | India's #1 Free Quiz & Rewards Platform"
-          description="Learn about Quiz Dangal - India's most exciting free quiz platform. Play daily quizzes on GK, sports, movies, earn coins, climb leaderboards, and win rewards. Join thousands of quiz enthusiasts today!"
+          description="Learn about Quiz Dangal - India's free quiz platform focused on Opinion Quiz and GK Quiz. Play daily IPL-season polls, current affairs, earn coins, climb leaderboards, and win rewards."
           canonical="https://quizdangal.com/about-us/"
           alternateLocales={['hi_IN', 'en_US']}
           keywords={[
@@ -199,7 +197,7 @@ const AboutUs = () => {
           jsonLd={[orgSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
           datePublished="2025-01-01"
-          dateModified="2025-12-29"
+          dateModified="2026-03-16"
         />
 
         {/* Hero Section - AI Speakable */}
@@ -282,10 +280,9 @@ const AboutUs = () => {
             Quiz Categories We Offer
           </h2>
           <p className="text-slate-300 text-center text-sm md:text-base mb-6 max-w-2xl mx-auto">
-            From current affairs to entertainment, we cover a wide range of topics to keep every 
-            quiz lover engaged. Here&apos;s what you can explore:
+            Quiz Dangal now focuses on two strong quiz formats so every public page matches the real product and every player reaches useful content quickly.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             {categories.map((cat, index) => (
               <div
                 key={cat.name}

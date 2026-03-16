@@ -20,8 +20,6 @@ import DailyScheduler from '@/components/admin/DailyScheduler';
 const categoryOptions = [
   { value: 'opinion', label: 'Opinion' },
   { value: 'gk', label: 'General Knowledge' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'movies', label: 'Movies' },
 ];
 const getCategoryLabel = (value) =>
   categoryOptions.find((option) => option.value === value)?.label || value;

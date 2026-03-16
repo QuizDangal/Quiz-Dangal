@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // Categories for scheduler (keep in sync with backend expected values)
-export const CATEGORIES = ['opinion', 'gk', 'sports', 'movies'];
+export const CATEGORIES = ['opinion', 'gk'];
 // Fixed prizes (always enforced everywhere) - in coins
 export const PRIZES = [121, 71, 51];
 // Quiz duration in minutes (each quiz runs for 5 minutes)
@@ -14,7 +14,7 @@ export const QUIZ_DURATION_MINUTES = 5;
 export const QUIZ_INTERVAL_MINUTES = 10;
 // 00:00 to 23:50 with 10-min intervals = 144 quizzes per day per category (24 hours)
 // (00:00-00:05 quiz, 00:05-00:10 gap, 00:10-00:15 quiz... 23:50-23:55 last quiz)
-// 4 categories × 144 = 576 total quizzes per day
+// 2 categories × 144 = 288 total quizzes per day
 export const TOTAL_QUIZZES_PER_DAY = 144;
 const QUESTIONS_PER_QUIZ = 10;
 
@@ -34,8 +34,6 @@ function generateDaySchedule() {
 const CATEGORY_COLORS = {
   opinion: { bg: 'bg-pink-600/20', border: 'border-pink-500', text: 'text-pink-400', badge: 'bg-pink-600' },
   gk: { bg: 'bg-emerald-600/20', border: 'border-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-600' },
-  sports: { bg: 'bg-blue-600/20', border: 'border-blue-500', text: 'text-blue-400', badge: 'bg-blue-600' },
-  movies: { bg: 'bg-amber-600/20', border: 'border-amber-500', text: 'text-amber-400', badge: 'bg-amber-600' },
 };
 
 // Icons
@@ -49,16 +47,6 @@ const CategoryIcon = ({ category, className = 'w-4 h-4' }) => {
     gk: (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-      </svg>
-    ),
-    sports: (
-      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    movies: (
-      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
       </svg>
     ),
   };
@@ -846,7 +834,7 @@ Answer: B
 ...10 questions with answers...
 
 Quiz 2
-Title: Sports Quiz
+Title: GK Evening Quiz
 ...`}
                 />
               </div>

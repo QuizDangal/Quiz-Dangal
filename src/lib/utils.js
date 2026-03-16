@@ -71,6 +71,7 @@ const routePrefetchMap = {
   '/login': () => import('@/pages/Login'),
   '/about-us': () => import('@/pages/AboutUs'),
   '/contact-us': () => import('@/pages/ContactUs'),
+  '/gk-quiz': () => import('@/pages/seo/GKQuiz'),
   '/play-win-quiz-app': () => import('@/pages/PlayWinQuiz'),
   '/opinion-quiz-app': () => import('@/pages/OpinionQuiz'),
   '/refer-earn-quiz-app': () => import('@/pages/ReferEarnInfo'),

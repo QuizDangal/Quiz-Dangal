@@ -24,7 +24,7 @@ const defaultFeatures = [
 // Default how it works steps
 const defaultSteps = [
   { step: 1, title: 'Sign Up Free', desc: 'Create your account in seconds with email or phone' },
-  { step: 2, title: 'Choose a Quiz', desc: 'Browse categories like GK, Sports, Movies, Opinion and more' },
+  { step: 2, title: 'Choose a Quiz', desc: 'Browse active categories like GK and Opinion' },
   { step: 3, title: 'Play & Earn', desc: 'Answer questions, earn coins, and climb the leaderboards' },
   { step: 4, title: 'Redeem Rewards', desc: 'Use your coins to get exciting prizes and rewards' },
 ];

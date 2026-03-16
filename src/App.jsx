@@ -6,6 +6,7 @@ import CookieConsent from '@/components/CookieConsent';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import PWAInstallButton from '@/components/PWAInstallButton';
+import AdSenseLoader from '@/components/AdSenseLoader';
 import Home from '@/pages/Home';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -30,25 +31,7 @@ const PlayWinQuiz = lazy(() => import('@/pages/PlayWinQuiz'));
 const OpinionQuiz = lazy(() => import('@/pages/OpinionQuiz'));
 const ReferEarnInfo = lazy(() => import('@/pages/ReferEarnInfo'));
 const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
-// SEO landing pages (keyword-targeted)
-const QuizQuestions = lazy(() => import('@/pages/seo/QuizQuestions'));
-const QuizQuestionsWithAnswers = lazy(() => import('@/pages/seo/QuizQuestionsWithAnswers'));
 const GKQuiz = lazy(() => import('@/pages/seo/GKQuiz'));
-const GKQuestions = lazy(() => import('@/pages/seo/GKQuestions'));
-const HindiQuiz = lazy(() => import('@/pages/seo/HindiQuiz'));
-const EnglishQuiz = lazy(() => import('@/pages/seo/EnglishQuiz'));
-const OnlineQuiz = lazy(() => import('@/pages/seo/OnlineQuiz'));
-const ScienceQuiz = lazy(() => import('@/pages/seo/ScienceQuiz'));
-const CurrentAffairsQuiz = lazy(() => import('@/pages/seo/CurrentAffairsQuiz'));
-const MathsQuiz = lazy(() => import('@/pages/seo/MathsQuiz'));
-const QuizGame = lazy(() => import('@/pages/seo/QuizGame'));
-const QuizCompetition = lazy(() => import('@/pages/seo/QuizCompetition'));
-const QuizApp = lazy(() => import('@/pages/seo/QuizApp'));
-const QuizForKids = lazy(() => import('@/pages/seo/QuizForKids'));
-const IndiaQuiz = lazy(() => import('@/pages/seo/IndiaQuiz'));
-const SportsQuizLanding = lazy(() => import('@/pages/seo/SportsQuizLanding'));
-const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
-const GeneralKnowledgeQuiz = lazy(() => import('@/pages/seo/GeneralKnowledgeQuiz'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
@@ -60,6 +43,7 @@ const policyRoutes = (
     <Route path="/privacy-policy/" element={<PrivacyPolicy />} />
     <Route path="/about-us/" element={<AboutUs />} />
     <Route path="/contact-us/" element={<ContactUs />} />
+    <Route path="/gk-quiz/" element={<GKQuiz />} />
     <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
     <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
     <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
@@ -67,27 +51,27 @@ const policyRoutes = (
   </>
 );
 
-// Public SEO routes (indexable landing pages)
-const seoLandingRoutes = (
+const legacyRedirectRoutes = (
   <>
-    <Route path="/quiz-questions/" element={<QuizQuestions />} />
-    <Route path="/quiz-questions-with-answers/" element={<QuizQuestionsWithAnswers />} />
-    <Route path="/gk-quiz/" element={<GKQuiz />} />
-    <Route path="/gk-questions/" element={<GKQuestions />} />
-    <Route path="/hindi-quiz/" element={<HindiQuiz />} />
-    <Route path="/english-quiz/" element={<EnglishQuiz />} />
-    <Route path="/online-quiz/" element={<OnlineQuiz />} />
-    <Route path="/science-quiz/" element={<ScienceQuiz />} />
-    <Route path="/current-affairs-quiz/" element={<CurrentAffairsQuiz />} />
-    <Route path="/maths-quiz/" element={<MathsQuiz />} />
-    <Route path="/quiz-game/" element={<QuizGame />} />
-    <Route path="/quiz-competition/" element={<QuizCompetition />} />
-    <Route path="/quiz-app/" element={<QuizApp />} />
-    <Route path="/quiz-for-kids/" element={<QuizForKids />} />
-    <Route path="/india-quiz/" element={<IndiaQuiz />} />
-    <Route path="/sports-quiz/" element={<SportsQuizLanding />} />
-    <Route path="/cricket-quiz/" element={<CricketQuiz />} />
-    <Route path="/general-knowledge-quiz/" element={<GeneralKnowledgeQuiz />} />
+    <Route path="/category/sports/*" element={<Navigate to="/category/gk/" replace />} />
+    <Route path="/category/movies/*" element={<Navigate to="/category/gk/" replace />} />
+    <Route path="/quiz-questions/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/quiz-questions-with-answers/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/gk-questions/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/hindi-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/english-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/online-quiz/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/science-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/current-affairs-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/maths-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/quiz-game/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/quiz-competition/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/quiz-app/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/quiz-for-kids/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
+    <Route path="/india-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/sports-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/cricket-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
+    <Route path="/general-knowledge-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
   </>
 );
 
@@ -213,6 +197,7 @@ function App() {
             <meta name="revisit-after" content="3 days" />
           </Helmet>
           {/* Initialize notifications for authenticated, confirmed users outside of <Routes> */}
+          <AdSenseLoader />
           {authUser &&
             !isRecoveryFlow &&
             !(authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at) && (
@@ -362,8 +347,8 @@ const PublicLayout = () => {
                 </Page>
               }
             />
-            {seoLandingRoutes}
             {policyRoutes}
+            {legacyRedirectRoutes}
             {/* Publicly accessible category pages for SEO */}
             <Route
               path="/category/:slug/"
@@ -465,7 +450,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
-            {seoLandingRoutes}
+            {legacyRedirectRoutes}
             <Route
               path="/my-quizzes/"
               element={
@@ -529,6 +514,14 @@ const MainLayout = () => {
               element={
                 <Page>
                   <ContactUs />
+                </Page>
+              }
+            />
+            <Route
+              path="/gk-quiz/"
+              element={
+                <Page>
+                  <GKQuiz />
                 </Page>
               }
             />

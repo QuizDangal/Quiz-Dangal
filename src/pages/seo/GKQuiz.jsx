@@ -36,6 +36,20 @@ export default function GKQuiz() {
           learning new facts, Quiz Dangal&apos;s GK section has something for everyone.
         </p>
       </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-4">
+          <h3 className="font-semibold text-white mb-2">🏏 IPL Season Inside GK</h3>
+          <p className="text-sm text-slate-300 leading-relaxed">
+            During IPL season, Quiz Dangal folds cricket awareness into active GK rounds instead of sending users to thin one-topic pages. Expect questions around teams, venues, records, player milestones, tournament history, and major match moments alongside core current-affairs coverage.
+          </p>
+        </div>
+        <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-xl p-4">
+          <h3 className="font-semibold text-white mb-2">🧭 High-Value Daily Content</h3>
+          <p className="text-sm text-slate-300 leading-relaxed">
+            This page explains the real product, the topics we publish, and how live GK rounds help both learners and quiz players. That means users reach useful content even when a quiz slot is not currently live.
+          </p>
+        </div>
+      </div>
     </>
   );
 
@@ -54,11 +68,10 @@ export default function GKQuiz() {
       additionalContent={additionalContent}
       relatedLinks={[
         { to: '/category/gk/', label: 'Play GK Quizzes' },
-        { to: '/current-affairs-quiz/', label: 'Current Affairs Quiz' },
-        { to: '/quiz-questions/', label: 'Quiz Questions' },
-        { to: '/gk-questions/', label: 'GK Questions' },
-        { to: '/general-knowledge-quiz/', label: 'General Knowledge Quiz' },
-        { to: '/india-quiz/', label: 'India Quiz' },
+        { to: '/opinion-quiz-app/', label: 'Opinion Quiz Guide' },
+        { to: '/play-win-quiz-app/', label: 'Play & Win Guide' },
+        { to: '/leaderboards/', label: 'Leaderboard' },
+        { to: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
       ]}
       faqs={[
         {
@@ -67,7 +80,7 @@ export default function GKQuiz() {
         },
         {
           question: 'Do you have GK quiz in Hindi?',
-          answer: 'Absolutely! We support Indian audiences with content in both Hindi and English. Many of our GK quizzes are bilingual. Visit our Hindi Quiz page for dedicated Hindi-language general knowledge quizzes.',
+          answer: 'Yes. Many GK rounds are written for Indian audiences in easy-to-understand language and may include bilingual support where available inside the main product flow.',
         },
         {
           question: 'Is this GK quiz helpful for competitive exams?',

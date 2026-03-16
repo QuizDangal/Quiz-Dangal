@@ -51,6 +51,27 @@ const HOT_PICKS = [
   },
 ];
 
+const HERO_MODES = [
+  {
+    id: 'opinion',
+    icon: '🗳️',
+    title: 'Opinion Quiz',
+    description: 'Vote on hot topics and win coins.',
+    accentClass: 'from-rose-500 via-pink-500 to-fuchsia-600',
+    glowClass: 'shadow-[0_24px_60px_rgba(236,72,153,0.24)]',
+    buttonLabel: 'Play Now',
+  },
+  {
+    id: 'gk',
+    icon: '🧠',
+    title: 'GK Quiz',
+    description: 'Test your knowledge and earn rewards.',
+    accentClass: 'from-indigo-500 via-violet-500 to-cyan-500',
+    glowClass: 'shadow-[0_24px_60px_rgba(99,102,241,0.24)]',
+    buttonLabel: 'Play Now',
+  },
+];
+
 const Home = () => {
   const navigate = useNavigate();
   const { user, userProfile, refreshUserProfile } = useAuth();
@@ -113,8 +134,8 @@ const Home = () => {
   return (
     <div className="mx-auto max-w-[480px] px-4 pb-[calc(var(--qd-footer-h)+24px)]">
       <SeoHead
-        title="Quiz Dangal - Play Quiz & Win"
-        description="India's #1 quiz platform. Play opinion polls and GK quizzes daily!"
+        title="Quiz Dangal - Daily Opinion & GK Quiz for IPL Fans"
+        description="Play daily opinion polls, IPL season trivia, current affairs, and GK quizzes on Quiz Dangal. Win coins, climb leaderboards, and join fresh live rounds every day."
         canonical="https://quizdangal.com/"
         jsonLd={[{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Quiz Dangal', url: 'https://quizdangal.com/' }]}
       />
@@ -174,136 +195,105 @@ const Home = () => {
 
         {/* ═══════ HERO ═══════ */}
         <section
-          className="animate-fade-up relative overflow-hidden rounded-[28px]"
+          className="animate-fade-up relative overflow-hidden rounded-[32px] border border-white/10 bg-[#070311] shadow-[0_24px_90px_rgba(12,1,24,0.65)]"
           style={{ '--fade-delay': '0ms' }}
         >
-          {/* Main bg with mesh pattern */}
-          <div className="absolute inset-0 bg-[#0c0118]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23a855f7%22 fill-opacity=%220.04%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-60" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.22),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_12%_90%,rgba(244,63,94,0.18),transparent_24%),linear-gradient(180deg,#12051f_0%,#080412_48%,#07030d_100%)]" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2280%22 height=%2280%22 viewBox=%220 0 80 80%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.04%22%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%221.5%22/%3E%3Ccircle cx=%220%22 cy=%220%22 r=%221.5%22/%3E%3Ccircle cx=%2280%22 cy=%2280%22 r=%221.5%22/%3E%3Cpath d=%22M0 40h80M40 0v80%22 stroke=%22%23a855f7%22 stroke-opacity=%220.05%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-violet-500/30 blur-[120px] animate-float" />
+          <div className="pointer-events-none absolute -right-12 top-10 h-40 w-40 rounded-full bg-cyan-500/20 blur-[100px] animate-float-slow" />
+          <div className="pointer-events-none absolute -left-12 bottom-10 h-40 w-40 rounded-full bg-rose-500/20 blur-[90px] animate-float-delayed" />
 
-          {/* Animated glow orbs */}
-          <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-violet-600/30 blur-[100px] animate-float" />
-          <div className="pointer-events-none absolute bottom-0 -left-10 h-36 w-36 rounded-full bg-pink-500/25 blur-[80px] animate-float-delayed" />
-          <div className="pointer-events-none absolute top-8 -right-10 h-32 w-32 rounded-full bg-cyan-500/20 blur-[70px] animate-float-slow" />
+          <div className="relative px-5 pb-5 pt-5">
+            <div className="pointer-events-none absolute left-6 top-14 h-1.5 w-1.5 rounded-full bg-violet-300/70 animate-ping" />
+            <div className="pointer-events-none absolute right-8 top-24 h-2 w-2 rounded-full bg-cyan-300/50 animate-float" />
+            <div className="pointer-events-none absolute bottom-28 right-10 h-2 w-2 rounded-full bg-amber-300/50 animate-float-delayed" />
 
-          <div className="relative px-5 pt-6 pb-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[0.76rem] font-medium text-white/50">
+                  {user ? (
+                    <>Hey <span className="font-bold text-amber-300">{displayName}</span>{' '}<span className="inline-block" style={{ animation: 'heroWave 1.8s ease-in-out infinite' }}>👋</span></>
+                  ) : (
+                    <>Welcome to <span className="font-bold text-violet-300">Quiz Dangal</span></>
+                  )}
+                </p>
+              </div>
 
-            {/* Floating particles */}
-            <div className="pointer-events-none absolute top-4 right-6 h-2 w-2 rounded-full bg-amber-400/50 animate-float" />
-            <div className="pointer-events-none absolute top-16 left-6 h-1.5 w-1.5 rounded-full bg-violet-400/40 animate-float-delayed" />
-            <div className="pointer-events-none absolute bottom-28 right-10 h-2.5 w-2.5 rounded-full bg-pink-400/35 animate-float-slow" />
-            <div className="pointer-events-none absolute bottom-16 left-10 h-1.5 w-1.5 rounded-full bg-cyan-400/40 animate-float" />
-            <div className="pointer-events-none absolute top-1/3 right-4 h-1 w-1 rounded-full bg-yellow-300/50 animate-ping" />
-
-            {/* Top row: Greeting + LIVE */}
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-[0.78rem] text-white/50 font-medium">
-                {user ? (
-                  <>Hey <span className="text-amber-300 font-bold">{displayName}</span>{' '}<span className="inline-block" style={{ animation: 'heroWave 1.8s ease-in-out infinite' }}>👋</span></>
-                ) : (
-                  <>Welcome to <span className="text-violet-300 font-bold">Quiz Dangal</span></>
-                )}
-              </p>
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-1 text-[0.55rem] font-extrabold text-emerald-400 tracking-wider" role="status" aria-label="Quizzes are live now">
-                <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" /></span>
-                LIVE
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-[0.58rem] font-extrabold uppercase tracking-[0.22em] text-emerald-300" role="status" aria-label="Quizzes are live now">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                Live now
               </div>
             </div>
 
-            {/* Center crown icon */}
-            <div className="flex justify-center mb-3">
-              <Crown className="w-[4.5rem] h-[4.5rem] text-amber-400" strokeWidth={1.8} style={{ animation: 'float 4s ease-in-out infinite, shimmer-glow 2.5s ease-in-out infinite alternate' }} />
-            </div>
+            <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.045] px-3.5 pb-4 pt-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+              <div className="absolute -right-10 top-4 h-28 w-28 rounded-full bg-amber-400/15 blur-[50px]" />
+              <div className="absolute left-0 top-0 h-24 w-24 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_70%)]" />
 
-            {/* Title - centered, bold */}
-            <h1 className="text-center mb-1">
-              <span className="block text-[1.5rem] font-black tracking-tight text-white leading-tight">
-                Quiz Khelo Daily
-              </span>
-              <span className="block text-[1.8rem] font-black tracking-tight bg-gradient-to-r from-amber-300 via-yellow-200 to-orange-400 bg-300% bg-clip-text text-transparent animate-gradient-slow leading-tight">
-                Coins Jeeto! 💰
-              </span>
-            </h1>
-
-            {/* Tagline pills with stagger animation */}
-            <div className="flex items-center justify-center gap-2 mt-3 mb-6">
-              <span className="rounded-full bg-violet-500/15 border border-violet-500/20 px-3 py-1 text-[0.6rem] font-bold text-violet-300" style={{ animation: 'heroPillFade 0.5s ease-out 0.2s both' }}>🎮 Free to Play</span>
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/20 px-3 py-1 text-[0.6rem] font-bold text-amber-300" style={{ animation: 'heroPillFade 0.5s ease-out 0.4s both' }}>💰 Win Coins</span>
-              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/20 px-3 py-1 text-[0.6rem] font-bold text-emerald-300" style={{ animation: 'heroPillFade 0.5s ease-out 0.6s both' }}>🧠 Daily New</span>
-            </div>
-
-            {/* Two side-by-side game cards */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Opinion Poll Card */}
-              <button
-                type="button"
-                onClick={() => go('opinion')}
-                className="home-shine group relative overflow-hidden rounded-2xl text-left transition-all duration-300 hover:-translate-y-1 active:scale-[0.97]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-600 via-rose-500 to-fuchsia-600" />
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.2),transparent_50%)]" />
-                <div className="relative px-3.5 pt-4 pb-3.5">
-                  <div className="h-11 w-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                    <span className="text-[1.4rem] leading-none">🗳️</span>
+              <div className="relative flex items-start justify-between gap-2.5">
+                <div className="max-w-[70%]">
+                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[0.58rem] font-bold text-violet-200 shadow-[0_10px_30px_rgba(139,92,246,0.16)]" style={{ animation: 'heroPillFade 0.55s ease-out 0.1s both' }}>
+                    <Crown size={12} className="text-amber-300" />
+                    Live quiz drops
                   </div>
-                  <div className="text-[0.92rem] font-black text-white leading-tight mb-0.5">Opinion Quiz</div>
-                  <div className="text-[0.58rem] text-white/50 font-medium mb-3">Vote & Earn</div>
-                  <div className="flex items-center justify-center gap-1.5 rounded-lg bg-white/95 py-1.5 shadow-lg transition-all duration-200 group-hover:bg-white">
-                    <Play size={11} className="text-pink-600" fill="rgb(219,39,119)" />
-                    <span className="text-[0.72rem] font-extrabold text-pink-600">Play</span>
-                    <ChevronRight size={11} className="text-pink-400 transition-transform group-hover:translate-x-0.5" />
-                  </div>
+
+                  <h1 className="text-left leading-[1.03]">
+                    <span className="block pb-0.5 text-[1.72rem] font-black tracking-[-0.05em] text-white">Play Smart.</span>
+                    <span className="mt-0.5 block pb-1 bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-400 bg-clip-text text-[1.96rem] font-black tracking-[-0.05em] text-transparent">Earn Big. ✨</span>
+                  </h1>
+
+                  <p className="mt-2.5 max-w-[15rem] text-[0.7rem] font-medium leading-[1.35] text-white/68">
+                    Choose a quiz, play fast, and win daily rewards.
+                  </p>
                 </div>
-              </button>
 
-              {/* GK Quiz Card */}
-              <button
-                type="button"
-                onClick={() => go('gk')}
-                className="home-shine group relative overflow-hidden rounded-2xl text-left transition-all duration-300 hover:-translate-y-1 active:scale-[0.97]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-500 to-cyan-500" />
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.2),transparent_50%)]" />
-                <div className="relative px-3.5 pt-4 pb-3.5">
-                  <div className="h-11 w-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                    <span className="text-[1.4rem] leading-none">🧠</span>
-                  </div>
-                  <div className="text-[0.92rem] font-black text-white leading-tight mb-0.5">GK Quiz</div>
-                  <div className="text-[0.58rem] text-white/50 font-medium mb-3">Test & Win</div>
-                  <div className="flex items-center justify-center gap-1.5 rounded-lg bg-white/95 py-1.5 shadow-lg transition-all duration-200 group-hover:bg-white">
-                    <Play size={11} className="text-indigo-600" fill="rgb(79,70,229)" />
-                    <span className="text-[0.72rem] font-extrabold text-indigo-600">Play</span>
-                    <ChevronRight size={11} className="text-indigo-400 transition-transform group-hover:translate-x-0.5" />
-                  </div>
+                <div className="relative flex h-[6.1rem] w-[6.1rem] shrink-0 items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_200deg_at_50%_50%,rgba(251,191,36,0.42),rgba(255,255,255,0.12),rgba(34,211,238,0.16),rgba(168,85,247,0.22),rgba(251,191,36,0.42))] opacity-95 shadow-[0_18px_48px_rgba(251,191,36,0.24)]" />
+                  <div className="absolute inset-[2px] rounded-full bg-[linear-gradient(180deg,rgba(32,15,52,0.98),rgba(12,7,22,0.98))] shadow-[inset_0_0_28px_rgba(251,191,36,0.08)]" />
+                  <div className="absolute inset-[16px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.14),transparent_30%),radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.14),transparent_70%)]" />
+                  <Crown className="relative h-[3.15rem] w-[3.15rem] text-amber-300 drop-shadow-[0_6px_18px_rgba(251,191,36,0.35)]" strokeWidth={2} style={{ animation: 'float 4s ease-in-out infinite, shimmer-glow 2.5s ease-in-out infinite alternate' }} />
                 </div>
-              </button>
-            </div>
-
-            {/* Bottom stats strip */}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-gradient-to-b from-violet-500/15 to-violet-500/5 border border-violet-500/15 py-2.5">
-                <div className="flex items-center gap-1">
-                  <User size={12} className="text-violet-400" />
-                  <span className="text-[0.82rem] font-black text-white">10K+</span>
-                </div>
-                <span className="text-[0.5rem] text-violet-300/60 font-semibold">Players</span>
               </div>
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-gradient-to-b from-cyan-500/15 to-cyan-500/5 border border-cyan-500/15 py-2.5">
-                <div className="flex items-center gap-1">
-                  <span className="text-[0.7rem]">🧠</span>
-                  <span className="text-[0.82rem] font-black text-white">500+</span>
-                </div>
-                <span className="text-[0.5rem] text-cyan-300/60 font-semibold">Quizzes</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-gradient-to-b from-amber-500/15 to-amber-500/5 border border-amber-500/15 py-2.5">
-                <div className="flex items-center gap-1">
-                  <Coins size={12} className="text-amber-400" />
-                  <span className="text-[0.82rem] font-black text-amber-300">₹1L+</span>
-                </div>
-                <span className="text-[0.5rem] text-amber-300/60 font-semibold">Rewards</span>
-              </div>
+
             </div>
 
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {HERO_MODES.map(({ id, icon, title, description, accentClass, glowClass, buttonLabel }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => go(id)}
+                  className={`home-shine group relative overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0818] text-left transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] ${glowClass}`}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${accentClass} opacity-[0.95]`} />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.22))]" />
+                  <div className="absolute -right-8 top-10 h-20 w-20 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+
+                  <div className="relative flex h-full flex-col px-3.5 pb-3.5 pt-3.5">
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-white/20 bg-white/20 text-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        <span>{icon}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-1 text-[1rem] font-black leading-tight text-white">{title}</div>
+                    <p className="mt-2 min-h-[2.25rem] text-[0.64rem] font-medium leading-4 text-white/74">{description}</p>
+
+                    <div className="mt-4 flex items-center justify-between rounded-2xl border border-black/5 bg-white px-3.5 py-2.5 shadow-[0_14px_32px_rgba(255,255,255,0.18)] transition-all duration-200 group-hover:bg-white group-hover:shadow-[0_18px_36px_rgba(255,255,255,0.22)]">
+                      <div className="flex items-center gap-1.5">
+                        <Play size={11} className="text-slate-900" fill="rgb(15,23,42)" />
+                        <span className="text-[0.68rem] font-black uppercase tracking-[0.08em] text-slate-900">{buttonLabel}</span>
+                      </div>
+                      <ChevronRight size={13} className="text-slate-500 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -388,6 +378,55 @@ const Home = () => {
             </Link>
           </section>
         )}
+
+        <section className="animate-fade-up grid gap-3 md:grid-cols-3" style={{ '--fade-delay': '250ms' }}>
+          <article className="rounded-[24px] border border-orange-400/15 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent p-4">
+            <div className="text-[0.66rem] font-black uppercase tracking-[0.22em] text-amber-300/80">IPL Season</div>
+            <h2 className="mt-2 text-[1rem] font-black text-white">Cricket buzz without thin pages</h2>
+            <p className="mt-2 text-[0.72rem] leading-5 text-white/65">
+              IPL trends, captain choices, match predictions, and fan sentiment now live inside our core GK and Opinion flows.
+            </p>
+          </article>
+          <article className="rounded-[24px] border border-violet-400/15 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-transparent p-4">
+            <div className="text-[0.66rem] font-black uppercase tracking-[0.22em] text-violet-300/80">High Value Content</div>
+            <h2 className="mt-2 text-[1rem] font-black text-white">Two strong formats only</h2>
+            <p className="mt-2 text-[0.72rem] leading-5 text-white/65">
+              Quiz Dangal focuses on live Opinion Quiz and GK Quiz rounds so every public page maps to the real product, not placeholder categories.
+            </p>
+          </article>
+          <article className="rounded-[24px] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent p-4">
+            <div className="text-[0.66rem] font-black uppercase tracking-[0.22em] text-emerald-300/80">Made For India</div>
+            <h2 className="mt-2 text-[1rem] font-black text-white">Daily useful quiz content</h2>
+            <p className="mt-2 text-[0.72rem] leading-5 text-white/65">
+              Fresh current affairs, IPL talking points, social opinion polls, and exam-style GK keep the site useful even when no round is live.
+            </p>
+          </article>
+        </section>
+
+        <section className="animate-fade-up rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl" style={{ '--fade-delay': '300ms' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📚</span>
+            <h2 className="text-[1rem] font-black text-white">Why Quiz Dangal is different</h2>
+          </div>
+          <div className="mt-3 space-y-3 text-[0.76rem] leading-6 text-white/68">
+            <p>
+              Quiz Dangal is built around two live formats that users actually play every day: Opinion Quiz for fast community voting and GK Quiz for verified knowledge rounds. During IPL season, cricket questions and fan polls are published inside these same formats so users never land on empty or duplicate category screens.
+            </p>
+            <p>
+              Every public page explains a real part of the product: how quizzes work, what type of questions are covered, how scoring and leaderboards behave, and how rewards and referrals are earned. That makes the site stronger for users, search engines, and ad review alike.
+            </p>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+              <h3 className="text-[0.85rem] font-bold text-white">What users can play right now</h3>
+              <p className="mt-2 text-[0.7rem] leading-5 text-white/60">Opinion polls on trending IPL and India topics, plus GK rounds covering current affairs, history, science, polity, and sports awareness.</p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+              <h3 className="text-[0.85rem] font-bold text-white">Why pages stay valuable</h3>
+              <p className="mt-2 text-[0.7rem] leading-5 text-white/60">Even when a slot is not live, users still get real explainer content, FAQs, schedules, and category details instead of empty shells or ad-only screens.</p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <StreakModal

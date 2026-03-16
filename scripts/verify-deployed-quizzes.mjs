@@ -52,7 +52,7 @@ function hasFlag(name) {
   return process.argv.includes(`--${name}`);
 }
 
-const CATEGORIES = ['gk', 'sports', 'movies', 'opinion'];
+const CATEGORIES = ['gk', 'opinion'];
 const EXPECTED_SLOTS = 144;
 const EXPECTED_QUESTIONS = 10;
 

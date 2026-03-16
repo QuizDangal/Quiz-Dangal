@@ -198,7 +198,7 @@ Sent via Quiz Dangal Contact Form`
           jsonLd={[contactSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
           datePublished="2025-01-01"
-          dateModified="2025-12-29"
+          dateModified="2026-03-16"
         />
 
         <AnimatePresence>
