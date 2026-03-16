@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, Search } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import SeoHead from '@/components/SEO';
 
 /**
  * 404 Not Found Page
@@ -11,11 +11,11 @@ import { Helmet } from 'react-helmet-async';
 const NotFound = () => {
   return (
     <>
-      <Helmet>
-        <title>404 - Page Not Found | Quiz Dangal</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="The page you're looking for doesn't exist. Return to Quiz Dangal homepage." />
-      </Helmet>
+      <SeoHead
+        title="404 - Page Not Found | Quiz Dangal"
+        description="The page you're looking for doesn't exist. Return to Quiz Dangal homepage."
+        noindex
+      />
       
       <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full text-center">

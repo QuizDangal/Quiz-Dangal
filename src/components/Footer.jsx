@@ -1,11 +1,10 @@
 import React from 'react';
 import { prefetchRoute } from '@/lib/utils';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { Home, Wallet, User, Medal, Trophy } from 'lucide-react';
 
 const Footer = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   // Use trailing slashes to avoid 301s on first load (GitHub Pages serves directories with a slash)
   const navItems = [
@@ -61,10 +60,9 @@ const Footer = () => {
             };
 
             return (
-              <button
-                type="button"
+              <Link
+                to={item.path}
                 key={item.path}
-                onClick={() => navigate(item.path)}
                 onMouseEnter={() => prefetchRoute(item.path)}
                 onFocus={() => prefetchRoute(item.path)}
                 className={getButtonClassName()}
@@ -86,7 +84,7 @@ const Footer = () => {
                 ) : (
                   <span className="qd-footer-label text-white/80">{item.label}</span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>

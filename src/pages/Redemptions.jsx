@@ -430,7 +430,7 @@ export default function Redemptions() {
                                 affordable ? `bg-gradient-to-br ${cc.btnBg}` : 'bg-slate-700/50'
                               }`}>
                                 {rw.image_url ? (
-                                  <img src={rw.image_url} alt="" className="w-full h-full rounded-xl object-cover" width={48} height={48} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                  <img src={rw.image_url} alt={rw.name || rw.type || 'Reward'} className="w-full h-full rounded-xl object-cover" width={48} height={48} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                 ) : isVoucher ? (
                                   <Gift className="w-5 h-5 text-white" />
                                 ) : (

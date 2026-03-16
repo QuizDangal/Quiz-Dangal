@@ -126,6 +126,8 @@ const Home = () => {
             <img
               src="/logo-48.png"
               alt="Quiz Dangal"
+              width={44}
+              height={44}
               className="h-11 w-11 rounded-2xl ring-2 ring-white/10 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(139,92,246,0.35)]"
             />
             <div className="leading-tight">
