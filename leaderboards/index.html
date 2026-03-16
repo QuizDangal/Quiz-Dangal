@@ -54,9 +54,9 @@
 	<!-- Canonical URL: default for crawlers before JS; React Helmet updates per-route -->
 	<link rel="canonical" href="https://quizdangal.com/leaderboards/" />
 	<!-- Hreflang for language/region targeting -->
-	<link rel="alternate" hreflang="en-IN" href="https://quizdangal.com/" />
-	<link rel="alternate" hreflang="en" href="https://quizdangal.com/" />
-	<link rel="alternate" hreflang="x-default" href="https://quizdangal.com/" />
+	<link rel="alternate" hreflang="en-IN" href="https://quizdangal.com/leaderboards/" />
+	<link rel="alternate" hreflang="en" href="https://quizdangal.com/leaderboards/" />
+	<link rel="alternate" hreflang="x-default" href="https://quizdangal.com/leaderboards/" />
 	<!-- Open Graph / Social share defaults -->
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Quiz Dangal" />
@@ -182,38 +182,18 @@
 	
 	<!-- Structured Data: WebSite (minimal for index.html, full schemas in React components) -->
 	<script type="application/ld+json">
-	  {
-	    "@context": "https://schema.org",
-	    "@type": "WebSite",
-	    "name": "Quiz Dangal",
-	    "alternateName": "QuizDangal",
-	    "url": "https://quizdangal.com/",
-	    "inLanguage": ["en-IN", "hi-IN"],
-	    "publisher": {
-	      "@type": "Organization",
-	      "name": "Quiz Dangal"
-	    },
-	    "potentialAction": {
-	      "@type": "SearchAction",
-	      "target": "https://quizdangal.com/?q={search_term_string}",
-	      "query-input": "required name=search_term_string"
-	    }
-	  }
-	</script>
-	<!-- Speakable Content for Voice Assistants & AI -->
-	<script type="application/ld+json">
-	  {
-	    "@context": "https://schema.org",
-	    "@type": "WebPage",
-	    "name": "Quiz Dangal - India's #1 Free Quiz Platform",
-	    "url": "https://quizdangal.com/",
-	    "description": "Quiz Dangal is India's leading free-to-play quiz platform where users can participate in daily quizzes, earn coins, and win rewards.",
-	    "speakable": {
-	      "@type": "SpeakableSpecification",
-	      "cssSelector": ["[data-speakable]", "h1", ".qdh-title", ".qdh-faq-section"]
-	    }
-	  }
-	</script>
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Leaderboards – Quiz Dangal | Top Quiz Players",
+    "url": "https://quizdangal.com/leaderboards/",
+    "description": "See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks.",
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": ["[data-speakable]", "h1", ".qdh-title", ".qdh-faq-section"]
+    }
+  }
+</script>
 	<!-- Knowledge Graph / Brand Entity -->
 	<script type="application/ld+json">
 	  {
@@ -221,13 +201,13 @@
 	    "@type": "Brand",
 	    "name": "Quiz Dangal",
 	    "alternateName": ["QuizDangal", "Quiz Dangal India"],
-	    "description": "India's premier free-to-play quiz and rewards platform offering daily quizzes, leaderboards, and coin-based rewards.",
+	    "description": "India's daily opinion and GK quiz platform offering live rounds, leaderboards, and coin-based rewards.",
 	    "url": "https://quizdangal.com/",
 	    "logo": "https://quizdangal.com/android-chrome-512x512.png",
 	    "slogan": "Play. Compete. Win."
 	  }
 	</script>
-  <script type="module" crossorigin src="/assets/index-Cb-XB76z.js"></script>
+  <script type="module" crossorigin src="/assets/index-DpFC29ts.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/react-DQQtrPfG.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-BMIB7Fuo.js">
   <link rel="modulepreload" crossorigin href="/assets/router-CHyimOz-.js">
@@ -246,7 +226,13 @@
 		id="static-loader"
 		style="position:fixed;inset:0;z-index:9999;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#050508 0%,#0a0a12 50%,#08080f 100%);transition:opacity 0.15s ease-out;"
 	>
-		<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+		<div style="width:min(92vw,680px);padding:24px;display:grid;gap:16px;text-align:center;justify-items:center;">
+			<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+			<div style="display:grid;gap:10px;max-width:620px;">
+				<h1 data-prerender-title style="margin:0;font:800 clamp(1.8rem,5vw,2.6rem)/1.05 Poppins,system-ui,sans-serif;letter-spacing:-0.04em;color:#fff;">Leaderboards – Quiz Dangal | Top Quiz Players</h1>
+				<p data-prerender-desc style="margin:0;color:rgba(255,255,255,0.74);font:500 0.98rem/1.65 Poppins,system-ui,sans-serif;">See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks.</p>
+			</div>
+		</div>
 	</div>
 
 	<!-- No-JS fallback -->
