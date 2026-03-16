@@ -179,8 +179,8 @@ Sent via Quiz Dangal Contact Form`
   };
 
   return (
-    <div className="min-h-screen pt-14 text-slate-100">
-      <div className="container mx-auto px-4 py-6 space-y-8 max-w-5xl">
+    <div className="min-h-screen pt-4 text-slate-100">
+      <div className="container mx-auto px-4 py-4 space-y-8 max-w-5xl">
         <SeoHead
           title="Contact Us – Quiz Dangal | Customer Support & Help"
           description="Get in touch with the Quiz Dangal support team for help, feedback, partnerships, and media inquiries. Call +91 9587803557 or email support@quizdangal.com. We're here to help!"
@@ -206,13 +206,13 @@ Sent via Quiz Dangal Contact Form`
             <>
               {/* Hero Section - AI Speakable */}
               <m.header
-                className="text-center mb-8"
+                className="text-center mb-6"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 data-speakable="true"
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">
+                <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent mb-3">
                   Contact Us
                 </h1>
                 <p className="text-base md:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto">

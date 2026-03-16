@@ -13,7 +13,7 @@ import {
   formatSupabaseError,
 } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy } from 'lucide-react';
+import { Users, MessageSquare, Brain, Clapperboard, Clock, Trophy, Play, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SeoHead from '@/components/SEO';
@@ -150,7 +150,7 @@ const CategoryQuizzes = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isSubscribed, subscribeToPush } = usePushNotifications();
-  const [quizzes] = useState([]); // legacy quizzes list fallback (setQuizzes removed)
+  const [quizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [counts, setCounts] = useState({}); // { [quizId]: joined (pre+joined+completed as joined) }
@@ -532,7 +532,7 @@ const CategoryQuizzes = () => {
       if (upcoming) return hasJoined ? 'Joined ✓' : 'Pre-Join';
       return 'View';
     };
-    const cta = getCta();
+    const _cta = getCta();
     
     // Handle button click
     const handleClick = async () => {
@@ -569,102 +569,168 @@ const CategoryQuizzes = () => {
       }
     };
     
+    const mins = secs !== null ? Math.floor(secs / 60) : 0;
+    const secsR = secs !== null ? secs % 60 : 0;
+    const totalWindow = st && et ? Math.max(1, et - st) : null;
+    const progressed = isActive && totalWindow ? Math.min(100, Math.max(0, Math.round(((now - st) / totalWindow) * 100))) : null;
+
     return (
-      <div
+      <m.div
         key={slot.slotId}
-        className="quiz-slot-card"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 14 }}
+        className="group cursor-pointer"
+        onClick={handleClick}
       >
-        <div className={`quiz-slot-card-inner ${isActive ? 'quiz-slot-card-live' : ''}`}>
-          {/* Top Row: Language + Badge */}
-          <div className="flex justify-between items-center mb-3">
-            <span className="quiz-slot-lang">
-              🌐 Hindi / English
-            </span>
-            <span className={`quiz-slot-badge ${
-              badge === 'LIVE' ? 'quiz-slot-badge-live' :
-              badge === 'UPCOMING' ? 'quiz-slot-badge-upcoming' :
-              badge === 'PAUSED' ? 'quiz-slot-badge-paused' :
-              'quiz-slot-badge-default'
-            }`}>
-              {badge === 'LIVE' && <span className="quiz-slot-badge-dot" />}
-              {badge}
-            </span>
-          </div>
-          
-          {/* Title */}
-          <h3 className="text-sm sm:text-base font-bold text-white mb-3 line-clamp-2">
-            {slot.quiz_title || slot.title || 'Quiz'}
-          </h3>
-          
-          {/* Time Section - Start & End with Timer */}
-          <div className="quiz-slot-time-section">
-            <div className="quiz-slot-time-row">
-              <div className="quiz-slot-time-box">
-                <span className="quiz-slot-time-label">START</span>
-                <span className="quiz-slot-time-value">{slot.start_time ? formatTimeOnly(slot.start_time) : '—'}</span>
-              </div>
-              <div className="quiz-slot-time-divider">→</div>
-              <div className="quiz-slot-time-box">
-                <span className="quiz-slot-time-label">END</span>
-                <span className="quiz-slot-time-value">{slot.end_time ? formatTimeOnly(slot.end_time) : '—'}</span>
+        {/* Animated conic gradient border */}
+        <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
+          isActive 
+            ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
+            : isPaused
+              ? 'bg-[conic-gradient(from_0deg,#f59e0b,#d97706,#b45309,#f59e0b)] shadow-[0_0_20px_-5px_rgba(245,158,11,0.25)]'
+              : isFinished
+                ? 'bg-[conic-gradient(from_0deg,#10b981,#06b6d4,#3b82f6,#10b981)] shadow-[0_0_20px_-5px_rgba(16,185,129,0.25)]'
+                : 'bg-[conic-gradient(from_0deg,#a855f7,#ec4899,#f43f5e,#a855f7)] shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
+        }`}>
+          <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 overflow-hidden">
+            {/* Top shimmer glow */}
+            <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
+              isActive 
+                ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
+                : isPaused
+                  ? 'bg-gradient-to-b from-amber-500/20 via-yellow-500/10 to-transparent'
+                  : isFinished
+                    ? 'bg-gradient-to-b from-emerald-500/20 via-teal-500/10 to-transparent'
+                    : 'bg-gradient-to-b from-violet-500/25 via-fuchsia-500/10 to-transparent'
+            }`} />
+
+            {/* Badge Row */}
+            <div className="relative flex items-center justify-between mb-3">
+              <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
+                isActive
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
+                  : isPaused
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-[0_4px_15px_-3px_rgba(245,158,11,0.5)]'
+                    : isFinished
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.5)]'
+                      : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_15px_-3px_rgba(168,85,247,0.5)]'
+              }`}>
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                {badge === 'LIVE' ? '🔴 LIVE NOW' : badge === 'UPCOMING' ? '⏰ UPCOMING' : badge === 'PAUSED' ? '⏸️ PAUSED' : badge === 'FINISHED' ? '✅ FINISHED' : badge}
+              </span>
+              <div className="flex items-center gap-1 text-slate-500">
+                <Users className="w-3 h-3" />
+                <span className="text-[10px] font-bold">{participantsJoined}</span>
               </div>
             </div>
+
+            {/* Title */}
+            <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">
+              {slot.quiz_title || slot.title || 'Quiz'}
+            </h3>
+
+            {/* Timer — Big and prominent */}
             {secs !== null && (
-              <div className={`quiz-slot-timer ${isActive ? 'quiz-slot-timer-live' : ''}`}>
-                <Clock className="w-3.5 h-3.5" />
-                <span>{upcoming ? 'Starts in' : 'Ends in'}</span>
-                <span className="quiz-slot-timer-value">
-                  {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
-                </span>
+              <div className={`relative mb-4 rounded-2xl overflow-hidden ${
+                isActive 
+                  ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
+                  : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
+              }`}>
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
+                    <div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                        {isActive ? 'Ends in' : 'Starts in'}
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
+                          {String(mins).padStart(2, '0')}
+                        </span>
+                        <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
+                        <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
+                          {String(secsR).padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
+                    <div className="text-[11px] text-slate-300 font-semibold">
+                      {slot.start_time ? formatTimeOnly(slot.start_time) : '—'} → {slot.end_time ? formatTimeOnly(slot.end_time) : '—'}
+                    </div>
+                  </div>
+                </div>
+                {progressed !== null && (
+                  <div className="h-1 bg-black/30">
+                    <m.div 
+                      className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressed}%` }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
-          
-          {/* Prize Section */}
-          <div className="quiz-slot-prize-section">
-            <div className="quiz-slot-prize-title">🏆 Prizes</div>
-            <div className="quiz-slot-prize-row">
-              <div className="quiz-slot-prize-item quiz-slot-prize-gold">
-                <span className="quiz-slot-prize-rank">1st</span>
-                <span className="quiz-slot-prize-value">{formatPrize(p1)}</span>
-              </div>
-              <div className="quiz-slot-prize-item quiz-slot-prize-silver">
-                <span className="quiz-slot-prize-rank">2nd</span>
-                <span className="quiz-slot-prize-value">{formatPrize(p2)}</span>
-              </div>
-              <div className="quiz-slot-prize-item quiz-slot-prize-bronze">
-                <span className="quiz-slot-prize-rank">3rd</span>
-                <span className="quiz-slot-prize-value">{formatPrize(p3)}</span>
-              </div>
+
+            {/* Prizes — Medal cards */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[
+                { label: '1st', emoji: '🥇', value: formatPrize(p1), bg: 'from-rose-500/20 to-pink-600/10', border: 'border-rose-500/25', text: 'text-rose-300', glow: 'shadow-rose-500/10' },
+                { label: '2nd', emoji: '🥈', value: formatPrize(p2), bg: 'from-violet-400/15 to-purple-500/10', border: 'border-violet-400/20', text: 'text-violet-300', glow: 'shadow-violet-400/5' },
+                { label: '3rd', emoji: '🥉', value: formatPrize(p3), bg: 'from-cyan-500/15 to-teal-600/10', border: 'border-cyan-500/20', text: 'text-cyan-300', glow: 'shadow-cyan-500/10' },
+              ].map((prize) => (
+                <div key={prize.label} className={`relative text-center py-3 rounded-2xl bg-gradient-to-b ${prize.bg} border ${prize.border} shadow-lg ${prize.glow}`}>
+                  <div className="text-lg leading-none">{prize.emoji}</div>
+                  <div className={`text-sm font-black ${prize.text} mt-1`}>{prize.value}</div>
+                </div>
+              ))}
             </div>
+
+            {/* Stats Row */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-400 font-medium">
+                📝 {qCount} Qs
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-400 font-medium">
+                🌐 Hindi / English
+              </span>
+            </div>
+
+            {/* CTA Button (full width) */}
+            <button
+              type="button"
+              disabled={isJoining}
+              onClick={(e) => { e.stopPropagation(); handleClick(); }}
+              onMouseEnter={() => prefetchRoute(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`)}
+              className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
+                isJoining ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
+                isActive 
+                  ? 'bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white shadow-[0_8px_25px_-5px_rgba(244,63,94,0.5)]'
+                  : isPaused
+                    ? 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-[0_6px_20px_-4px_rgba(100,116,139,0.4)]'
+                    : isFinished
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_6px_20px_-4px_rgba(16,185,129,0.3)]'
+                      : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_8px_25px_-5px_rgba(168,85,247,0.5)]'
+              }`}
+            >
+              {isJoining ? (
+                'Joining...'
+              ) : isFinished ? (
+                <><Trophy className="w-4 h-4" /> RESULTS <ChevronRight className="w-4 h-4 opacity-60" /></>
+              ) : isActive ? (
+                <><Play className="w-4 h-4" fill="currentColor" /> PLAY NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
+              ) : hasJoined ? (
+                <><Play className="w-4 h-4" fill="currentColor" /> PLAY <ChevronRight className="w-4 h-4 opacity-60" /></>
+              ) : (
+                <><Play className="w-4 h-4" fill="currentColor" /> {upcoming ? 'PRE-JOIN' : 'JOIN NOW'} <ChevronRight className="w-4 h-4 opacity-60" /></>
+              )}
+            </button>
           </div>
-          
-          {/* Stats Row */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="quiz-slot-stat">
-              📝 {qCount} Questions
-            </span>
-            <span className="quiz-slot-stat">
-              <Users className="w-3 h-3" /> {participantsJoined} Joined
-            </span>
-          </div>
-          
-          {/* CTA Button */}
-          <button
-            type="button"
-            disabled={isJoining || (hasJoined && upcoming)}
-            onClick={handleClick}
-            onMouseEnter={() => prefetchRoute(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`)}
-            className={`quiz-slot-btn ${
-              isJoining ? 'opacity-50 cursor-wait' :
-              hasJoined && upcoming ? 'quiz-slot-btn-joined' :
-              isActive ? 'quiz-slot-btn-live' : 'quiz-slot-btn-default'
-            }`}
-          >
-            {isJoining ? 'Joining...' : cta}
-          </button>
         </div>
-      </div>
+      </m.div>
     );
   };
   // Push reminder scheduling for next slot (simple local toast) – front-end only placeholder
@@ -689,8 +755,6 @@ const CategoryQuizzes = () => {
     return () => clearTimeout(id);
   }, [nextSlot, toast]);
 
-  // Removed recent finished inclusion from display; do not mention in description
-
   const canonical =
     typeof window !== 'undefined'
       ? `${window.location.origin}/category/${slug}/`
@@ -700,7 +764,7 @@ const CategoryQuizzes = () => {
   // This ensures Google sees valuable content regardless of when it crawls
 
   return (
-    <div className="px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
+    <div className="min-h-screen px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
       <SeoHead
         title={`${meta.title} – Quiz Dangal`}
         description={`Active and upcoming quizzes in ${meta.title}. Play daily ${meta.title.toLowerCase()} on Quiz Dangal and earn coins.`}
@@ -907,7 +971,6 @@ const CategoryQuizzes = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filtered.map((q, idx) => {
-            // use tick to trigger re-render every second
             const now = Date.now();
             const st = q.start_time ? new Date(q.start_time).getTime() : null;
             const et = q.end_time ? new Date(q.end_time).getTime() : null;
@@ -920,20 +983,17 @@ const CategoryQuizzes = () => {
                 : isActive && et
                   ? Math.max(0, Math.floor((et - now) / 1000))
                   : null;
+            const mins = secs !== null ? Math.floor(secs / 60) : 0;
+            const secsR = secs !== null ? secs % 60 : 0;
             const prizes = Array.isArray(q.prizes) ? q.prizes : [];
             const prizeType = q.prize_type || 'coins';
             const p1 = prizes[0] ?? 0;
             const p2 = prizes[1] ?? 0;
             const p3 = prizes[2] ?? 0;
-            const formatPrize = (value) => {
-              const display = getPrizeDisplay(prizeType, value, { fallback: 0 });
-              // Plain text only, no coin icon
-              return display.formatted;
-            };
+            const formatPrize = (value) => getPrizeDisplay(prizeType, value, { fallback: 0 }).formatted;
             const joined = counts[q.id] || 0;
             const myStatus = joinedMap[q.id];
-            // unified UX: show only JOIN/JOINED; treat pre-joined as Joined in UI
-            const already = !!myStatus; // 'pre' or 'joined' both count as joined for display
+            const already = !!myStatus;
             const totalWindow = st && et ? Math.max(1, et - st) : null;
             const progressed =
               isActive && totalWindow
@@ -942,60 +1002,101 @@ const CategoryQuizzes = () => {
             return (
               <m.div
                 key={q.id}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.02 }}
+                transition={{ delay: idx * 0.04, type: 'spring', stiffness: 100, damping: 14 }}
                 onClick={() => navigate(`/quiz/${q.id}`)}
-                className="cursor-pointer"
+                className="group cursor-pointer"
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') navigate(`/quiz/${q.id}`);
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quiz/${q.id}`); }}
               >
-                <div className={`p-[1px] rounded-xl sm:rounded-2xl ${isActive ? 'bg-gradient-to-r from-emerald-500/60 to-green-500/60' : 'bg-gradient-to-r from-indigo-500/40 via-violet-500/30 to-fuchsia-500/40'}`}>
-                  <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4">
-                    {/* Header row */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-sm sm:text-base font-bold text-white flex-1 min-w-0 line-clamp-2">{q.title}</h3>
-                      <div className="shrink-0 flex items-center gap-1">
-                        {isActive && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold bg-rose-600 text-white">LIVE</span>}
-                        {isUpcoming && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold bg-sky-600 text-white">SOON</span>}
-                        {myStatus && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/40">Joined</span>}
-                      </div>
-                    </div>
-                    {/* Prize chips */}
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs mb-2">
-                      <span className="px-1.5 sm:px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-600/30">🥇 {formatPrize(p1)}</span>
-                      <span className="px-1.5 sm:px-2 py-1 rounded bg-sky-500/15 text-sky-300 border border-sky-600/30">🥈 {formatPrize(p2)}</span>
-                      <span className="px-1.5 sm:px-2 py-1 rounded bg-violet-500/15 text-violet-300 border border-violet-600/30">🥉 {formatPrize(p3)}</span>
-                    </div>
-                    {/* Time info */}
-                    <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-400 mb-2">
-                      <span>{q.start_time ? formatDateOnly(q.start_time) : '—'}</span>
-                      <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-slate-800/60 border border-slate-700/50">
-                        {q.start_time ? formatTimeOnly(q.start_time) : '—'} - {q.end_time ? formatTimeOnly(q.end_time) : '—'}
+                <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
+                  isActive 
+                    ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
+                    : 'bg-[conic-gradient(from_0deg,#a855f7,#ec4899,#f43f5e,#a855f7)] shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
+                }`}>
+                  <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 overflow-hidden">
+                    <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
+                      isActive 
+                        ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
+                        : 'bg-gradient-to-b from-violet-500/25 via-fuchsia-500/10 to-transparent'
+                    }`} />
+
+                    {/* Badge Row */}
+                    <div className="relative flex items-center justify-between mb-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
+                        isActive
+                          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
+                          : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_15px_-3px_rgba(168,85,247,0.5)]'
+                      }`}>
+                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                        {isActive ? '🔴 LIVE NOW' : '⏰ UPCOMING'}
                       </span>
-                    </div>
-                    {/* Stats row */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500">
-                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {joined} joined
+                      <div className="flex items-center gap-1 text-slate-500">
+                        <Users className="w-3 h-3" />
+                        <span className="text-[10px] font-bold">{joined}</span>
                       </div>
-                      {secs !== null && (
-                        <div className="text-xs sm:text-sm font-semibold text-indigo-300">
-                          {isUpcoming ? 'In' : 'Ends'} {Math.floor(secs / 60).toString().padStart(2, '0')}:{(secs % 60).toString().padStart(2, '0')}
-                        </div>
-                      )}
                     </div>
-                    {/* Progress bar */}
-                    {progressed !== null && (
-                      <div className="mb-2 w-full bg-slate-800 rounded-full h-1 sm:h-1.5 overflow-hidden">
-                        <div className="h-full bg-emerald-500" style={{ width: `${progressed}%` }} />
+
+                    <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">{q.title}</h3>
+
+                    {/* Timer */}
+                    {secs !== null && (
+                      <div className={`relative mb-4 rounded-2xl overflow-hidden ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
+                          : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
+                      }`}>
+                        <div className="px-4 py-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
+                            <div>
+                              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                {isActive ? 'Ends in' : 'Starts in'}
+                              </div>
+                              <div className="flex items-baseline gap-1 mt-0.5">
+                                <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(mins).padStart(2, '0')}</span>
+                                <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
+                                <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(secsR).padStart(2, '0')}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
+                            <div className="text-[11px] text-slate-300 font-semibold">
+                              {q.start_time ? formatTimeOnly(q.start_time) : '—'} → {q.end_time ? formatTimeOnly(q.end_time) : '—'}
+                            </div>
+                          </div>
+                        </div>
+                        {progressed !== null && (
+                          <div className="h-1 bg-black/30">
+                            <m.div 
+                              className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressed}%` }}
+                              transition={{ duration: 0.8 }}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
-                    {/* CTA Button */}
+
+                    {/* Prizes */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {[
+                        { label: '1st', emoji: '🥇', value: formatPrize(p1), bg: 'from-rose-500/20 to-pink-600/10', border: 'border-rose-500/25', text: 'text-rose-300', glow: 'shadow-rose-500/10' },
+                        { label: '2nd', emoji: '🥈', value: formatPrize(p2), bg: 'from-violet-400/15 to-purple-500/10', border: 'border-violet-400/20', text: 'text-violet-300', glow: 'shadow-violet-400/5' },
+                        { label: '3rd', emoji: '🥉', value: formatPrize(p3), bg: 'from-cyan-500/15 to-teal-600/10', border: 'border-cyan-500/20', text: 'text-cyan-300', glow: 'shadow-cyan-500/10' },
+                      ].map((prize) => (
+                        <div key={prize.label} className={`relative text-center py-3 rounded-2xl bg-gradient-to-b ${prize.bg} border ${prize.border} shadow-lg ${prize.glow}`}>
+                          <div className="text-lg leading-none">{prize.emoji}</div>
+                          <div className={`text-sm font-black ${prize.text} mt-1`}>{prize.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTA Button (full width) */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1005,13 +1106,22 @@ const CategoryQuizzes = () => {
                       }}
                       onMouseEnter={() => prefetchRoute('/quiz')}
                       disabled={joiningId === q.id}
-                      className={`w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm font-bold text-white transition ${
+                      className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
+                        joiningId === q.id ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
                         isActive
-                          ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:opacity-90'
-                          : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90'
-                      } ${joiningId === q.id ? 'opacity-80' : ''}`}
+                          ? 'bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white shadow-[0_8px_25px_-5px_rgba(244,63,94,0.5)]'
+                          : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_8px_25px_-5px_rgba(168,85,247,0.5)]'
+                      }`}
                     >
-                      {already ? 'JOINED' : !canJoin ? 'VIEW' : joiningId === q.id ? 'JOINING…' : 'JOIN'}
+                      {joiningId === q.id ? 'Joining...' : isActive ? (
+                        <><Play className="w-4 h-4" fill="currentColor" /> PLAY NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
+                      ) : already ? (
+                        <><Play className="w-4 h-4" fill="currentColor" /> PLAY <ChevronRight className="w-4 h-4 opacity-60" /></>
+                      ) : !canJoin ? (
+                        'VIEW'
+                      ) : (
+                        <><Play className="w-4 h-4" fill="currentColor" /> JOIN NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
+                      )}
                     </button>
                   </div>
                 </div>

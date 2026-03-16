@@ -176,8 +176,8 @@ const PrivacyPolicy = () => {
   };
 
   return (
-    <div className="min-h-screen pt-14 text-slate-100">
-      <div className="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
+    <div className="min-h-screen pt-4 text-slate-100">
+      <div className="container mx-auto px-4 py-4 space-y-6 max-w-4xl">
         <SeoHead
           title="Privacy Policy - Quiz Dangal | Data Protection & User Privacy"
           description="Comprehensive Privacy Policy for Quiz Dangal. Learn how we collect, use, store, and protect your personal data. Your privacy is our priority."
@@ -198,8 +198,8 @@ const PrivacyPolicy = () => {
         />
 
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-3">
+        <header className="text-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent mb-3">
             Privacy Policy
           </h1>
           <div className="flex items-center justify-center space-x-2 text-slate-300 mb-4">

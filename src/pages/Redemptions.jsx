@@ -26,7 +26,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
-// Removed Link import since we no longer show the Earn now link
 
 export default function Redemptions() {
   const { user, userProfile, refreshUserProfile } = useAuth();
@@ -35,7 +34,6 @@ export default function Redemptions() {
   const [loading, setLoading] = useState(true);
   const [rewards, setRewards] = useState([]);
   const [rewardsLoading, setRewardsLoading] = useState(true);
-  // search is removed from UI; keep list as-is
   const [selectedReward, setSelectedReward] = useState(null);
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [redeemStep, setRedeemStep] = useState('confirm'); // confirm | success
@@ -44,14 +42,26 @@ export default function Redemptions() {
   const [payoutChannel, setPayoutChannel] = useState('upi');
   const [redeemMode, setRedeemMode] = useState('cash'); // cash | voucher
   const payoutInputRef = React.useRef(null);
-  // Mobile keyboard handling: when input focused on small screens, lift dialog upward for better visibility
-  const [inputFocused, setInputFocused] = useState(false);
+  const [_inputFocused, setInputFocused] = useState(false);
   const isMobile =
     typeof window !== 'undefined' &&
     /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const [kbOffset, setKbOffset] = useState(0);
+
+  // Track visual viewport to detect keyboard open/close on mobile
+  useEffect(() => {
+    if (!isMobile || typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const diff = window.innerHeight - vv.height;
+      setKbOffset(diff > 100 ? diff : 0);
+    };
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
+  }, [isMobile]);
   const [activeTab, setActiveTab] = useState('rewards'); // rewards | history
-  const historyQuery = '';
-  const historySort = 'newest';
+
 
   // Use backend reward_value exactly as provided (no extra suffix/prefix)
   const getRawRewardValue = useCallback((rw) => {
@@ -138,29 +148,12 @@ export default function Redemptions() {
 
   // History filters and sorting
   const filteredRows = useMemo(() => {
-    const q = historyQuery.trim().toLowerCase();
-    let list = rows || [];
-    if (q) {
-      list = list.filter(
-        (r) =>
-          String(r.reward_type || '')
-            .toLowerCase()
-            .includes(q) ||
-          String(r.reward_value || '')
-            .toLowerCase()
-            .includes(q) ||
-          String(r.status || '')
-            .toLowerCase()
-            .includes(q),
-      );
-    }
-    list = [...list].sort((a, b) => {
+    return [...(rows || [])].sort((a, b) => {
       const at = a.requested_at ? new Date(a.requested_at).getTime() : 0;
       const bt = b.requested_at ? new Date(b.requested_at).getTime() : 0;
-      return historySort === 'oldest' ? at - bt : bt - at;
+      return bt - at;
     });
-    return list;
-  }, [rows, historyQuery, historySort]);
+  }, [rows]);
 
   const resolveRewardMode = useCallback((rw) => {
     const raw = String(rw?.reward_type || '')
@@ -327,7 +320,7 @@ export default function Redemptions() {
         author="Quiz Dangal"
         datePublished="2025-01-01"
       />
-      <div className="relative pt-20 mx-auto max-w-5xl px-4 py-6">
+      <div className="relative min-h-screen mx-auto max-w-5xl px-4 py-4">
         {/* Dev guard: if Supabase is not configured, show a helpful message */}
         {!hasSupabaseConfig && (
           <div className="mb-4 rounded-xl border border-amber-300/30 bg-amber-500/10 p-3 text-amber-100 text-sm">
@@ -343,31 +336,28 @@ export default function Redemptions() {
           transition={{ duration: 0.4 }}
           className="mb-6"
         >
-          {/* Section Header */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 grid place-items-center shadow-lg shadow-orange-500/20">
-              <Gift className="w-6 h-6 text-white" />
+          {/* Header */}
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 shadow-lg shadow-fuchsia-500/25">
+              <Gift className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Redeem Rewards</h1>
-              <p className="text-sm text-slate-400">Exchange coins for real prizes</p>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300 bg-clip-text text-transparent">Redeem Rewards</h1>
           </div>
 
-          {/* Tabs: Rewards Summary | History (under heading) */}
-          <div className="mb-4 flex items-center gap-2">
+          {/* Tabs */}
+          <div className="mb-5 flex items-center gap-2 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
             {[
-              { key: 'rewards', label: 'My Redemptions', icon: Gift },
-              { key: 'history', label: 'Full History', icon: Receipt },
+              { key: 'rewards', label: 'Rewards', icon: Gift },
+              { key: 'history', label: 'History', icon: Receipt },
             ].map((tab) => (
               <button
                 type="button"
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   activeTab === tab.key
-                    ? 'bg-white/10 text-white border-white/20 shadow-lg'
-                    : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:border-white/20'
+                    ? 'bg-gradient-to-r from-violet-500/20 via-fuchsia-500/15 to-pink-500/20 text-white shadow-lg shadow-fuchsia-500/10 border border-fuchsia-400/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -403,137 +393,95 @@ export default function Redemptions() {
                   <p className="text-slate-500 text-sm mt-1">Check back soon!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredRewards.map((rw) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredRewards.map((rw, idx) => {
                     const price = Number(rw.coins_required ?? rw.coin_cost ?? rw.coins ?? 0);
                     const rewardValue = getRawRewardValue(rw);
                     const displayValue = formatRewardValue(rewardValue);
                     const affordable = walletCoins >= price;
                     const pct = price > 0 ? Math.min(100, Math.round((walletCoins / price) * 100)) : 100;
-                    const description = rw.description ? String(rw.description).trim() : '';
                     const rewardType = String(rw.reward_type || '').toLowerCase();
                     const isVoucher = rewardType.includes('voucher');
+                    const cardColors = [
+                      { border: 'from-violet-500 via-fuchsia-500 to-pink-500', btnBg: 'from-violet-500 to-fuchsia-500' },
+                      { border: 'from-cyan-400 via-blue-500 to-indigo-500', btnBg: 'from-cyan-500 to-blue-500' },
+                      { border: 'from-emerald-400 via-teal-500 to-cyan-500', btnBg: 'from-emerald-500 to-teal-500' },
+                      { border: 'from-amber-400 via-orange-500 to-rose-500', btnBg: 'from-amber-500 to-orange-500' },
+                    ];
+                    const cc = cardColors[idx % cardColors.length];
                     
                     return (
                       <m.div
                         key={rw.id}
                         className="group"
-                        whileHover={{ y: -3 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.05, type: 'spring', stiffness: 150, damping: 18 }}
                       >
-                        <div className={`h-full rounded-2xl border overflow-hidden transition-all duration-200 ${
+                        <div className={`relative h-full rounded-2xl p-[1.5px] transition-all duration-200 ${
                           affordable 
-                            ? 'bg-gradient-to-b from-slate-800/90 to-slate-900/95 border-white/10 hover:border-indigo-400/50 hover:shadow-lg hover:shadow-indigo-500/10' 
-                            : 'bg-slate-800/40 border-white/5'
+                            ? `bg-gradient-to-br ${cc.border} shadow-lg` 
+                            : 'bg-gradient-to-br from-slate-600/30 to-slate-700/30'
                         }`}>
-                          {/* Top colored bar */}
-                          <div className={`h-1 ${affordable ? 'bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-500' : 'bg-slate-700'}`} />
-                          
-                          <div className="p-4">
-                            {/* Header: Icon + Value + Type Badge */}
-                            <div className="flex items-start gap-3 mb-3">
-                              {/* Reward Icon */}
+                          <div className="h-full rounded-[14.5px] bg-[#0a0a14]/95 p-4">
+                            {/* Icon + Value row */}
+                            <div className="flex items-center gap-3 mb-3">
                               <div className={`w-12 h-12 rounded-xl grid place-items-center flex-shrink-0 ${
-                                isVoucher 
-                                  ? 'bg-gradient-to-br from-purple-500/25 to-pink-500/25 ring-1 ring-purple-400/20' 
-                                  : 'bg-gradient-to-br from-emerald-500/25 to-teal-500/25 ring-1 ring-emerald-400/20'
+                                affordable ? `bg-gradient-to-br ${cc.btnBg}` : 'bg-slate-700/50'
                               }`}>
                                 {rw.image_url ? (
-                                  <img
-                                    src={rw.image_url}
-                                    alt="Reward item"
-                                    className="w-full h-full rounded-xl object-cover"
-                                    width={48}
-                                    height={48}
-                                    loading="lazy"
-                                    decoding="async"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                  />
+                                  <img src={rw.image_url} alt="" className="w-full h-full rounded-xl object-cover" width={48} height={48} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                 ) : isVoucher ? (
-                                  <Gift className="w-5 h-5 text-purple-300" aria-hidden="true" />
+                                  <Gift className="w-5 h-5 text-white" />
                                 ) : (
-                                  <span className="text-lg font-bold text-emerald-300" aria-hidden="true">₹</span>
+                                  <span className="text-lg font-bold text-white">₹</span>
                                 )}
                               </div>
-                              
-                              {/* Value + Title */}
                               <div className="flex-1 min-w-0">
-                                <div className={`text-lg font-bold ${affordable ? 'text-white' : 'text-slate-400'}`}>
+                                <div className={`text-lg font-extrabold leading-tight ${affordable ? 'text-white' : 'text-slate-400'}`}>
                                   {displayValue || rw.title || 'Reward'}
                                 </div>
-                                {rw.title && displayValue && (
-                                  <div className="text-sm text-slate-400 truncate">{rw.title}</div>
-                                )}
-                                {/* Type Badge */}
-                                <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide ${
-                                  isVoucher 
-                                    ? 'bg-purple-500/20 text-purple-300' 
-                                    : 'bg-emerald-500/20 text-emerald-300'
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                  isVoucher ? 'text-fuchsia-400' : 'text-emerald-400'
                                 }`}>
                                   {isVoucher ? 'Voucher' : 'Cash'}
                                 </span>
                               </div>
-
-                              {/* Affordable Check */}
-                              {affordable && (
-                                <div className="w-6 h-6 rounded-full bg-emerald-500/20 grid place-items-center flex-shrink-0">
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                </div>
-                              )}
                             </div>
 
-                            {/* Description */}
-                            {description && (
-                              <p className="text-xs text-slate-400 mb-3 line-clamp-2">{description}</p>
-                            )}
-
-                            {/* Price & Progress */}
-                            <div className="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-slate-800/60 border border-white/5">
-                              <div className="flex items-center gap-2">
-                                <Coins className="w-4 h-4 text-amber-400" />
-                                <span className="text-base font-bold text-white">{price.toLocaleString()}</span>
-                                <span className="text-xs text-slate-500">coins</span>
+                            {/* Coins + progress */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <Coins className="w-4 h-4 text-amber-400" />
+                              <span className="text-sm font-extrabold text-white">{price.toLocaleString()}</span>
+                              <span className="text-[10px] text-slate-500">coins</span>
+                              <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden ml-1">
+                                <m.div
+                                  className={`h-full rounded-full ${affordable ? `bg-gradient-to-r ${cc.border}` : 'bg-slate-600'}`}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.min(pct, 100)}%` }}
+                                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                                />
                               </div>
-                              <div className="ml-auto text-sm font-semibold text-slate-400">
-                                {pct >= 100 ? (
-                                  <span className="text-emerald-400">Ready!</span>
-                                ) : (
-                                  <span>{pct}%</span>
-                                )}
-                              </div>
+                              <span className={`text-[10px] font-bold ${pct >= 100 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                {pct >= 100 ? '✓ Ready' : `${pct}%`}
+                              </span>
                             </div>
 
-                            {/* Progress Bar */}
-                            <div className="h-1.5 w-full rounded-full bg-slate-700/50 mb-4 overflow-hidden">
-                              <m.div
-                                className={`h-full rounded-full ${affordable ? 'bg-gradient-to-r from-emerald-400 to-cyan-400' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(pct, 100)}%` }}
-                                transition={{ duration: 0.6, ease: 'easeOut' }}
-                              />
-                            </div>
-
-                            {/* Redeem Button */}
+                            {/* Button */}
                             <button
                               type="button"
                               disabled={!affordable}
                               onClick={() => onRedeemClick(rw)}
-                              className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
                                 affordable
-                                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-md hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98]'
-                                  : 'bg-slate-700/40 text-slate-500 border border-slate-600/30 cursor-not-allowed'
+                                  ? `bg-gradient-to-r ${cc.btnBg} text-white shadow-md hover:brightness-110 active:scale-[0.97]`
+                                  : 'bg-white/[0.04] text-slate-500 cursor-not-allowed'
                               }`}
                             >
                               {affordable ? (
-                                <>
-                                  <Sparkles className="w-4 h-4" />
-                                  Redeem Now
-                                </>
+                                <><Sparkles className="w-4 h-4" /> Redeem Now</>
                               ) : (
-                                <>
-                                  <Clock className="w-4 h-4" />
-                                  Need {(price - walletCoins).toLocaleString()} more
-                                </>
+                                <><Clock className="w-3 h-3" /> {(price - walletCoins).toLocaleString()} more</>
                               )}
                             </button>
                           </div>
@@ -544,42 +492,32 @@ export default function Redemptions() {
                 </div>
               )}
 
-              {/* Stats Summary - refreshed layout */}
+              {/* Stats */}
               <m.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.08 }}
-                className="mt-6"
+                className="mt-5"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[{
-                    label: 'Total Requests',
-                    value: stats.total,
-                    icon: Receipt,
-                    accent: 'from-indigo-500/15 to-blue-600/20',
-                  },
-                  {
-                    label: 'Approved',
-                    value: stats.approved,
-                    icon: CheckCircle2,
-                    accent: 'from-emerald-500/15 to-teal-600/20',
-                  }].map((card) => (
-                    <div
-                      key={card.label}
-                      className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-lg p-4 shadow-lg flex items-center gap-3"
-                    >
-                      <div className={`w-11 h-11 rounded-xl grid place-items-center bg-gradient-to-br ${card.accent} border border-white/10 shadow-inner`}>
-                        <card.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">
-                          {card.label}
-                        </div>
-                        <div className="text-2xl font-bold text-white leading-tight">{card.value}</div>
-                      </div>
-                      <div className="absolute inset-y-0 right-0 w-16 opacity-20 bg-gradient-to-l from-white/20 to-transparent" />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-400/15">
+                    <div className="w-7 h-7 rounded-lg grid place-items-center bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-sm">
+                      <Receipt className="w-3.5 h-3.5 text-white" />
                     </div>
-                  ))}
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Requests</div>
+                      <div className="text-sm font-extrabold text-violet-300 leading-tight">{stats.total}</div>
+                    </div>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-400/15">
+                    <div className="w-7 h-7 rounded-lg grid place-items-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-sm">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Approved</div>
+                      <div className="text-sm font-extrabold text-emerald-300 leading-tight">{stats.approved}</div>
+                    </div>
+                  </div>
                 </div>
               </m.div>
             </>
@@ -588,87 +526,94 @@ export default function Redemptions() {
 
         {/* Redemptions history list */}
         {activeTab === 'history' && (
-          <div className="qd-card rounded-3xl p-5 shadow-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl">
+          <m.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
             {loading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-xl bg-indigo-900/30 border border-indigo-700/40"
-                  >
-                    <div className="animate-pulse flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 w-2/3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-800/40" />
+                  <div key={i} className="rounded-2xl p-[1.5px] bg-gradient-to-r from-slate-600/30 to-slate-700/30">
+                    <div className="rounded-[14.5px] bg-[#0a0a14]/95 p-4 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-800/60" />
                         <div className="flex-1">
-                          <div className="h-3 bg-indigo-800/40 rounded w-2/3 mb-2" />
-                          <div className="h-2.5 bg-indigo-800/40 rounded w-1/3" />
+                          <div className="h-3.5 bg-slate-800/60 rounded w-2/3 mb-2" />
+                          <div className="h-2.5 bg-slate-800/60 rounded w-1/3" />
                         </div>
+                        <div className="h-6 w-20 bg-slate-800/60 rounded-full" />
                       </div>
-                      <div className="h-3 w-20 bg-indigo-800/40 rounded" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : filteredRows.length === 0 ? (
-              <div className="text-center py-10">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-md mb-3">
-                  <Gift className="w-6 h-6" />
+              <div className="text-center py-14 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 grid place-items-center ring-1 ring-fuchsia-400/20">
+                  <Gift className="w-7 h-7 text-fuchsia-400" />
                 </div>
-                <p className="text-slate-200 font-semibold">No redemptions yet</p>
-                <p className="text-slate-400 text-sm">Make a request and it will appear here.</p>
+                <p className="text-white font-bold text-base">No redemptions yet</p>
+                <p className="text-slate-500 text-sm mt-1">Your redemption history will appear here</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredRows.map((r) => {
+              <div className="space-y-2.5">
+                {filteredRows.map((r, i) => {
                   const badge = statusBadge(r.status);
                   const BadgeIcon = badge.icon;
+                  const statusColors = {
+                    approved: { border: 'from-emerald-400 via-teal-500 to-cyan-500', iconBg: 'from-emerald-500/20 to-teal-500/20', ring: 'ring-emerald-400/20' },
+                    pending: { border: 'from-amber-400 via-orange-500 to-yellow-500', iconBg: 'from-amber-500/20 to-orange-500/20', ring: 'ring-amber-400/20' },
+                    rejected: { border: 'from-rose-400 via-red-500 to-pink-500', iconBg: 'from-rose-500/20 to-red-500/20', ring: 'ring-rose-400/20' },
+                  };
+                  const sc = statusColors[String(r.status).toLowerCase()] || { border: 'from-slate-500 to-slate-600', iconBg: 'from-slate-700/40 to-slate-800/40', ring: 'ring-slate-600/20' };
                   return (
                     <m.div
                       key={r.id}
-                      className={`p-3 sm:p-3.5 rounded-xl bg-indigo-900/30 border border-indigo-700/40 hover:border-indigo-400/50 transition hover:shadow-lg ${badge.rowAccent}`}
-                      whileHover={{ y: -2 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, type: 'spring', stiffness: 120, damping: 16 }}
+                      className={`rounded-2xl p-[1.5px] bg-gradient-to-r ${sc.border} transition-all hover:-translate-y-0.5`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
-                        <div className="flex items-start sm:items-center gap-3 min-w-0">
-                          <div className="relative w-10 h-10 rounded-xl grid place-items-center bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-white/20 flex-shrink-0">
-                            <Gift className="w-5 h-5 text-white" />
+                      <div className="rounded-[14.5px] bg-[#0a0a14]/95 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br ${sc.iconBg} ring-1 ${sc.ring}`}>
+                            <Gift className="w-5 h-5 text-white/80" />
                           </div>
-                          <div className="min-w-0">
-                            {/* reward value only - without star icon, allow full text */}
-                            <div className="inline-block rounded-lg px-2.5 py-1 bg-white/5 border border-white/10 backdrop-blur-sm shadow-sm max-w-full">
-                              <span className="text-slate-100 font-semibold text-sm leading-snug break-words">
-                                {r.reward_value}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[11px] text-slate-400/80 font-mono truncate">
-                              {r.requested_at ? new Date(r.requested_at).toLocaleString() : ''}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[13px] font-bold text-white leading-snug break-words line-clamp-1">
+                              {r.reward_value}
+                            </span>
+                            <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <Clock className="w-2.5 h-2.5" />
+                              {r.requested_at ? new Date(r.requested_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : ''}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${badge.className} shadow`}
-                          >
-                            <BadgeIcon className="w-3.5 h-3.5" /> {badge.label}
-                          </span>
-                          <button
-                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-slate-200 hover:bg-white/10"
-                            onClick={async () => {
-                              try {
-                                await navigator.clipboard.writeText(String(r.id));
-                                toast({ title: 'Copied', description: 'Redemption ID copied' });
-                              } catch {
-                                toast({
-                                  title: 'Copy failed',
-                                  description: 'Unable to copy ID',
-                                  variant: 'destructive',
-                                });
-                              }
-                            }}
-                            title="Copy redemption ID"
-                          >
-                            <Copy className="w-3.5 h-3.5" /> ID
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold ${badge.className}`}
+                            >
+                              <BadgeIcon className="w-3 h-3" /> {badge.label}
+                            </span>
+                            <button
+                              className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.08] grid place-items-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(String(r.id));
+                                  toast({ title: 'Copied', description: 'Redemption ID copied' });
+                                } catch {
+                                  toast({
+                                    title: 'Copy failed',
+                                    description: 'Unable to copy ID',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                              title="Copy redemption ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </m.div>
@@ -676,7 +621,7 @@ export default function Redemptions() {
                 })}
               </div>
             )}
-          </div>
+          </m.div>
         )}
 
         {/* Redeem Preview Dialog */}
@@ -696,7 +641,8 @@ export default function Redemptions() {
           }}
         >
           <DialogContent
-            className={`bg-slate-900/95 border-white/10 text-slate-100 rounded-xl sm:rounded-2xl p-0 overflow-hidden w-[min(94vw,600px)] sm:max-w-xl md:max-w-2xl max-h-[86svh] transition-transform duration-300 ${isMobile && inputFocused ? 'translate-y-[-12svh]' : ''}`}
+            className="bg-slate-900/95 border-white/10 text-slate-100 rounded-xl sm:rounded-2xl p-0 overflow-hidden w-[min(94vw,600px)] sm:max-w-xl md:max-w-2xl max-h-[86svh] transition-all duration-200"
+            style={isMobile && kbOffset > 0 ? { top: `calc(50% - ${kbOffset / 2}px)` } : undefined}
           >
             {selectedReward &&
               (() => {
@@ -727,8 +673,6 @@ export default function Redemptions() {
                         </DialogDescription>
                       </div>
                     </DialogHeader>
-
-                    {/* Top summary intentionally removed (was value/coins line). No empty block retained. */}
 
                     <DialogFooter className="mt-6">
                       {redeemStep === 'confirm' ? (

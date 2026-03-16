@@ -5,10 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import CookieConsent from '@/components/CookieConsent';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import Header from '@/components/Header';
 import PWAInstallButton from '@/components/PWAInstallButton';
 import Home from '@/pages/Home';
-// OnboardingFlow removed (unused)
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
@@ -155,8 +153,6 @@ function useRouteFocus() {
 }
 
 function InitNotifications() {
-  // Initialize Push Notifications only when this component is rendered
-  // Removed unused user variable (auth state already handled in parent conditional)
   usePushNotifications();
   return null;
 }
@@ -304,7 +300,7 @@ function AdminRoute({ children }) {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="qd-card rounded-2xl max-w-md w-full p-6 text-center">
+        <div className="qd-glass rounded-2xl max-w-md w-full p-6 text-center">
           <h2 className="text-xl font-semibold text-red-400 mb-2">Admin access required</h2>
           <p className="text-sm text-white/70">
             Admin panel kholne ke liye aapke Supabase <code>profiles</code> record ka{' '}
@@ -342,15 +338,14 @@ function RouteFocusWrapper({ children }) {
   );
 }
 
-// Public layout for non-authenticated users (Header only, no Footer)
+// Public layout for non-authenticated users (no Header - integrated in Home)
 const PublicLayout = () => {
-  const isHome =
-    typeof window !== 'undefined' && window.location && window.location.pathname === '/';
+  const location = useLocation();
+  const isHome = location.pathname === '/';
   return (
     <>
-      <Header />
       <main
-        className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-4' : 'pb-6 pt-4 sm:pt-6'}`}
+        className={`flex-1 ${isHome ? 'pt-0 pb-0' : 'pt-0 pb-6'}`}
         id="app-main"
         tabIndex="-1"
         role="main"
@@ -444,15 +439,16 @@ const MainLayout = () => {
     }
   }, [authLoading, hasSupabaseConfig, requiresProfileCompletion, userProfile]);
 
-  // Detect if current path is home to tailor layout spacing/overflow (BrowserRouter)
-  const isHome =
-    typeof window !== 'undefined' && window.location && window.location.pathname === '/';
+  // Detect if current path is home using React Router
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  const isProfile = location.pathname === '/profile/' || location.pathname === '/profile';
 
   return (
     <>
-      <Header />
+      {/* No Header - integrated in Home.jsx */}
       <main
-        className={`flex-1 ${isHome ? 'pt-6 sm:pt-8 pb-24' : 'pb-24 pt-4 sm:pt-6'}`}
+        className={`flex-1 ${(isHome || isProfile) ? 'pt-0 pb-0' : 'pt-0 pb-24'}`}
         id="app-main"
         tabIndex="-1"
         role="main"
@@ -621,7 +617,6 @@ const MainLayout = () => {
           />
         </Suspense>
       )}
-      {/* OnboardingFlow removed */}
     </>
   );
 };

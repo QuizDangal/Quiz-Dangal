@@ -342,8 +342,6 @@ const Results = () => {
       : 0;
   const userPrizeDisplay = getPrizeDisplay(prizeType, userPrizeVal, { fallback: 0 });
 
-  // Removed static background poster; we render a clean gradient background only.
-
   // As soon as user has a prize decided, refresh profile so wallet updates without manual refresh
   useEffect(() => {
     try {
@@ -1035,7 +1033,7 @@ const Results = () => {
           robots="noindex, nofollow"
           author="Quiz Dangal"
         />
-        <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
+        <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-2xl font-bold mb-2 text-white">Couldn&apos;t load results</h2>
           <p className="text-slate-300 mb-4">{errorMessage}</p>
           <div className="flex justify-center gap-3">
@@ -1078,7 +1076,7 @@ const Results = () => {
           robots="noindex, nofollow"
           author="Quiz Dangal"
         />
-        <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
+        <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-xl font-bold mb-2 text-white">Results will be published soon.</h2>
           <p className="text-slate-300 mb-4">Quiz ends in</p>
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -1114,7 +1112,7 @@ const Results = () => {
           robots="noindex, nofollow"
           author="Quiz Dangal"
         />
-        <div className="qd-card rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
+        <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-xl font-bold mb-2 text-white">Finalizing results…</h2>
           <p className="text-slate-300 mb-4">
             {finalizing ? 'Please wait a moment.' : 'Results are being prepared.'}

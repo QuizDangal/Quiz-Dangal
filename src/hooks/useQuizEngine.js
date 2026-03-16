@@ -739,7 +739,6 @@ export function useQuizEngine(quizId, navigate, options = {}) {
 
       // Optimistic UI update so selection + submit button are reliable even under flaky networks.
       setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-      // Removed auto-advance - user will click Next/Submit button manually
 
       try {
         const { error } = await supabase

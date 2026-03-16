@@ -126,7 +126,7 @@ const Wallet = () => {
   };
 
   return (
-    <div className="relative pt-14 pb-4">
+    <div className="relative min-h-screen pb-4">
       <SeoHead
         title="Wallet – Quiz Dangal"
         description="View your Quiz Dangal wallet balance, recent transactions, and referral earnings."
@@ -142,12 +142,10 @@ const Wallet = () => {
         initial="hidden"
         animate="visible"
       >
-        {/* Header */}
-        <m.div variants={itemVariants} className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <WalletIcon className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-white">My Wallet</h1>
+        {/* Page Title */}
+        <m.div variants={itemVariants} className="mb-4">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent">My Wallet</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Manage your coins & rewards</p>
         </m.div>
 
         {/* Balance Card - Premium */}

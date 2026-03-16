@@ -179,8 +179,8 @@ const AboutUs = () => {
   };
 
   return (
-    <div className="min-h-screen pt-14 text-slate-100">
-      <div className="container mx-auto px-4 py-6 space-y-8 max-w-5xl">
+    <div className="min-h-screen pt-4 text-slate-100">
+      <div className="container mx-auto px-4 py-4 space-y-8 max-w-5xl">
         <SeoHead
           title="About Us - Quiz Dangal | India's #1 Free Quiz & Rewards Platform"
           description="Learn about Quiz Dangal - India's most exciting free quiz platform. Play daily quizzes on GK, sports, movies, earn coins, climb leaderboards, and win rewards. Join thousands of quiz enthusiasts today!"
@@ -203,8 +203,8 @@ const AboutUs = () => {
         />
 
         {/* Hero Section - AI Speakable */}
-        <header className="text-center mb-8" data-speakable="true">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent mb-4">
+        <header className="text-center mb-6" data-speakable="true">
+          <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-violet-400 via-fuchsia-300 to-pink-400 bg-clip-text text-transparent mb-3">
             About Quiz Dangal
           </h1>
           <p className="text-base md:text-lg text-slate-300 leading-relaxed max-w-3xl mx-auto">

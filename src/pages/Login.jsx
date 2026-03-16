@@ -267,7 +267,7 @@ const Login = () => {
         }}
       >
         <LoginHead />
-        <div className="qd-card rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-center text-slate-100">
+        <div className="qd-glass rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-center text-slate-100">
           <h2 className="text-2xl font-bold text-white text-shadow-sm mb-4">Check your email</h2>
           <p className="text-slate-300">
             We&apos;ve sent a confirmation link to <strong>{email}</strong>. Please click the link
@@ -288,7 +288,7 @@ const Login = () => {
         }}
       >
         <LoginHead />
-        <div className="qd-card rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-center text-slate-100">
+        <div className="qd-glass rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-center text-slate-100">
           <h2 className="text-2xl font-bold text-white text-shadow-sm mb-4">Forgot Password</h2>
           <p className="text-slate-300 mb-4">Enter your email to receive a password reset link.</p>
           <form
@@ -356,7 +356,7 @@ const Login = () => {
       }}
     >
       <LoginHead />
-      <div className="qd-card rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-slate-100 flex flex-col">
+      <div className="qd-glass rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl text-slate-100 flex flex-col items-stretch cursor-default">
         <div className="text-center mb-6 sm:mb-8">
           <picture>
             <source type="image/webp" srcSet="/logo-96.webp 1x, /android-chrome-192x192.png 2x" />

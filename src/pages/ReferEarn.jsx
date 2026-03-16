@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
-import { Gift, Users, Coins, Share2, Copy, Check, Loader2, Trophy, Zap } from 'lucide-react';
+import { Users, Coins, Share2, Copy, Check, Loader2, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { normalizeReferralCode, saveReferralCode } from '@/lib/referralStorage';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -198,22 +198,17 @@ Referral Link: ${referralLink}`,
         datePublished="2025-01-01"
       />
       
-      <div className="min-h-screen pt-14 pb-24">
+      <div className="min-h-screen pb-24">
         <motion.div 
-          className="container mx-auto px-4 py-6 max-w-lg"
+          className="container mx-auto px-4 py-4 max-w-lg"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* Hero Section - Compact */}
-          <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Refer & Earn</h1>
-              <p className="text-sm text-slate-400">Dost bulao, <span className="text-amber-400 font-semibold">50 Coins</span> kamao!</p>
-            </div>
+          {/* Page Title */}
+          <motion.div variants={itemVariants} className="mb-4">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">Refer & Earn</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Dost bulao, <span className="text-amber-400 font-semibold">50 Coins</span> kamao!</p>
           </motion.div>
 
           {/* Reward Card - Compact */}

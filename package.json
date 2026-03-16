@@ -6,7 +6,7 @@
   "homepage": "https://quizdangal.com",
   "scripts": {
     "predev": "node ./scripts/generate-maskable-icons.mjs",
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 5173",
     "predev:lan": "node ./scripts/generate-maskable-icons.mjs",
     "dev:lan": "vite --host --port 5173",
     "prebuild": "node ./scripts/generate-maskable-icons.mjs && node ./scripts/generate-sitemap.mjs",
