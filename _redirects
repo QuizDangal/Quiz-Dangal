@@ -1,5 +1,48 @@
 # Canonicalize category URLs (match prerendered directory routes)
 /category/:slug  /category/:slug/  301!
 
+# Legacy SEO landing pages -> strongest current product pages
+/quiz-questions  /play-win-quiz-app/  301!
+/quiz-questions/  /play-win-quiz-app/  301!
+/quiz-questions-with-answers  /play-win-quiz-app/  301!
+/quiz-questions-with-answers/  /play-win-quiz-app/  301!
+/online-quiz  /play-win-quiz-app/  301!
+/online-quiz/  /play-win-quiz-app/  301!
+/quiz-game  /play-win-quiz-app/  301!
+/quiz-game/  /play-win-quiz-app/  301!
+/quiz-competition  /play-win-quiz-app/  301!
+/quiz-competition/  /play-win-quiz-app/  301!
+/quiz-app  /play-win-quiz-app/  301!
+/quiz-app/  /play-win-quiz-app/  301!
+
+/gk-questions  /gk-quiz/  301!
+/gk-questions/  /gk-quiz/  301!
+/general-knowledge-quiz  /gk-quiz/  301!
+/general-knowledge-quiz/  /gk-quiz/  301!
+/science-quiz  /gk-quiz/  301!
+/science-quiz/  /gk-quiz/  301!
+/current-affairs-quiz  /gk-quiz/  301!
+/current-affairs-quiz/  /gk-quiz/  301!
+/maths-quiz  /gk-quiz/  301!
+/maths-quiz/  /gk-quiz/  301!
+/india-quiz  /gk-quiz/  301!
+/india-quiz/  /gk-quiz/  301!
+
+/sports-quiz  /gk-quiz/  301!
+/sports-quiz/  /gk-quiz/  301!
+/cricket-quiz  /gk-quiz/  301!
+/cricket-quiz/  /gk-quiz/  301!
+/hindi-quiz  /gk-quiz/  301!
+/hindi-quiz/  /gk-quiz/  301!
+/english-quiz  /gk-quiz/  301!
+/english-quiz/  /gk-quiz/  301!
+/quiz-for-kids  /play-win-quiz-app/  301!
+/quiz-for-kids/  /play-win-quiz-app/  301!
+
+/category/sports  /category/gk/  301!
+/category/sports/  /category/gk/  301!
+/category/movies  /category/gk/  301!
+/category/movies/  /category/gk/  301!
+
 # SPA fallback for deep links (quiz, wallet, profile, etc.)
 /*  /index.html  200
