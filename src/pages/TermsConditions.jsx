@@ -232,7 +232,6 @@ const TermsConditions = () => {
           title="Terms & Conditions – Quiz Dangal | Rules, Policies & Guidelines"
           description="Complete Terms & Conditions for Quiz Dangal. Learn about eligibility, gameplay rules, fair play policies, rewards system, and user guidelines. Read before playing."
           canonical="https://quizdangal.com/terms-conditions/"
-          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'quiz dangal terms',
             'quiz dangal terms and conditions',
@@ -244,7 +243,7 @@ const TermsConditions = () => {
           ]}
           jsonLd={[faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
-          datePublished="2025-01-01"
+          datePublished="2025-01-15"
           dateModified="2026-03-16"
         />
 

@@ -162,9 +162,22 @@ export default function Profile() {
   const onAvatarSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !sessionUser) return;
+    // Validate file type and size before upload
+    const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a JPEG, PNG, GIF, or WebP image.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      toast({ title: 'File too large', description: 'Avatar must be under 5MB.', variant: 'destructive' });
+      return;
+    }
     setUploading(true);
     try {
-      const path = `${sessionUser.id}/${Date.now()}-${file.name}`;
+      // Sanitize filename to prevent path issues
+      const safeExt = file.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '') || 'png';
+      const path = `${sessionUser.id}/${Date.now()}.${safeExt}`;
       const { error: upErr } = await supabase.storage
         .from('avatars')
         .upload(path, file, { upsert: true });
@@ -246,7 +259,7 @@ export default function Profile() {
         canonical="https://quizdangal.com/profile/"
         robots="noindex, nofollow"
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
       />
 
       {/* Gradient Header Strip */}

@@ -238,7 +238,7 @@ Frontend ko change karne ki zaroorat nahi (wo `quizzes` se hi `prize_pool`/`priz
 ## Results computation (opinion vs knowledge)
 
 - Opinion quizzes: Inmein koi "correct" option nahi hota. Har question pe majority vote ko winner option mana jata hai. Jo users majority option select karte hain unko 1 point milta hai. Ranking tie-breaker: matching answers ka average answer time (jaldi waley upar).
-- Knowledge quizzes (gk, movies, sports): Score = sahi answers ki count. "Sahi" ka signal `public.options.is_correct = true` se aata hai. Tie-breaker: jis time pe user ne last correct answer complete kiya (jaldi complete karne wale upar).
+- Knowledge quizzes (primarily GK): Score = sahi answers ki count. "Sahi" ka signal `public.options.is_correct = true` se aata hai. Tie-breaker: jis time pe user ne last correct answer complete kiya (jaldi complete karne wale upar). Legacy movies/sports public categories have been consolidated into GK.
 
 DB Functions
 - `public.compute_quiz_results(quiz_id)`: Leaderboard jsonb compute karta hai aur `public.quiz_results` me upsert karta hai.

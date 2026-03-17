@@ -1,5 +1,5 @@
-# Quiz Dangal - Custom HTTP Headers for SEO & Security
-# These headers are applied by Netlify
+# Quiz Dangal - Reference HTTP headers for hosts that support custom header files
+# GitHub Pages ignores this file; production protection must come from HTML/meta tags or a different host
 
 # ===== PRIVATE PAGES - Block from Search Engines =====
 /login

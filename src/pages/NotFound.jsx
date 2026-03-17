@@ -1,25 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Home, Search } from 'lucide-react';
 import SeoHead from '@/components/SEO';
 
-/**
- * 404 Not Found Page
- * SEO-friendly: Shows proper 404 message instead of redirecting to home
- * This helps search engines understand the page doesn't exist
- */
 const NotFound = () => {
   return (
     <>
       <SeoHead
         title="404 - Page Not Found | Quiz Dangal"
-        description="The page you're looking for doesn't exist. Return to Quiz Dangal homepage."
+        description="The page you're looking for does not exist on Quiz Dangal. Return to the homepage or explore popular public pages."
         noindex
       />
-      
+
       <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full text-center">
-          {/* 404 Visual */}
           <div className="relative mb-8">
             <div className="text-[120px] sm:text-[160px] font-bold leading-none bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent opacity-20 select-none">
               404
@@ -31,19 +25,17 @@ const NotFound = () => {
             </div>
           </div>
 
-          {/* Message */}
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Page Not Found
           </h1>
           <p className="text-white/70 mb-8 leading-relaxed">
-            Oops! The page you&apos;re looking for doesn&apos;t exist or has been moved.
+            Oops! The page you&apos;re looking for doesn&apos;t exist or has moved.
             <br />
             <span className="text-white/50 text-sm">
-              Ye page exist nahi karta ya hata diya gaya hai.
+              Ye page exist nahi karta ya move ho chuka hai.
             </span>
           </p>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/"
@@ -61,16 +53,15 @@ const NotFound = () => {
             </button>
           </div>
 
-          {/* Helpful Links */}
           <div className="mt-10 pt-6 border-t border-white/10">
-            <p className="text-white/50 text-sm mb-4">Popular pages you might be looking for:</p>
+            <p className="text-white/50 text-sm mb-4">Popular public pages:</p>
             <div className="flex flex-wrap justify-center gap-3 text-sm">
               <Link to="/leaderboards/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
                 Leaderboards
               </Link>
               <span className="text-white/20">•</span>
-              <Link to="/about-us/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
-                About Us
+              <Link to="/play-win-quiz-app/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                Play &amp; Win
               </Link>
               <span className="text-white/20">•</span>
               <Link to="/contact-us/" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">

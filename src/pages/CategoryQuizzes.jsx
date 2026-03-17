@@ -729,10 +729,9 @@ const CategoryQuizzes = () => {
         description={`Active and upcoming quizzes in ${meta.title}. Play daily ${meta.title.toLowerCase()} on Quiz Dangal and earn coins.`}
         canonical={canonical}
         robots="index, follow"
-        alternateLocales={['hi_IN', 'en_US']}
         author="Quiz Dangal"
-        datePublished="2025-01-01"
-        dateModified="2026-01-15"
+        datePublished="2025-01-15"
+        dateModified="2026-03-16"
         jsonLd={[{
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',

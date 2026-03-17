@@ -20,6 +20,8 @@ import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const Results = () => {
   const { id: quizIdParam, slotId: slotIdParam } = useParams();
   const [effectiveQuizId, setEffectiveQuizId] = useState(quizIdParam);
@@ -163,12 +165,13 @@ const Results = () => {
 
       // === BACKGROUND: Fetch secondary data non-blocking ===
       // Participation check (for Q&A visibility)
+      const safeSlotId = slotId && UUID_RE.test(slotId) ? slotId : null;
       const participationPromise = user?.id
         ? supabase
             .from('quiz_participants')
             .select('id')
             .eq('user_id', user.id)
-            .or(slotId ? `slot_id.eq.${slotId},quiz_id.eq.${quizId}` : `quiz_id.eq.${quizId}`)
+            .or(safeSlotId ? `slot_id.eq.${safeSlotId},quiz_id.eq.${quizId}` : `quiz_id.eq.${quizId}`)
             .limit(1)
             .maybeSingle()
         : Promise.resolve({ data: null });

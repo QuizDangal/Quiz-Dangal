@@ -117,15 +117,3 @@ export function getEnvMode() {
     isTest: import.meta.env.MODE === 'test',
   };
 }
-
-/**
- * Check if feature is enabled
- */
-export function isFeatureEnabled(featureFlag) {
-  const value = import.meta.env[featureFlag] || window.__QUIZ_DANGAL_ENV__?.[featureFlag];
-  
-  if (!value) return false;
-  
-  const normalized = String(value).toLowerCase().trim();
-  return ['1', 'true', 'yes', 'on', 'enabled'].includes(normalized);
-}

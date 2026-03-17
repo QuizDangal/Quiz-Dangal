@@ -66,10 +66,10 @@
       "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "My Wallet",
-      "short_name": "Wallet",
-      "description": "Check your coin balance",
-      "url": "/wallet/?source=pwa_shortcut",
+      "name": "Play & Win",
+      "short_name": "Play Win",
+      "description": "Open the main play-and-win quiz explainer",
+      "url": "/play-win-quiz-app/?source=pwa_shortcut",
       "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ],

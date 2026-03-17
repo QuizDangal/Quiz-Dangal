@@ -130,7 +130,9 @@ export function useQuizEngine(quizId, navigate, options = {}) {
   const questionsLoadAttemptedRef = useRef(null); // Track quiz ID for which questions were already attempted
 
   useEffect(
-    () => () => {
+    () => {
+      mountedRef.current = true;
+      return () => {
       mountedRef.current = false;
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
@@ -143,6 +145,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       // Cleanup scheduled join timeouts to prevent memory leaks
       const quizIdentifier = slotId || quizId;
       if (quizIdentifier) clearScheduledJoins(quizIdentifier);
+    };
     },
     [quizId, slotId],
   );
@@ -618,7 +621,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         } catch {
           /* ignore */
         }
-        navigate(`/results/${quizId}`);
+        navigate(slotId ? `/results/slot/${slotId}` : `/results/${quizId}`);
       })();
     };
 
@@ -653,7 +656,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         redirectTimeoutRef.current = null;
       }
     };
-  }, [quiz, quizId, quizState, navigate]);
+  }, [quiz, quizId, slotId, quizState, navigate]);
 
   const handleJoinOrPrejoin = useCallback(async () => {
     if (!quiz) return;

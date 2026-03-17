@@ -185,7 +185,6 @@ export default function Leaderboards() {
         title="Leaderboards – Quiz Dangal | Top Quiz Players"
         description="See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks."
         canonical="https://quizdangal.com/leaderboards/"
-        alternateLocales={['hi_IN', 'en_US']}
         keywords={[
           'quiz leaderboard',
           'top quiz players',
@@ -193,7 +192,7 @@ export default function Leaderboards() {
           'daily quiz rankings',
         ]}
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
         dateModified="2026-03-16"
         jsonLd={[{
           '@context': 'https://schema.org',
@@ -358,12 +357,11 @@ export default function Leaderboards() {
           </div>
 
           {loading ? (
-            <div className="py-20 flex flex-col items-center text-slate-400">
-              <div className="relative w-10 h-10 mb-3">
+            <div className="py-20 flex items-center justify-center text-slate-400">
+              <div className="relative w-10 h-10">
                 <div className="absolute inset-0 rounded-full border-2 border-slate-700" />
                 <div className="absolute inset-0 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
               </div>
-              <span className="text-sm font-medium">Loading rankings...</span>
             </div>
           ) : error ? (
             <div className="py-14 text-center px-4">

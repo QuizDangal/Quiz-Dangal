@@ -35,6 +35,12 @@ export function LazyImage({
   const [isInView, setIsInView] = useState(false);
   const imgRef = useRef(null);
 
+  // Reset state when src changes
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
+
   // Use IntersectionObserver for lazy loading
   useEffect(() => {
     const img = imgRef.current;
@@ -72,9 +78,7 @@ export function LazyImage({
 
   const handleError = () => {
     setHasError(true);
-    if (fallback) {
-      setIsLoaded(true);
-    }
+    // Don't set isLoaded here — let the fallback image trigger handleLoad when it renders
   };
 
   const imageSrc = hasError && fallback ? fallback : src;

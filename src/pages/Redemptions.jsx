@@ -318,7 +318,7 @@ export default function Redemptions() {
         canonical="https://quizdangal.com/redemptions/"
         robots="noindex, nofollow"
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
       />
       <div className="relative min-h-screen mx-auto max-w-5xl px-4 py-4">
         {/* Dev guard: if Supabase is not configured, show a helpful message */}

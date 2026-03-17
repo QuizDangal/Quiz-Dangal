@@ -75,8 +75,8 @@ function loadEnv() {
 
 const env = loadEnv();
 const DATABASE_URL = env.DATABASE_URL;
-console.error('Debug: env has keys:', Object.keys(env).filter(k => /DATABASE|SUPABASE|VITE/.test(k)));
-console.error('Debug: DATABASE_URL value preview:', (DATABASE_URL||'').slice(0, 40));
+console.error('Debug: env has keys:', Object.keys(env).filter(k => /DATABASE|SUPABASE|VITE/.test(k)).length, 'matching keys');
+console.error('Debug: DATABASE_URL present:', !!DATABASE_URL);
 if (!DATABASE_URL) {
   console.error(`Debug: DATABASE_URL not found after loading env files. Checked: .env.local exists=${fs.existsSync(path.join(__dirname, '..', '.env.local'))}`);
 }

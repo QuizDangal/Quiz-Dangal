@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cookie, X } from 'lucide-react';
 
@@ -48,12 +48,21 @@ const triggerGALoad = () => {
   }
 };
 
+const broadcastConsentUpdate = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('qd-consent-updated'));
+  }
+};
+
 /**
  * Cookie Consent Banner - Required for AdSense and GDPR compliance
  * Shows once and stores preference in localStorage
  */
 const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
+  const dialogRef = useRef(null);
+  const acceptButtonRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
 
   useEffect(() => {
     // Check if user has already consented
@@ -65,9 +74,58 @@ const CookieConsent = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!visible) return undefined;
+
+    previouslyFocusedRef.current = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusTimer = setTimeout(() => {
+      acceptButtonRef.current?.focus();
+    }, 0);
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleDecline();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const focusableElements = dialogRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+
+      if (!focusableElements.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocusedRef.current?.focus?.();
+    };
+  }, [visible]);
+
   const handleAccept = () => {
     localStorage.setItem(CONSENT_KEY, 'accepted');
     setVisible(false);
+    broadcastConsentUpdate();
     // Trigger GA load now that consent is given
     triggerGALoad();
   };
@@ -75,6 +133,7 @@ const CookieConsent = () => {
   const handleDecline = () => {
     localStorage.setItem(CONSENT_KEY, 'declined');
     setVisible(false);
+    broadcastConsentUpdate();
     // No need to disable anything - GA won't load without 'accepted' status
   };
 
@@ -82,12 +141,17 @@ const CookieConsent = () => {
 
   return (
     <div
-      className="fixed bottom-20 left-4 right-4 z-[100] mx-auto max-w-lg animate-in slide-in-from-bottom-4 duration-300"
+      ref={dialogRef}
+      className="fixed left-3 right-3 z-[100] mx-auto max-w-lg animate-in slide-in-from-bottom-4 duration-300 sm:left-4 sm:right-4"
+      style={{
+        bottom: 'calc(var(--qd-footer-offset, 0px) + 4px)',
+      }}
       role="dialog"
+      aria-modal="true"
       aria-labelledby="cookie-consent-title"
       aria-describedby="cookie-consent-desc"
     >
-      <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-4 shadow-2xl">
+      <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-4 shadow-2xl shadow-black/40">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 p-2 rounded-full bg-amber-500/20">
             <Cookie className="w-5 h-5 text-amber-400" aria-hidden="true" />
@@ -108,6 +172,7 @@ const CookieConsent = () => {
             </p>
             <div className="flex items-center gap-2 mt-3">
               <button
+                ref={acceptButtonRef}
                 onClick={handleAccept}
                 className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >

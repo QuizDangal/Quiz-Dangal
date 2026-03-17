@@ -185,7 +185,6 @@ Sent via Quiz Dangal Contact Form`
           title="Contact Us – Quiz Dangal | Customer Support & Help"
           description="Get in touch with the Quiz Dangal support team for help, feedback, partnerships, and media inquiries. Call +91 9587803557 or email support@quizdangal.com. We're here to help!"
           canonical="https://quizdangal.com/contact-us/"
-          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'quiz dangal contact',
             'quiz dangal support',
@@ -197,7 +196,7 @@ Sent via Quiz Dangal Contact Form`
           ]}
           jsonLd={[contactSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
-          datePublished="2025-01-01"
+          datePublished="2025-01-15"
           dateModified="2026-03-16"
         />
 

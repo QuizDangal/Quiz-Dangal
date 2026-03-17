@@ -100,7 +100,7 @@ const AboutUs = () => {
 
   // FAQ data for schema
   const faqs = [
-    { question: 'What is Quiz Dangal?', answer: 'Quiz Dangal is India\'s premier free-to-play quiz platform where users can participate in daily quizzes across multiple categories, earn coins, and redeem rewards. It combines learning with entertainment.' },
+    { question: 'What is Quiz Dangal?', answer: 'Quiz Dangal is India\'s free-to-play daily quiz platform focused on opinion polls and general knowledge rounds. Players can earn coins, build streaks, and redeem rewards while staying engaged with India-first topics.' },
     { question: 'Is Quiz Dangal free to use?', answer: 'Yes, Quiz Dangal is completely free to join and play. There are no entry fees or hidden charges. All users start with equal opportunities.' },
     { question: 'How do I earn coins on Quiz Dangal?', answer: 'You can earn coins by answering quiz questions correctly, maintaining daily streaks, referring friends, and participating in special events. The more you play, the more you earn.' },
     { question: 'Can I play Quiz Dangal on my mobile?', answer: 'Yes, Quiz Dangal is a Progressive Web App (PWA) that works on all devices—smartphones, tablets, and computers. Simply visit quizdangal.com from any browser.' },
@@ -183,7 +183,6 @@ const AboutUs = () => {
           title="About Us - Quiz Dangal | India's #1 Free Quiz & Rewards Platform"
           description="Learn about Quiz Dangal - India's free quiz platform focused on Opinion Quiz and GK Quiz. Play daily IPL-season polls, current affairs, earn coins, climb leaderboards, and win rewards."
           canonical="https://quizdangal.com/about-us/"
-          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'about quiz dangal',
             'quiz dangal team',
@@ -196,7 +195,7 @@ const AboutUs = () => {
           ]}
           jsonLd={[orgSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
-          datePublished="2025-01-01"
+          datePublished="2025-01-15"
           dateModified="2026-03-16"
         />
 
@@ -232,8 +231,8 @@ const AboutUs = () => {
             <p>
               Founded in 2025 and headquartered in Jaipur, Rajasthan, Quiz Dangal started as a small 
               project with a big dream: to become India&apos;s go-to destination for free, fair, and fun 
-              quizzing. Today, we host thousands of quizzes across multiple categories, with new 
-              challenges added every single day.
+              quizzing. Today, the platform is focused on two strong public formats: daily opinion polls 
+              and GK quizzes, with fresh India-first challenges added every single day.
             </p>
             <p>
               What sets us apart is our commitment to fairness and transparency. Every quiz on Quiz 

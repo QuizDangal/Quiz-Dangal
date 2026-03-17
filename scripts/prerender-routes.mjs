@@ -110,43 +110,32 @@ function replaceHead(html, { title, description, url, robots }) {
 }
 
 function replaceStaticLoaderCopy(html, { title, description }) {
-  let out = html;
-  // Replace loader title (data-prerender-title)
-  out = out.replace(
-    /<h1([^>]*\bdata-prerender-title\b[^>]*)>[\s\S]*?<\/h1>/i,
-    `<h1$1>${escapeHtml(title)}</h1>`,
-  );
-  // Replace loader description (data-prerender-desc)
-  out = out.replace(
-    /<p([^>]*\bdata-prerender-desc\b[^>]*)>[\s\S]*?<\/p>/i,
-    `<p$1>${escapeHtml(description)}</p>`,
-  );
-  return out;
+  // Static loader is now spinner-only (no text). Kept as no-op for future use.
+  return html;
 }
 
 function buildRedirectHtml(baseHtml, { from, to }) {
-  const sourceUrl = toUrl(from);
   const targetUrl = toUrl(to);
-  let html = replaceHead(baseHtml, {
-    title: 'Redirecting… | Quiz Dangal',
-    description: `This page has moved to ${targetUrl}`,
-    url: targetUrl,
-    robots: 'noindex, follow',
-  });
-  html = replaceStaticLoaderCopy(html, {
-    title: 'Redirecting you to the right page',
-    description: `This page has moved. Opening ${targetUrl}`,
-  });
-  if (!html.includes('http-equiv="refresh"')) {
-    html = html.replace('</head>', `  <meta http-equiv="refresh" content="0; url=${targetUrl}" />\n  <script>window.location.replace(${JSON.stringify(targetUrl)});</script>\n</head>`);
-  }
-  html = html.replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${targetUrl}" />`);
-  html = html.replace(/<meta\s+property="og:url"[^>]*>/i, `<meta property="og:url" content="${targetUrl}" />`);
-  html = html.replace(/<meta\s+name="robots"[^>]*>/i, `<meta name="robots" content="noindex, follow" />`);
-  return html.replace(
-    /<script type="application\/ld\+json">\s*\{[\s\S]*?"@type": "WebPage"[\s\S]*?<\/script>/i,
-    `<script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "WebPage",\n    "name": "Redirecting… | Quiz Dangal",\n    "url": "${sourceUrl}",\n    "description": "This page has moved permanently.",\n    "mainEntityOfPage": "${targetUrl}"\n  }\n</script>`
-  );
+  return `<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecting | Quiz Dangal</title>
+  <meta name="robots" content="noindex, follow" />
+  <meta name="description" content="This page has moved to ${escapeHtml(targetUrl)}" />
+  <link rel="canonical" href="${targetUrl}" />
+  <meta http-equiv="refresh" content="0; url=${targetUrl}" />
+  <script>window.location.replace(${JSON.stringify(targetUrl)});</script>
+</head>
+<body style="margin:0;font-family:Poppins,system-ui,sans-serif;background:#050508;color:#ffffff;display:grid;place-items:center;min-height:100vh;padding:24px;">
+  <main style="max-width:560px;text-align:center;display:grid;gap:12px;">
+    <h1 style="margin:0;font-size:clamp(1.75rem,4vw,2.5rem);line-height:1.1;">Redirecting you to the latest Quiz Dangal page</h1>
+    <p style="margin:0;color:rgba(255,255,255,0.74);line-height:1.6;">This legacy URL has moved. If you are not redirected automatically, open the updated page below.</p>
+    <p style="margin:0;"><a href="${targetUrl}" style="color:#a5b4fc;">${escapeHtml(targetUrl)}</a></p>
+  </main>
+</body>
+</html>`;
 }
 
 function escapeHtml(s) {

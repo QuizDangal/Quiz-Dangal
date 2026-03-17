@@ -41,7 +41,6 @@ export default function ReferEarnInfo() {
         title="Refer & Earn Quiz App – Quiz Dangal"
         description="Invite friends, they play quizzes, and you both earn. Learn how the referral code works, bonus rules, and best practices to invite more effectively."
         canonical={canonical}
-        alternateLocales={['hi_IN', 'en_US']}
         keywords={[
           'refer and earn quiz',
           'invite friends earn coins',
@@ -57,7 +56,7 @@ export default function ReferEarnInfo() {
           ],
         }]}
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
         dateModified="2026-03-16"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">

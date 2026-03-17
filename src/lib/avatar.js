@@ -59,6 +59,6 @@ export async function getSignedAvatarUrls(paths, expiresIn = 3600, client = supa
     return urlMap;
   } catch (error) {
     logger.warn('Signed avatar URLs batch fetch failed:', error);
-    return new Map();
+    return urlMap;
   }
 }

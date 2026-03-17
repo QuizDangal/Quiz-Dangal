@@ -371,8 +371,14 @@ const PublicLayout = () => {
             <Route path="/redemptions/*" element={<LoginRedirect message="Please sign in to redeem rewards." />} />
             <Route path="/results/*" element={<LoginRedirect message="Please sign in to view results." />} />
             <Route path="/admin/*" element={<LoginRedirect message="Please sign in to continue." />} />
-            {/* For unknown routes show proper 404 page (SEO-friendly) */}
-            <Route path="*" element={<NotFound />} />
+            <Route
+              path="*"
+              element={
+                <Page>
+                  <NotFound />
+                </Page>
+              }
+            />
           </Routes>
         </Suspense>
       </main>
@@ -593,8 +599,14 @@ const MainLayout = () => {
               element={<Navigate to="/admin?tab=redemptions" replace />}
             />
             <Route path="/admin/reports" element={<Navigate to="/admin?tab=reports" replace />} />
-            {/* Show proper 404 page for unknown routes (SEO-friendly) */}
-            <Route path="*" element={<NotFound />} />
+            <Route
+              path="*"
+              element={
+                <Page>
+                  <NotFound />
+                </Page>
+              }
+            />
           </Routes>
         </Suspense>
       </main>

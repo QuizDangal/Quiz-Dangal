@@ -369,7 +369,7 @@ export default function DailyScheduler() {
 
   // Validate and deploy
   const handleDeploy = async () => {
-    if (!isAdmin) return;
+    if (!isAdmin || bulkProcessing) return;
     setBulkProcessing(true);
 
     try {
@@ -477,7 +477,7 @@ export default function DailyScheduler() {
             Quiz Scheduler
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {TOTAL_QUIZZES_PER_DAY} quizzes/day × 4 categories • 00:00 - 23:50 IST (24hr) • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
+            {TOTAL_QUIZZES_PER_DAY} quizzes/day × {CATEGORIES.length} categories • 00:00 - 23:50 IST (24hr) • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
           </p>
         </div>
         {loading && (

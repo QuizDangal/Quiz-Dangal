@@ -182,7 +182,6 @@ const PrivacyPolicy = () => {
           title="Privacy Policy - Quiz Dangal | Data Protection & User Privacy"
           description="Comprehensive Privacy Policy for Quiz Dangal. Learn how we collect, use, store, and protect your personal data. Your privacy is our priority."
           canonical="https://quizdangal.com/privacy-policy/"
-          alternateLocales={['hi_IN', 'en_US']}
           keywords={[
             'quiz dangal privacy policy',
             'quiz app privacy policy',
@@ -193,7 +192,7 @@ const PrivacyPolicy = () => {
           ]}
           jsonLd={[faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
-          datePublished="2025-01-01"
+          datePublished="2025-01-15"
           dateModified="2026-03-16"
         />
 

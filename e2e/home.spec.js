@@ -8,8 +8,9 @@ test.describe('Home Page', () => {
     // Check page title
     await expect(page).toHaveTitle(/Quiz Dangal/);
     
-    // Check main heading is visible (specific selector)
-    await expect(page.getByRole('link', { name: 'Go to home page' })).toBeVisible();
+    // Check current home hero content is visible
+    await expect(page.getByRole('img', { name: 'Quiz Dangal' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Play Smart\./i })).toBeVisible();
   });
 
   test('should display category cards', async ({ page }) => {
@@ -18,8 +19,8 @@ test.describe('Home Page', () => {
     // Wait for categories to load
     await page.waitForSelector('[aria-label*="Play"]');
     
-    // Check all 4 categories exist
-    const categories = ['Opinion', 'GK', 'Sports', 'Movies'];
+    // Check the live public categories exist
+    const categories = ['Opinion', 'GK'];
     for (const cat of categories) {
       await expect(page.locator(`text=${cat}`).first()).toBeVisible();
     }
@@ -29,21 +30,18 @@ test.describe('Home Page', () => {
     await page.goto('/');
     
     // Click sign in button
-    const signInButton = page.locator('a[href="/login"]');
+    const signInButton = page.getByRole('link', { name: /sign in/i }).first();
     if (await signInButton.isVisible()) {
       await signInButton.click();
       await expect(page).toHaveURL(/\/login/);
     }
   });
 
-  test('should show FAQ section', async ({ page }) => {
+  test('should show trending section', async ({ page }) => {
     await page.goto('/');
     
-    // Scroll to FAQ
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    
-    // Check FAQ exists
-    await expect(page.locator('text=What is Quiz Dangal').first()).toBeVisible();
+    await expect(page.getByText('Trending Now')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Play Today's Opinion quiz/i })).toBeVisible();
   });
 });
 

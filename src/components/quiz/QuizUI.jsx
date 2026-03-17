@@ -64,8 +64,7 @@ export const LoadingView = ({ quizId }) => (
       author="Quiz Dangal"
     />
     <div className="text-center">
-      <Loader2 className="h-16 w-16 animate-spin text-indigo-500 mx-auto mb-4" />
-      <p className="text-gray-400">Loading quiz...</p>
+      <Loader2 className="h-16 w-16 animate-spin text-indigo-500 mx-auto" />
     </div>
   </div>
 );

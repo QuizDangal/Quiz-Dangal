@@ -1,5 +1,5 @@
 # Quiz Dangal robots.txt
-# Last updated: 2026-01-15
+# Last updated: 2026-03-17
 
 User-agent: *
 
@@ -38,7 +38,7 @@ Disallow: /sw-register.js
 Disallow: /modulepreload-polyfill.js
 Disallow: /url-migrate.js
 Disallow: /env-config.js
-Disallow: /*.json$
+Disallow: /*.json
 Disallow: /404.html
 
 # Note: /assets/ is NOT blocked - Google needs CSS/JS to render pages correctly

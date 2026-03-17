@@ -36,7 +36,7 @@
 	<!-- Security & privacy hardening (frontend-only, no backend dependency) -->
 	<meta name="referrer" content="strict-origin-when-cross-origin" />
 	<meta http-equiv="X-Content-Type-Options" content="nosniff" />
-	<!-- Content-Security-Policy: frame-ancestors moved to _headers (meta tag doesn't support it) -->
+	<!-- Content-Security-Policy note: frame-ancestors cannot be enforced via meta tag -->
 	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; frame-src https://pagead2.googlesyndication.com https://www.google.com https://*.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google;" />
 	<meta name="color-scheme" content="light dark" />
 	<!-- Permissions-Policy: allow notifications (for push), geolocation optional; block unused powerful features -->
@@ -61,8 +61,6 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Quiz Dangal" />
 	<meta property="og:locale" content="en_IN" />
-	<meta property="og:locale:alternate" content="hi_IN" />
-	<meta property="og:locale:alternate" content="en_US" />
 	<meta property="og:title" content="Quiz Dangal – Daily Opinion & GK Quiz for IPL Fans" />
 	<meta property="og:description" content="Quiz Dangal is India’s daily opinion and GK quiz arena. Play IPL season polls, current affairs rounds, and general knowledge quizzes, grow streaks, invite friends, and redeem rewards." />
 	<meta property="og:url" content="https://quizdangal.com/" />
@@ -192,11 +190,6 @@
 	    "publisher": {
 	      "@type": "Organization",
 	      "name": "Quiz Dangal"
-	    },
-	    "potentialAction": {
-	      "@type": "SearchAction",
-	      "target": "https://quizdangal.com/?q={search_term_string}",
-	      "query-input": "required name=search_term_string"
 	    }
 	  }
 	</script>
@@ -240,13 +233,7 @@
 		id="static-loader"
 		style="position:fixed;inset:0;z-index:9999;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#050508 0%,#0a0a12 50%,#08080f 100%);transition:opacity 0.15s ease-out;"
 	>
-		<div style="width:min(92vw,680px);padding:24px;display:grid;gap:16px;text-align:center;justify-items:center;">
-			<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-			<div style="display:grid;gap:10px;max-width:620px;">
-				<h1 data-prerender-title style="margin:0;font:800 clamp(1.8rem,5vw,2.6rem)/1.05 Poppins,system-ui,sans-serif;letter-spacing:-0.04em;color:#fff;">Quiz Dangal</h1>
-				<p data-prerender-desc style="margin:0;color:rgba(255,255,255,0.74);font:500 0.98rem/1.65 Poppins,system-ui,sans-serif;">India's daily Opinion and GK quiz platform with IPL-season polls, current-affairs rounds, leaderboards, and rewards.</p>
-			</div>
-		</div>
+		<div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
 	</div>
 
 	<!-- No-JS fallback -->

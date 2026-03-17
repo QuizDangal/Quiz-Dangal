@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-// Clean Vite config without any Hostinger/Horizons debug injections
+// Vite config for GitHub Pages deployment
 // __dirname is not defined in ESM; derive it from import.meta.url
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,7 +21,7 @@ export default defineConfig({
 		port: 5173,     // Default Vite port
 		headers: {
 			// Google Ads iframes don't support COEP, so we disable it
-			// Production uses _headers file with same setting
+			// GitHub Pages ignores public/_headers, so production relies on HTML/meta-compatible hardening only
 			'Cross-Origin-Embedder-Policy': 'unsafe-none',
 			'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
 		},

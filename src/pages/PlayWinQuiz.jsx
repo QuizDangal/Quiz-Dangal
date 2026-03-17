@@ -41,7 +41,6 @@ export default function PlayWinQuiz() {
         title="Play & Win Quiz App – Quiz Dangal"
         description="Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India – start free on Quiz Dangal. Learn rules, scoring, and tips to win more."
         canonical={canonical}
-        alternateLocales={['hi_IN', 'en_US']}
         keywords={[
           'play and win quiz',
           'daily quiz India',
@@ -58,7 +57,7 @@ export default function PlayWinQuiz() {
           ],
         }]}
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
         dateModified="2026-03-16"
       />
       <div className="container mx-auto px-4 py-8 space-y-6">

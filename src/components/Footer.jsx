@@ -1,10 +1,34 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { prefetchRoute } from '@/lib/utils';
 import { useLocation, Link } from 'react-router-dom';
 import { Home, Wallet, User, Medal, Trophy } from 'lucide-react';
 
 const Footer = () => {
   const location = useLocation();
+  const footerRef = useRef(null);
+
+  useEffect(() => {
+    const footerElement = footerRef.current;
+    const rootStyle = document.documentElement.style;
+
+    if (!footerElement) return undefined;
+
+    const syncFooterHeight = () => {
+      rootStyle.setProperty('--qd-footer-offset', `${footerElement.offsetHeight}px`);
+    };
+
+    syncFooterHeight();
+
+    const resizeObserver = new ResizeObserver(syncFooterHeight);
+    resizeObserver.observe(footerElement);
+    window.addEventListener('resize', syncFooterHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', syncFooterHeight);
+      rootStyle.removeProperty('--qd-footer-offset');
+    };
+  }, []);
 
   // Use trailing slashes to avoid 301s on first load (GitHub Pages serves directories with a slash)
   const navItems = [
@@ -36,7 +60,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 p-0">
+    <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 z-50 p-0">
       <div className="qd-bar border-t border-white/10">
         <nav className="qd-footer-nav" aria-label="Primary">
           {navItems.map((item) => {

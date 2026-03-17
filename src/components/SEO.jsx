@@ -90,12 +90,12 @@ export default function SeoHead({
   type = 'website',
   keywords = [],
   lang = 'en-IN',
-  alternateLocales = ['en_US'],
+  alternateLocales = [],
   twitterHandle = '@quizdangal',
   twitterCardType = 'summary_large_image',
   jsonLd = [],
   author = 'Quiz Dangal',
-  datePublished = '2025-01-01',
+  datePublished = '2025-01-15',
   dateModified = null,
   noindex = false,
   articleSection = null,
@@ -111,6 +111,33 @@ export default function SeoHead({
   const normalizedLang = typeof lang === 'string' && lang ? lang : 'en-IN';
   const ogLocale = normalizedLang.replace('-', '_');
   const alternateHrefLang = normalizedLang.toLowerCase();
+  const toHrefLang = (loc) =>
+    String(loc || '')
+      .replaceAll('_', '-')
+      .toLowerCase();
+  const normalizedAlternateEntries = Array.isArray(alternateLocales)
+    ? alternateLocales
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+
+          const href = entry.href || entry.url;
+          const hrefLang = entry.hrefLang || entry.locale || entry.lang;
+
+          if (!href || !hrefLang) return null;
+
+          return {
+            href,
+            hrefLang: toHrefLang(hrefLang),
+            ogLocale: String(hrefLang).replace('-', '_'),
+          };
+        })
+        .filter(
+          (entry) =>
+            entry &&
+            entry.href !== canonical &&
+            entry.hrefLang !== toHrefLang(alternateHrefLang),
+        )
+    : [];
   // Normalize jsonLd to array
   const getJsonLdBlocks = () => {
     const blocks = [];
@@ -133,10 +160,6 @@ export default function SeoHead({
     return blocks;
   };
   const jsonLdBlocks = getJsonLdBlocks();
-  const toHrefLang = (loc) =>
-    String(loc || '')
-      .replaceAll('_', '-')
-      .toLowerCase();
 
   // Determine final robots value
   const finalRobots = noindex ? 'noindex, nofollow' : robots;
@@ -190,20 +213,19 @@ export default function SeoHead({
           <link rel="alternate" hrefLang={toHrefLang(alternateHrefLang)} href={canonical} />
         </>
       )}
-      {canonical &&
-        alternateLocales.map((locale) => (
-          <link key={locale} rel="alternate" hrefLang={toHrefLang(locale)} href={canonical} />
+      {normalizedAlternateEntries.map((entry) => (
+          <link key={`${entry.hrefLang}-${entry.href}`} rel="alternate" hrefLang={entry.hrefLang} href={entry.href} />
         ))}
 
       {/* Open Graph */}
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content="Quiz Dangal" />
       <meta property="og:locale" content={ogLocale} />
-      {alternateLocales.map((locale) => (
+      {normalizedAlternateEntries.map((entry) => (
         <meta
-          key={locale}
+          key={`${entry.ogLocale}-${entry.href}`}
           property="og:locale:alternate"
-          content={String(locale).replace('-', '_')}
+          content={entry.ogLocale}
         />
       ))}
       <meta property="og:title" content={title} />
@@ -259,7 +281,18 @@ SeoHead.propTypes = {
   type: PropTypes.string,
   keywords: PropTypes.arrayOf(PropTypes.string),
   lang: PropTypes.string,
-  alternateLocales: PropTypes.arrayOf(PropTypes.string),
+  alternateLocales: PropTypes.arrayOf(
+    PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        href: PropTypes.string,
+        url: PropTypes.string,
+        hrefLang: PropTypes.string,
+        locale: PropTypes.string,
+        lang: PropTypes.string,
+      }),
+    ])
+  ),
   twitterHandle: PropTypes.string,
   twitterCardType: PropTypes.oneOf(['summary', 'summary_large_image']),
   jsonLd: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),

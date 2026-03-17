@@ -146,7 +146,7 @@ keyPages.forEach(page => {
   }
 });
 
-if (keyPages.length === 9) {
+if (keyPages.length === 8) {
   success.push('✅ All key pages checked for SEO component');
 }
 

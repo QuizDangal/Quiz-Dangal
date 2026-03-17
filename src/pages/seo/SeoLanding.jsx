@@ -15,7 +15,7 @@ function toCanonical(pathname) {
 
 // Default features to show on all SEO landing pages
 const defaultFeatures = [
-  { icon: Trophy, title: 'Daily Quizzes', desc: 'Fresh challenges added every single day across multiple categories' },
+  { icon: Trophy, title: 'Daily Quizzes', desc: 'Fresh opinion polls and GK challenges added every single day' },
   { icon: Coins, title: 'Earn Rewards', desc: 'Answer correctly and earn coins that you can redeem for prizes' },
   { icon: Users, title: 'Compete & Climb', desc: 'Compete with players nationwide on real-time leaderboards' },
   { icon: Shield, title: 'Free & Fair', desc: 'No entry fees, no hidden charges—100% skill-based competition' },
@@ -132,10 +132,9 @@ export default function SeoLanding({
           canonical={canonical}
           keywords={keywords}
           jsonLd={jsonLd}
-          alternateLocales={['hi_IN', 'en_US']}
           author="Quiz Dangal"
-          datePublished="2025-01-01"
-          dateModified="2025-12-29"
+          datePublished="2025-01-15"
+          dateModified="2026-03-16"
         />
 
         {/* Hero Section */}

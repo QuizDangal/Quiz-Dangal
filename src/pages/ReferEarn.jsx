@@ -195,7 +195,7 @@ Referral Link: ${referralLink}`,
         keywords={['refer and earn', 'quizdangal refer', 'invite friends quiz app', 'earn coins by referral']}
         jsonLd={[faqSchema]}
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
       />
       
       <div className="min-h-screen pb-24">
@@ -309,9 +309,8 @@ Referral Link: ${referralLink}`,
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-500 bg-slate-800/30 rounded-2xl border border-slate-800/50">
-                <Loader2 className="w-6 h-6 animate-spin mb-2 text-cyan-400" />
-                <p className="text-sm">Loading...</p>
+              <div className="flex items-center justify-center py-12 text-slate-500 bg-slate-800/30 rounded-2xl border border-slate-800/50">
+                <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
               </div>
             ) : referralHistory.length > 0 ? (
               <div className="space-y-2">

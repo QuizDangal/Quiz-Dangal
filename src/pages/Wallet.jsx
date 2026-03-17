@@ -133,7 +133,7 @@ const Wallet = () => {
         canonical="https://quizdangal.com/wallet/"
         robots="noindex, nofollow"
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
       />
       
       <m.div

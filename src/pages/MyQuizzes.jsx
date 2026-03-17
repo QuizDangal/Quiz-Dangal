@@ -708,7 +708,7 @@ const MyQuizzes = () => {
         canonical="https://quizdangal.com/my-quizzes/"
         robots="noindex, nofollow"
         author="Quiz Dangal"
-        datePublished="2025-01-01"
+        datePublished="2025-01-15"
       />
 
       <div className="relative z-10">
