@@ -15,6 +15,7 @@ import { getSupabase, supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { STREAK_CLAIM_DELAY_MS } from '@/constants';
 import StreakModal from '@/components/StreakModal';
+import { prefetchRoute } from '@/lib/utils';
 
 /* ─── tiny static data ─── */
 const HOT_PICKS = [
@@ -123,14 +124,18 @@ const Home = () => {
     return () => clearTimeout(t);
   }, [user, refreshUserProfile]);
 
-  const go = useCallback(async (id) => {
-    try {
-      await getSupabase();
-    } catch (e) {
-      void e;
-    }
+  // Warm Supabase in background on Home mount so it's ready when user taps a category
+  useEffect(() => {
+    getSupabase().catch(() => {});
+  }, []);
+
+  const go = useCallback((id) => {
     navigate(`/category/${id}/`);
   }, [navigate]);
+
+  const warmCategory = useCallback((id) => {
+    prefetchRoute(`/category/${id}`);
+  }, []);
 
   return (
     <div className="mx-auto max-w-[480px] px-4 pb-[calc(var(--qd-footer-h)+24px)]">
@@ -283,6 +288,7 @@ const Home = () => {
                   key={id}
                   type="button"
                   onClick={() => go(id)}
+                  onPointerEnter={() => warmCategory(id)}
                   className={`home-shine group relative overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0818] text-left transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] ${glowClass}`}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${accentClass} opacity-[0.95]`} />
@@ -335,6 +341,7 @@ const Home = () => {
                 key={title}
                 type="button"
                 onClick={() => go(cat)}
+                onPointerEnter={() => warmCategory(cat)}
                 aria-label={`Play ${title} quiz`}
                 className={`home-shine hot-pick-card group relative overflow-hidden rounded-[22px] bg-gradient-to-br ${gradient} text-left transition-all duration-300 hover:-translate-y-1.5 active:translate-y-0`}
                 style={{ '--glow': glow, '--hover-glow': hoverGlow }}

@@ -202,7 +202,7 @@ function AuthProviderInner({ children }) {
       window.addEventListener('touchstart', warm, opts);
       window.addEventListener('keydown', warm, { once: true });
 
-      const tid = window.setTimeout(warm, 8000);
+      const tid = window.setTimeout(warm, 3000);
       return () => {
         try {
           window.removeEventListener('pointerdown', warm, opts);

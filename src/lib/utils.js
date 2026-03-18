@@ -77,6 +77,8 @@ const routePrefetchMap = {
   '/refer-earn-quiz-app': () => import('@/pages/ReferEarnInfo'),
   '/terms-conditions': () => import('@/pages/TermsConditions'),
   '/privacy-policy': () => import('@/pages/PrivacyPolicy'),
+  '/category/opinion': () => import('@/pages/CategoryQuizzes'),
+  '/category/gk': () => import('@/pages/CategoryQuizzes'),
 };
 
 const warmed = new Set();
