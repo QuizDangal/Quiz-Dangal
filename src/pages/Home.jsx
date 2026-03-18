@@ -234,7 +234,7 @@ const Home = () => {
               <div>
                 <p className="text-[0.76rem] font-medium text-white/50">
                   {user ? (
-                    <>Hey <span className="font-bold text-amber-300">{displayName}</span>{' '}<span className="inline-block" style={{ animation: 'heroWave 1.8s ease-in-out infinite' }}>👋</span></>
+                    <>Hey <span className="font-bold text-amber-300">{displayName}</span>{' '}<span className="inline-block hero-wave">👋</span></>
                   ) : (
                     <>Welcome to <span className="font-bold text-violet-300">Quiz Dangal</span></>
                   )}
@@ -257,7 +257,7 @@ const Home = () => {
 
               <div className="relative flex items-start justify-between gap-2.5">
                 <div className="max-w-[70%]">
-                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[0.58rem] font-bold text-violet-200 shadow-[0_10px_30px_rgba(139,92,246,0.16)]" style={{ animation: 'heroPillFade 0.55s ease-out 0.1s both' }}>
+                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[0.58rem] font-bold text-violet-200 shadow-[0_10px_30px_rgba(139,92,246,0.16)] hero-pill-fade">
                     <Crown size={12} className="text-amber-300" />
                     Live quiz drops
                   </div>
@@ -276,7 +276,7 @@ const Home = () => {
                   <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_200deg_at_50%_50%,rgba(251,191,36,0.42),rgba(255,255,255,0.12),rgba(34,211,238,0.16),rgba(168,85,247,0.22),rgba(251,191,36,0.42))] opacity-95 shadow-[0_18px_48px_rgba(251,191,36,0.24)]" />
                   <div className="absolute inset-[2px] rounded-full bg-[linear-gradient(180deg,rgba(32,15,52,0.98),rgba(12,7,22,0.98))] shadow-[inset_0_0_28px_rgba(251,191,36,0.08)]" />
                   <div className="absolute inset-[16px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.14),transparent_30%),radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.14),transparent_70%)]" />
-                  <Crown className="relative h-[3.15rem] w-[3.15rem] text-amber-300 drop-shadow-[0_6px_18px_rgba(251,191,36,0.35)]" strokeWidth={2} style={{ animation: 'float 4s ease-in-out infinite, shimmer-glow 2.5s ease-in-out infinite alternate' }} />
+                  <Crown className="relative h-[3.15rem] w-[3.15rem] text-amber-300 drop-shadow-[0_6px_18px_rgba(251,191,36,0.35)] hero-crown-anim" strokeWidth={2} />
                 </div>
               </div>
 
@@ -341,10 +341,8 @@ const Home = () => {
                 type="button"
                 onClick={() => go(cat)}
                 aria-label={`Play ${title} quiz`}
-                className={`home-shine group relative overflow-hidden rounded-[22px] bg-gradient-to-br ${gradient} text-left transition-all duration-300 hover:-translate-y-1.5 active:translate-y-0`}
-                style={{ boxShadow: `0 10px 36px ${glow}` }}
-                onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 16px 52px ${hoverGlow}`; }}
-                onMouseLeave={e => { e.currentTarget.style.boxShadow = `0 10px 36px ${glow}`; }}
+                className={`home-shine hot-pick-card group relative overflow-hidden rounded-[22px] bg-gradient-to-br ${gradient} text-left transition-all duration-300 hover:-translate-y-1.5 active:translate-y-0`}
+                style={{ '--glow': glow, '--hover-glow': hoverGlow }}
               >
                 {/* Glass overlay */}
                 <div className="relative rounded-[22px] bg-gradient-to-b from-black/[0.05] via-black/[0.15] to-black/[0.35] p-4">

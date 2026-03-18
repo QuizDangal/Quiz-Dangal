@@ -42,6 +42,7 @@ export function useRealtimeChannel({
     [JSON.stringify(changes)]
   );
   const changesRef = useRef(changes);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { changesRef.current = changes; }, [changesKey]);
 
   useEffect(() => {

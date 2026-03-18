@@ -367,6 +367,11 @@ html {
   100% { filter: drop-shadow(0 0 36px rgba(251,191,36,0.85)); }
 }
 
+/* Hero classes (moved from inline styles so mobile media query can disable them) */
+.hero-wave { animation: heroWave 1.8s ease-in-out infinite; }
+.hero-pill-fade { animation: heroPillFade 0.55s ease-out 0.1s both; }
+.hero-crown-anim { animation: float 4s ease-in-out infinite, shimmer-glow 2.5s ease-in-out infinite alternate; }
+
 @keyframes heroWave {
   0%, 100% { transform: rotate(0deg); }
   15% { transform: rotate(14deg); }
@@ -552,6 +557,15 @@ div:focus-visible:not([tabindex]) {
 }
 .home-shine:hover::after {
   transform: translateX(100%);
+}
+
+/* Hot pick cards - CSS-only box-shadow hover (avoids JS onMouseEnter/onMouseLeave) */
+.hot-pick-card {
+  box-shadow: 0 10px 36px var(--glow, rgba(0,0,0,0.2));
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.hot-pick-card:hover {
+  box-shadow: 0 16px 52px var(--hover-glow, rgba(0,0,0,0.3));
 }
 
 /* ─── Hide scrollbar (hot picks carousel) ─── */
@@ -1698,6 +1712,7 @@ div:focus-visible:not([tabindex]) {
   padding: 2px;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   animation: cardBorderShift 8s ease-in-out infinite;
+  contain: layout style paint;
 }
 
 @keyframes cardBorderShift {
@@ -1752,6 +1767,17 @@ div:focus-visible:not([tabindex]) {
 @keyframes cardShine {
   0% { left: -100%; }
   50%, 100% { left: 150%; }
+}
+
+/* Mobile: disable expensive infinite card animations */
+@media (max-width: 1023px) {
+  .quiz-slot-card {
+    animation: none;
+  }
+  .quiz-slot-card-inner::after {
+    animation: none;
+    display: none;
+  }
 }
 
 .quiz-slot-card-live {
@@ -4386,7 +4412,10 @@ div:focus-visible:not([tabindex]) {
   /* Disable floating/pulsing animations */
   .animate-float,
   .animate-pulse,
-  .qdh-floating {
+  .animate-ping,
+  .qdh-floating,
+  .hero-wave,
+  .hero-crown-anim {
     animation: none !important;
   }
   
@@ -4394,6 +4423,15 @@ div:focus-visible:not([tabindex]) {
   .qdh-section-title {
     animation: none !important;
     opacity: 1;
+  }
+
+  /* Disable slot card infinite animations on mobile */
+  .quiz-slot-card {
+    animation: none !important;
+  }
+  .quiz-slot-card-inner::after {
+    animation: none !important;
+    display: none !important;
   }
   
   /* Optimize will-change for mobile */
@@ -4410,6 +4448,7 @@ div:focus-visible:not([tabindex]) {
   .quiz-header-content,
   .qd-bar,
   .qd-card,
+  .quiz-slot-time-box,
   [class*="backdrop-blur"] {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;

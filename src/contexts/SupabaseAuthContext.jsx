@@ -219,6 +219,7 @@ function AuthProviderInner({ children }) {
     return () => {
       authSubRef.current?.unsubscribe?.();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Realtime: profile row watch via shared hook (single removal + timeout logic abstracted)
@@ -362,6 +363,7 @@ function AuthProviderInner({ children }) {
         // Refresh local profile state so navbar and UI update immediately
         refreshUserProfile(user);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, userProfile]);
 
   // Ensure referral_code exists for sharing
@@ -379,6 +381,7 @@ function AuthProviderInner({ children }) {
           // ignore
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile, user]);
 
   // SIGN UP FUNCTION (EMAIL)

@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { m } from '@/lib/motion-lite';
 import { BUILD_DATE } from '@/constants';
 import { getSupabase } from '@/lib/customSupabaseClient';
 import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
@@ -104,6 +103,71 @@ const isSlotUpcomingWindow = (slot) => {
 
 const UPCOMING_SOON_WINDOW_MS = 5 * 60 * 1000; // show only the next upcoming when it's within 5 minutes
 
+/** Self-contained countdown that ticks every 1 s — only this component re-renders, NOT the parent */
+const SlotCountdown = memo(function SlotCountdown({ startMs, endMs, isActive, formatTimeOnly: fmtTime, startTimeRaw, endTimeRaw }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const now = Date.now();
+  const upcoming = startMs && now < startMs;
+  const secs = upcoming
+    ? Math.max(0, Math.floor((startMs - now) / 1000))
+    : isActive && endMs
+      ? Math.max(0, Math.floor((endMs - now) / 1000))
+      : null;
+  if (secs === null) return null;
+
+  const mins = Math.floor(secs / 60);
+  const secsR = secs % 60;
+  const totalWindow = startMs && endMs ? Math.max(1, endMs - startMs) : null;
+  const progressed = isActive && totalWindow ? Math.min(100, Math.max(0, Math.round(((now - startMs) / totalWindow) * 100))) : null;
+
+  return (
+    <div className={`relative mb-4 rounded-2xl overflow-hidden ${
+      isActive
+        ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
+        : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
+    }`}>
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
+          <div>
+            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+              {isActive ? 'Ends in' : 'Starts in'}
+            </div>
+            <div className="flex items-baseline gap-1 mt-0.5">
+              <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
+                {String(mins).padStart(2, '0')}
+              </span>
+              <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
+              <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
+                {String(secsR).padStart(2, '0')}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right space-y-1">
+          <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
+          <div className="text-[11px] text-slate-300 font-semibold">
+            {startTimeRaw ? fmtTime(startTimeRaw) : '—'} → {endTimeRaw ? fmtTime(endTimeRaw) : '—'}
+          </div>
+        </div>
+      </div>
+      {progressed !== null && (
+        <div className="h-1 bg-black/30">
+          <div
+            className={`h-full rounded-full transition-[width] duration-700 ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
+            style={{ width: `${progressed}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+});
+
 const CategoryQuizzes = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -114,7 +178,6 @@ const CategoryQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [joinedMap, setJoinedMap] = useState({}); // quiz_id -> 'joined' | 'pre'
-  const [tick, setTick] = useState(0); // reintroduced for live countdown display recalculation
 
   // Slot mode state
   const [slots, setSlots] = useState([]);
@@ -168,20 +231,6 @@ const CategoryQuizzes = () => {
     }, pollIntervalMs);
     return () => clearInterval(id);
   }, [slotMode, loadSlots]);
-
-  // Live countdown tick for slot mode
-  useEffect(() => {
-    if (slotMode !== 'slots') return;
-    const now = Date.now();
-    const hasSlotActivity = (slots || []).some((s) => {
-      const st = s.start_time ? new Date(s.start_time).getTime() : 0;
-      const et = s.end_time ? new Date(s.end_time).getTime() : 0;
-      return (st && now < st) || (st && et && now >= st && now < et);
-    });
-    if (!hasSlotActivity) return;
-    const id = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
-    return () => clearInterval(id);
-  }, [slots, slotMode]);
 
   // Fetch whether current user has joined or pre-joined each quiz
   useEffect(() => {
@@ -398,12 +447,7 @@ const CategoryQuizzes = () => {
     const isPaused = slot.status === 'paused';
     const isFinished = slot.status === 'finished' || (et && now >= et);
     const upcoming = isSlotUpcomingWindow(slot);
-    const secs =
-      upcoming && st
-        ? Math.max(0, Math.floor((st - now) / 1000))
-        : isActive && et
-          ? Math.max(0, Math.floor((et - now) / 1000))
-          : null;
+    const needsCountdown = (upcoming && st) || (isActive && et);
     const prizes = Array.isArray(slot.prizes) ? slot.prizes : [];
     const prizeType = slot.prize_type || 'coins';
     const p1 = prizes[0] ?? 0;
@@ -422,31 +466,16 @@ const CategoryQuizzes = () => {
       return (slot.status || '').toUpperCase();
     })();
     
-    // Check if user has already joined/pre-joined this quiz
-    // For slots, use slotId as key (since that's what pre_join_slot/join_slot expects)
     const cardId = slot.isLegacy ? slot.quizId : slot.slotId;
-    const myJoinStatus = joinedMap[cardId]; // 'pre' | 'joined' | undefined
+    const myJoinStatus = joinedMap[cardId];
     const hasJoined = !!myJoinStatus;
     const isJoining = joiningId === cardId;
     
-    // Determine button text and action
-    const getCta = () => {
-      if (isFinished) return 'Results';
-      if (isActive) return hasJoined ? 'Play' : 'Join Now';
-      if (upcoming) return hasJoined ? 'Joined ✓' : 'Pre-Join';
-      return 'View';
-    };
-    const _cta = getCta();
-    
-    // Handle button click
     const handleClick = async () => {
-      // Results page - anyone can view
       if (isFinished) {
         navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
         return;
       }
-      
-      // For live/upcoming quizzes, require login
       if (!user) {
         toast({
           title: 'Login Required',
@@ -456,36 +485,27 @@ const CategoryQuizzes = () => {
         navigate('/login', { state: { from: location.pathname, message: 'Login to join the quiz' } });
         return;
       }
-      
       if (hasJoined && !isActive) {
-        // Already joined upcoming - navigate to lobby
         navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
         return;
       }
       if (isActive) {
-        // Live quiz - navigate to play
         navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
         return;
       }
       if (upcoming && !hasJoined) {
-        // Pre-join the quiz - pass the full slot object with id for legacy compatibility
         await handleJoin({ id: slot.quizId, ...slot });
       }
     };
-    
-    const mins = secs !== null ? Math.floor(secs / 60) : 0;
-    const secsR = secs !== null ? secs % 60 : 0;
-    const totalWindow = st && et ? Math.max(1, et - st) : null;
-    const progressed = isActive && totalWindow ? Math.min(100, Math.max(0, Math.round(((now - st) / totalWindow) * 100))) : null;
 
     return (
-      <m.div
+      <div
         key={slot.slotId}
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 14 }}
-        className="group cursor-pointer"
+        role="button"
+        tabIndex={0}
+        className="group cursor-pointer animate-fade-up"
         onClick={handleClick}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
       >
         {/* Animated conic gradient border */}
         <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
@@ -534,49 +554,16 @@ const CategoryQuizzes = () => {
               {slot.quiz_title || slot.title || 'Quiz'}
             </h3>
 
-            {/* Timer — Big and prominent */}
-            {secs !== null && (
-              <div className={`relative mb-4 rounded-2xl overflow-hidden ${
-                isActive 
-                  ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
-                  : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
-              }`}>
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
-                    <div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                        {isActive ? 'Ends in' : 'Starts in'}
-                      </div>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
-                          {String(mins).padStart(2, '0')}
-                        </span>
-                        <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
-                        <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
-                          {String(secsR).padStart(2, '0')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
-                    <div className="text-[11px] text-slate-300 font-semibold">
-                      {slot.start_time ? formatTimeOnly(slot.start_time) : '—'} → {slot.end_time ? formatTimeOnly(slot.end_time) : '—'}
-                    </div>
-                  </div>
-                </div>
-                {progressed !== null && (
-                  <div className="h-1 bg-black/30">
-                    <m.div 
-                      className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progressed}%` }}
-                      transition={{ duration: 0.8 }}
-                    />
-                  </div>
-                )}
-              </div>
+            {/* Timer — Self-contained countdown (only this component re-renders every 1s) */}
+            {needsCountdown && (
+              <SlotCountdown
+                startMs={st}
+                endMs={et}
+                isActive={isActive}
+                formatTimeOnly={formatTimeOnly}
+                startTimeRaw={slot.start_time}
+                endTimeRaw={slot.end_time}
+              />
             )}
 
             {/* Prizes — Medal cards */}
@@ -634,7 +621,7 @@ const CategoryQuizzes = () => {
             </button>
           </div>
         </div>
-      </m.div>
+      </div>
     );
   };
   // Push reminder scheduling for next slot (simple local toast) – front-end only placeholder
@@ -686,9 +673,6 @@ const CategoryQuizzes = () => {
           ],
         }]}
       />
-      <span className="hidden" aria-hidden>
-        {tick}
-      </span>
       <div className="max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto space-y-4">
         {/* Category Header - Responsive */}
         <div className="p-[1px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
@@ -767,9 +751,8 @@ const CategoryQuizzes = () => {
       )}
 
         {/* SEO Content Panel — Always in DOM for search engine indexing; CSS controls visibility */}
-        <article
+        <section
           className={`cat-seo-panel rounded-xl sm:rounded-2xl ${seoExpanded ? 'cat-seo-panel--open' : ''}`}
-          aria-expanded={seoExpanded}
         >
           <div className="p-[1px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-orange-500/50 via-fuchsia-500/30 to-blue-500/50">
             <div className="cat-seo-panel__body rounded-[11px] sm:rounded-[15px] bg-[#0a0a16]/95 px-4 sm:px-6 py-4">
@@ -783,7 +766,7 @@ const CategoryQuizzes = () => {
               </div>
             </div>
           </div>
-        </article>
+        </section>
       </div>
     </div>
   );

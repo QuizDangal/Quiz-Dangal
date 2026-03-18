@@ -2,6 +2,7 @@
 module.exports = {
   root: true,
   env: { browser: true, es2022: true, node: true },
+  globals: { __BUILD_DATE__: 'readonly' },
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
   settings: { react: { version: 'detect' } },
   plugins: ['react', 'react-hooks', 'unused-imports', 'jsx-a11y'],
