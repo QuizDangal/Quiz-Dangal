@@ -239,6 +239,7 @@ function App() {
                   <>
                     <Route path="/quiz/:id" element={<Quiz />} />
                     <Route path="/quiz/slot/:slotId" element={<Quiz />} />
+                    {legacyRedirectRoutes}
                     {/* Canonicalize category routes (avoid duplicate-content URLs) */}
                     <Route
                       path="/category/:slug/"

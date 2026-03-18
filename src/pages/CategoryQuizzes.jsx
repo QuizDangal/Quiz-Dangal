@@ -66,7 +66,7 @@ function categoryMeta(slug = '') {
       ],
     };
   return {
-    title: 'Master Quizzes',
+    title: 'Quizzes',
     emoji: '⭐',
     Icon: MessageSquare,
     from: 'from-sky-600/30',
