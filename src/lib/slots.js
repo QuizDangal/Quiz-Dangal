@@ -4,6 +4,40 @@
 
 import { logger } from '@/lib/logger';
 
+// ── Slot data prefetch cache ──
+// Allows starting the data fetch before the CategoryQuizzes component mounts.
+const _prefetchCache = new Map(); // category -> { promise, ts }
+const PREFETCH_TTL_MS = 15_000; // cache valid for 15 seconds
+
+/**
+ * Start fetching slot data for a category in the background.
+ * Call this on navigation click so data is already in-flight when the page mounts.
+ */
+export function prefetchSlotData(category) {
+  if (!category) return;
+  const existing = _prefetchCache.get(category);
+  if (existing && Date.now() - existing.ts < PREFETCH_TTL_MS) return; // already cached/in-flight
+  // Lazy import getSupabase to avoid circular dependency at module level
+  import('@/lib/customSupabaseClient').then(({ getSupabase }) => {
+    const promise = getSupabase().then((sb) => {
+      if (!sb) return null;
+      return fetchSlotsForCategory(sb, category);
+    }).catch(() => null);
+    _prefetchCache.set(category, { promise, ts: Date.now() });
+  }).catch(() => {});
+}
+
+/**
+ * Consume the prefetched data if available and still fresh. Returns null if no valid cache.
+ */
+export function consumePrefetchedSlotData(category) {
+  const cached = _prefetchCache.get(category);
+  if (!cached) return null;
+  _prefetchCache.delete(category);
+  if (Date.now() - cached.ts > PREFETCH_TTL_MS) return null;
+  return cached.promise;
+}
+
 // Normalizes a raw slot row from quiz_slots_view
 function normalizeSlot(row) {
   if (!row) return null;
@@ -47,6 +81,10 @@ export async function fetchSlotsForCategory(supabase, category) {
   let slotsFromView = [];
   let legacySlots = [];
   let autoEnabled = true;
+
+  // Only fetch recent past + upcoming slots (1 hour ago to 24 hours ahead)
+  const windowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const windowEnd = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   
   // Fire all three queries in parallel
   const [slotsResult, legacyResult, overrideResult] = await Promise.allSettled([
@@ -54,12 +92,18 @@ export async function fetchSlotsForCategory(supabase, category) {
       .from('quiz_slots_view')
       .select('*')
       .eq('category', category)
-      .order('start_time', { ascending: true }),
+      .gte('start_time', windowStart)
+      .lte('start_time', windowEnd)
+      .order('start_time', { ascending: true })
+      .limit(20),
     supabase
       .from('quizzes')
       .select('id,title,start_time,end_time,status,prizes,prize_type,slot_id,questions(count)')
       .eq('category', category)
-      .order('start_time', { ascending: true }),
+      .gte('start_time', windowStart)
+      .lte('start_time', windowEnd)
+      .order('start_time', { ascending: true })
+      .limit(20),
     supabase
       .from('category_runtime_overrides')
       .select('category,auto_enabled:is_auto')
@@ -82,23 +126,7 @@ export async function fetchSlotsForCategory(supabase, category) {
       const now = Date.now();
       const legacyQuizzes = (data || []).filter(q => !q.slot_id);
 
-      // Fetch participant counts for legacy quizzes (only if needed)
-      let participantCounts = {};
-      if (legacyQuizzes.length > 0) {
-        try {
-          const { data: countData } = await supabase.rpc('get_engagement_counts_many', {
-            p_quiz_ids: legacyQuizzes.map(q => q.id)
-          });
-          if (countData) {
-            for (const row of countData) {
-              participantCounts[row.quiz_id] = (row.pre_joined || 0) + (row.joined || 0);
-            }
-          }
-        } catch (e) {
-          logger.debug('get_engagement_counts_many RPC error (non-critical):', e?.message || e);
-        }
-      }
-
+      // Build legacy slots immediately with 0 counts — don't block on RPC
       legacySlots = legacyQuizzes.map((q) => ({
         slotId: q.id,
         quizId: q.id,
@@ -110,8 +138,8 @@ export async function fetchSlotsForCategory(supabase, category) {
         status: deriveLegacyStatus(q, now),
         prizes: Array.isArray(q.prizes) ? q.prizes : [],
         prize_type: q.prize_type || 'coins',
-        participants_joined: participantCounts[q.id] || 0,
-        participants_total: participantCounts[q.id] || 0,
+        participants_joined: 0,
+        participants_total: 0,
         questions_count: q.questions?.[0]?.count || 0,
         auto_enabled: true,
         isLegacy: true,

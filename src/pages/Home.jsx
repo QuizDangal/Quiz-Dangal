@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { STREAK_CLAIM_DELAY_MS } from '@/constants';
 import StreakModal from '@/components/StreakModal';
 import { prefetchRoute } from '@/lib/utils';
+import { prefetchSlotData } from '@/lib/slots';
 
 /* ─── tiny static data ─── */
 const HOT_PICKS = [
@@ -130,11 +131,13 @@ const Home = () => {
   }, []);
 
   const go = useCallback((id) => {
+    prefetchSlotData(id);
     navigate(`/category/${id}/`);
   }, [navigate]);
 
   const warmCategory = useCallback((id) => {
     prefetchRoute(`/category/${id}`);
+    prefetchSlotData(id);
   }, []);
 
   return (

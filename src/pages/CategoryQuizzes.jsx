@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, memo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BUILD_DATE } from '@/constants';
 import { getSupabase } from '@/lib/customSupabaseClient';
-import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
+import { fetchSlotsForCategory, classifyThreeSlots, consumePrefetchedSlotData } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
 import {
@@ -190,16 +190,25 @@ const CategoryQuizzes = () => {
 
   const loadSlots = useCallback(async () => {
     try {
-      const sb = await getSupabase();
-      if (!sb) {
-        setSlots([]);
-        setCategoryAutoEnabled(true);
-        setSlotMode('legacy');
-        setSlotLoadError('Supabase is not configured.');
-        return;
+      // Check if data was prefetched during navigation
+      const prefetched = consumePrefetchedSlotData(slug);
+      let result;
+      if (prefetched) {
+        result = await prefetched;
+      }
+      if (!result) {
+        const sb = await getSupabase();
+        if (!sb) {
+          setSlots([]);
+          setCategoryAutoEnabled(true);
+          setSlotMode('legacy');
+          setSlotLoadError('Supabase is not configured.');
+          return;
+        }
+        result = await fetchSlotsForCategory(sb, slug);
       }
 
-      const { slots: s, mode, auto } = await fetchSlotsForCategory(sb, slug);
+      const { slots: s, mode, auto } = result;
       // Always set slots regardless of mode - fetchSlotsForCategory now returns merged results
       setSlots(s);
       setCategoryAutoEnabled(auto);
