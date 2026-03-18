@@ -3,7 +3,7 @@
 // Is file ka poora purana code delete karke yeh naya code paste karen.
 // ========================================================================
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { supabase, hasSupabaseConfig, getSupabase } from '@/lib/customSupabaseClient';
 import { loadReferralCode, clearReferralCode, normalizeReferralCode } from '@/lib/referralStorage';
@@ -385,7 +385,7 @@ function AuthProviderInner({ children }) {
   }, [userProfile, user]);
 
   // SIGN UP FUNCTION (EMAIL)
-  const signUp = async (email, password, { referralCode, options } = {}) => {
+  const signUp = useCallback(async (email, password, { referralCode, options } = {}) => {
     checkRateLimit('signup');
     const sb = await getSupabase();
     if (!sb) throw new Error('Supabase not configured');
@@ -413,19 +413,19 @@ function AuthProviderInner({ children }) {
     }
 
     return await sb.auth.signUp(payload);
-  };
+  }, [checkRateLimit]);
 
   // SIGN IN FUNCTION (EMAIL)
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     checkRateLimit('signin');
     const sb = await getSupabase();
     if (!sb) throw new Error('Supabase not configured');
     const e = (email || '').trim();
     const p = (password || '').trim();
     return await sb.auth.signInWithPassword({ email: e, password: p });
-  };
+  }, [checkRateLimit]);
 
-  const value = {
+  const value = useMemo(() => ({
     supabase,
     user,
     userProfile,
@@ -436,7 +436,7 @@ function AuthProviderInner({ children }) {
     signIn,
     signOut: hardSignOut,
     refreshUserProfile,
-  };
+  }), [user, userProfile, loading, isRecoveryFlow, signUp, signIn, hardSignOut, refreshUserProfile]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

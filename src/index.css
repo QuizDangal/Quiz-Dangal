@@ -136,6 +136,7 @@ html,
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  contain: strict;
 }
 
 .app-bg-base {
@@ -157,7 +158,7 @@ html,
     rgba(255,255,255,0.01) 2px,
     rgba(255,255,255,0.01) 4px
   );
-  animation: appBgScan 8s linear infinite;
+  /* Static — removing infinite animation to prevent continuous full-screen compositing */
 }
 
 @keyframes appBgScan {
@@ -4411,6 +4412,8 @@ div:focus-visible:not([tabindex]) {
   
   /* Disable floating/pulsing animations */
   .animate-float,
+  .animate-float-slow,
+  .animate-float-delayed,
   .animate-pulse,
   .animate-ping,
   .qdh-floating,

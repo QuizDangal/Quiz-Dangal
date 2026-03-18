@@ -186,7 +186,7 @@ const CategoryQuizzes = () => {
   const [slotLoadError, setSlotLoadError] = useState(null);
   const [seoExpanded, setSeoExpanded] = useState(false);
 
-  const pollIntervalMs = 20000; // 20s for slot refresh
+  const pollIntervalMs = 60000; // 60s for slot refresh
 
   const loadSlots = useCallback(async () => {
     try {

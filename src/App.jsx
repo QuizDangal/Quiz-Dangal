@@ -183,7 +183,7 @@ function App() {
           <div className="app-bg-vignette" />
         </div>
         <div
-          className="min-h-screen flex flex-col relative text-gray-50 transition-all duration-300 ease-in-out z-10"
+          className="min-h-screen flex flex-col relative text-gray-50 z-10"
           style={{ margin: 0, padding: 0, background: 'transparent' }}
         >
           <Helmet>

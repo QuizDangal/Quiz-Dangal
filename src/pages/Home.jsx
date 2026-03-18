@@ -161,7 +161,7 @@ const Home = () => {
       />
 
       {/* ═══════ HEADER ═══════ */}
-      <header className="sticky top-0 z-20 -mx-4 px-4 pt-3 pb-3 bg-black/50 backdrop-blur-2xl border-b border-white/[0.06]">
+      <header className="sticky top-0 z-20 -mx-4 px-4 pt-3 pb-3 bg-[#050508]/95 border-b border-white/[0.06]">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3 no-underline group">
             <img
@@ -203,7 +203,7 @@ const Home = () => {
           ) : (
             <Link
               to="/login/"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold border border-white/15 bg-white/[0.07] backdrop-blur-sm hover:bg-white/[0.12] transition-all duration-200 hover:border-white/25"
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold border border-white/15 bg-[#0d0818]/90 hover:bg-white/[0.12] transition-all duration-200 hover:border-white/25"
             >
               <User size={15} className="text-white/70" />
               <span>Sign In</span>
@@ -220,16 +220,11 @@ const Home = () => {
           style={{ '--fade-delay': '0ms' }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.22),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_12%_90%,rgba(244,63,94,0.18),transparent_24%),linear-gradient(180deg,#12051f_0%,#080412_48%,#07030d_100%)]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2280%22 height=%2280%22 viewBox=%220 0 80 80%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.04%22%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%221.5%22/%3E%3Ccircle cx=%220%22 cy=%220%22 r=%221.5%22/%3E%3Ccircle cx=%2280%22 cy=%2280%22 r=%221.5%22/%3E%3Cpath d=%22M0 40h80M40 0v80%22 stroke=%22%23a855f7%22 stroke-opacity=%220.05%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-violet-500/30 blur-[120px] animate-float" />
-          <div className="pointer-events-none absolute -right-12 top-10 h-40 w-40 rounded-full bg-cyan-500/20 blur-[100px] animate-float-slow" />
-          <div className="pointer-events-none absolute -left-12 bottom-10 h-40 w-40 rounded-full bg-rose-500/20 blur-[90px] animate-float-delayed" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-violet-500/30 blur-3xl" />
+          <div className="pointer-events-none absolute -right-12 top-10 h-40 w-40 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -left-12 bottom-10 h-40 w-40 rounded-full bg-rose-500/20 blur-3xl" />
 
           <div className="relative px-5 pb-5 pt-5">
-            <div className="pointer-events-none absolute left-6 top-14 h-1.5 w-1.5 rounded-full bg-violet-300/70 animate-ping" />
-            <div className="pointer-events-none absolute right-8 top-24 h-2 w-2 rounded-full bg-cyan-300/50 animate-float" />
-            <div className="pointer-events-none absolute bottom-28 right-10 h-2 w-2 rounded-full bg-amber-300/50 animate-float-delayed" />
-
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[0.76rem] font-medium text-white/50">
@@ -250,7 +245,7 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.045] px-3.5 pb-4 pt-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0d0818]/95 px-3.5 pb-4 pt-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_60px_rgba(0,0,0,0.35)]">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
               <div className="absolute -right-10 top-4 h-28 w-28 rounded-full bg-amber-400/15 blur-[50px]" />
               <div className="absolute left-0 top-0 h-24 w-24 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_70%)]" />
@@ -296,7 +291,7 @@ const Home = () => {
 
                   <div className="relative flex h-full flex-col px-3.5 pb-3.5 pt-3.5">
                     <div className="mb-3 flex items-start justify-between gap-2">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-white/20 bg-white/20 text-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-white/20 bg-white/20 text-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
                         <span>{icon}</span>
                       </div>
                     </div>
@@ -351,7 +346,7 @@ const Home = () => {
                   <div className="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-black/20 blur-2xl" />
 
                   {/* Tag */}
-                  <div className="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-sm px-2 py-[3px] text-[0.48rem] font-black tracking-[0.12em] text-white/90 uppercase mb-3">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-[3px] text-[0.48rem] font-black tracking-[0.12em] text-white/90 uppercase mb-3">
                     <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse" />
                     {tag}
                   </div>
@@ -366,7 +361,7 @@ const Home = () => {
                   {/* Play CTA */}
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-[0.62rem] font-bold text-white/50 group-hover:text-white/70 transition-colors">Play now</span>
-                    <div className="h-7 w-7 rounded-full bg-white/20 backdrop-blur-sm grid place-items-center transition-all duration-200 group-hover:bg-white/30 group-hover:scale-110">
+                    <div className="h-7 w-7 rounded-full bg-white/20 grid place-items-center transition-all duration-200 group-hover:bg-white/30 group-hover:scale-110">
                       <Play size={11} className="text-white ml-0.5" />
                     </div>
                   </div>
