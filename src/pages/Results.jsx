@@ -1357,7 +1357,7 @@ const Results = () => {
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-xs font-bold text-white truncate">
-                    {(quiz.category || '').toLowerCase().includes('opinion') ? 'More Opinion Quizzes' : 'More GK Quizzes'}
+                    {(quiz.category || '').toLowerCase().includes('opinion') ? 'More Opinion Quizzes' : 'More Master Quizzes'}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">New quiz every 5 min • Win coins & prizes</p>
                 </div>

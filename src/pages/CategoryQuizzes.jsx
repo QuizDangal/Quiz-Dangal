@@ -45,7 +45,7 @@ function categoryMeta(slug = '') {
     };
   if (s.includes('gk'))
     return {
-      title: 'GK Quizzes',
+      title: 'Master Quizzes',
       emoji: '🧠',
       Icon: Brain,
       from: 'from-emerald-600/30',
@@ -66,7 +66,7 @@ function categoryMeta(slug = '') {
       ],
     };
   return {
-    title: 'GK Quizzes',
+    title: 'Master Quizzes',
     emoji: '⭐',
     Icon: MessageSquare,
     from: 'from-sky-600/30',

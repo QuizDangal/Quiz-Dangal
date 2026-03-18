@@ -21,7 +21,7 @@ const HOT_PICKS = [
   {
     emoji: '🏏', title: 'IPL & Cricket',
     sub: 'Predict scores, win big',
-    cat: 'gk', tag: 'TRENDING',
+    cat: 'opinion', tag: 'TRENDING',
     gradient: 'from-orange-500 via-amber-500 to-yellow-500',
     glow: 'rgba(245,158,11,0.25)',
     hoverGlow: 'rgba(245,158,11,0.4)',
@@ -35,7 +35,7 @@ const HOT_PICKS = [
     hoverGlow: 'rgba(236,72,153,0.4)',
   },
   {
-    emoji: '🧠', title: 'GK Challenge',
+    emoji: '🧠', title: 'GK Quiz',
     sub: 'Test your brain daily',
     cat: 'gk', tag: 'POPULAR',
     gradient: 'from-violet-500 via-purple-500 to-indigo-600',
@@ -65,7 +65,7 @@ const HERO_MODES = [
   {
     id: 'gk',
     icon: '🧠',
-    title: 'GK Quiz',
+    title: 'Master Quiz',
     description: 'Test your knowledge and earn rewards.',
     accentClass: 'from-indigo-500 via-violet-500 to-cyan-500',
     glowClass: 'shadow-[0_24px_60px_rgba(99,102,241,0.24)]',
