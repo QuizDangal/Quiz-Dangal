@@ -212,13 +212,13 @@ self.addEventListener('notificationclick', function(event) {
   // Sanitize target URL to same-origin relative path
   function toSafePath(u) {
     try {
-      if (!u || typeof u !== 'string') return '/#/';
+      if (!u || typeof u !== 'string') return '/';
       const absolute = new URL(u, self.location.origin);
-      if (absolute.origin !== self.location.origin) return '/#/';
+      if (absolute.origin !== self.location.origin) return '/';
       // Return path + search + hash to keep in-app routing
       return absolute.pathname + absolute.search + absolute.hash;
     } catch {
-      return '/#/';
+      return '/';
     }
   }
 

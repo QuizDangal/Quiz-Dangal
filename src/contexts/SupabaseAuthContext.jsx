@@ -17,7 +17,7 @@ function AuthProviderInner({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
-  const initProfileRef = useRef(false);
+  const initProfileRef = useRef(null);
   const authSubRef = useRef(null);
   const rateLimitRef = useRef({});
 
@@ -35,7 +35,7 @@ function AuthProviderInner({ children }) {
   }, []);
 
   // Profile fetch karne ka function
-  const refreshUserProfile = async (currentUser) => {
+  const refreshUserProfile = useCallback(async (currentUser) => {
     if (currentUser) {
       try {
         const sb = await getSupabase();
@@ -57,7 +57,7 @@ function AuthProviderInner({ children }) {
         setUserProfile(null);
       }
     }
-  };
+  }, []);
 
   const hardSignOut = useCallback(async ({ redirect = true } = {}) => {
     try {
@@ -300,8 +300,8 @@ function AuthProviderInner({ children }) {
     if (!user || loading) return;
 
     // Guard double execution in React 18 StrictMode in dev
-    if (initProfileRef.current) return;
-    initProfileRef.current = true;
+    if (initProfileRef.current === user.id) return;
+    initProfileRef.current = user.id;
 
     const params = new URLSearchParams(window.location.search);
     const refParam = normalizeReferralCode(params.get('ref'));

@@ -8,39 +8,6 @@ import process from 'process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function parseEnvFile(filePath) {
-  try {
-    const buf = fs.readFileSync(filePath);
-    let raw;
-    if (buf[0] === 0xff && buf[1] === 0xfe) {
-      raw = buf.toString('utf16le');
-    } else if (buf[0] === 0xfe && buf[1] === 0xff) {
-      raw = buf.slice(2).toString('utf16le');
-    } else if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
-      raw = buf.slice(3).toString('utf8');
-    } else {
-      raw = buf.toString('utf8');
-    }
-    raw.split(/\r?\n/).forEach((line) => {
-      const cleaned = line.replace(/^\uFEFF/, '').trim();
-      if (!cleaned || cleaned.startsWith('#')) return;
-      const eq = cleaned.indexOf('=');
-      if (eq === -1) return;
-      const key = cleaned.slice(0, eq).trim();
-      let val = cleaned.slice(eq + 1).trim();
-      // strip inline comments if unquoted
-      if (!(val.startsWith('"') || val.startsWith('\''))) {
-        const hash = val.indexOf('#');
-        if (hash !== -1) val = val.slice(0, hash).trim();
-      }
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith('\'') && val.endsWith('\''))) {
-        val = val.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = val;
-    });
-  } catch {}
-}
-
 function loadEnv() {
   const env = {};
   const files = [path.join(__dirname, '..', '.env'), path.join(__dirname, '..', '.env.local')];

@@ -31,7 +31,8 @@ export async function getSupabase() {
 
   try {
     return await initPromise;
-  } finally {
-    // keep initPromise for dedupe; supabase becomes non-null after init
+  } catch (err) {
+    initPromise = null;
+    throw err;
   }
 }

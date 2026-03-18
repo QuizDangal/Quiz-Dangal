@@ -34,24 +34,28 @@ const today = new Date().toISOString().split('T')[0];
  */
 const staticPages = [
   // ===== HIGH PRIORITY - Core pages =====
-  { path: '/', priority: 1.0, changefreq: 'daily', lastmod: '2026-03-17' },
-  { path: '/leaderboards/', priority: 0.8, changefreq: 'daily', lastmod: '2026-03-17' },
+  // Daily pages auto-update lastmod to build date; others keep manual dates
+  { path: '/', priority: 1.0, changefreq: 'daily' },
+  { path: '/leaderboards/', priority: 0.8, changefreq: 'daily' },
 
   // ===== PRODUCT EXPLAINERS =====
-  { path: '/play-win-quiz-app/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-17' },
-  { path: '/opinion-quiz-app/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-17' },
-  { path: '/gk-quiz/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-17' },
-  { path: '/refer-earn-quiz-app/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-17' },
+  { path: '/play-win-quiz-app/', priority: 0.8, changefreq: 'weekly' },
+  { path: '/opinion-quiz-app/', priority: 0.8, changefreq: 'weekly' },
+  { path: '/gk-quiz/', priority: 0.8, changefreq: 'weekly' },
+  { path: '/cricket-quiz/', priority: 0.8, changefreq: 'weekly' },
+  { path: '/current-affairs-quiz/', priority: 0.8, changefreq: 'weekly' },
+  { path: '/bollywood-quiz/', priority: 0.7, changefreq: 'weekly' },
+  { path: '/refer-earn-quiz-app/', priority: 0.6, changefreq: 'monthly' },
 
   // ===== CATEGORY PAGES =====
-  { path: '/category/opinion/', priority: 0.8, changefreq: 'daily', lastmod: '2026-03-17' },
-  { path: '/category/gk/', priority: 0.8, changefreq: 'daily', lastmod: '2026-03-17' },
+  { path: '/category/opinion/', priority: 0.8, changefreq: 'daily' },
+  { path: '/category/gk/', priority: 0.8, changefreq: 'daily' },
 
   // ===== INFORMATIONAL PAGES =====
-  { path: '/about-us/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-03-17' },
-  { path: '/contact-us/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-03-17' },
-  { path: '/terms-conditions/', priority: 0.3, changefreq: 'yearly', lastmod: '2026-03-17' },
-  { path: '/privacy-policy/', priority: 0.3, changefreq: 'yearly', lastmod: '2026-03-17' },
+  { path: '/about-us/', priority: 0.5, changefreq: 'monthly' },
+  { path: '/contact-us/', priority: 0.5, changefreq: 'monthly' },
+  { path: '/terms-conditions/', priority: 0.3, changefreq: 'yearly' },
+  { path: '/privacy-policy/', priority: 0.3, changefreq: 'yearly' },
 ];
 
 /**

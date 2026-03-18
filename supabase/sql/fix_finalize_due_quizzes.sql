@@ -49,6 +49,11 @@ BEGIN
       AND q.status = 'completed'
       AND (qr.id IS NULL OR jsonb_array_length(COALESCE(qr.leaderboard, '[]'::jsonb)) = 0)
       AND EXISTS (SELECT 1 FROM public.questions WHERE quiz_id = q.id)  -- Has questions
+      AND EXISTS (
+        SELECT 1 FROM public.quiz_participants qp
+        WHERE qp.quiz_id = q.id
+           OR qp.slot_id = q.slot_id
+      )  -- Only retry if actual participants exist
     ORDER BY q.end_time DESC
     LIMIT v_limit
     FOR UPDATE OF q SKIP LOCKED

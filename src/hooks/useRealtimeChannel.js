@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { getSupabase, hasSupabaseConfig } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
 
@@ -35,6 +35,15 @@ export function useRealtimeChannel({
   const supabaseRef = useRef(null);
   const onChangeRef = useRef(onChange);
 
+  // Stable serialized key for multi-binding changes to avoid re-subscribing on every render
+  const changesKey = useMemo(
+    () => (Array.isArray(changes) ? JSON.stringify(changes) : ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(changes)]
+  );
+  const changesRef = useRef(changes);
+  useEffect(() => { changesRef.current = changes; }, [changesKey]);
+
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
@@ -45,7 +54,7 @@ export function useRealtimeChannel({
     if (!channelName) return;
 
     const hasSingleBinding = Boolean(table);
-    const hasMultiBindings = Array.isArray(changes) && changes.length > 0;
+    const hasMultiBindings = Array.isArray(changesRef.current) && changesRef.current.length > 0;
     if (!hasSingleBinding && !hasMultiBindings) return;
 
     if (typeof window === 'undefined') return;
@@ -130,7 +139,7 @@ export function useRealtimeChannel({
         ch = sb.channel(channelName, { config: { broadcast: { ack: false } } });
 
         if (hasMultiBindings) {
-          for (const binding of changes) {
+          for (const binding of changesRef.current) {
             if (!binding?.table) continue;
             const bEvent = binding.event ?? '*';
             const bSchema = binding.schema ?? 'public';
@@ -222,7 +231,7 @@ export function useRealtimeChannel({
     baseDelayMs,
     maxDelayMs,
     debug,
-    changes,
+    changesKey,
   ]);
 }
 

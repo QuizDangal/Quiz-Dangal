@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Trophy, Crown, ChevronDown, Medal } from 'lucide-react';
@@ -193,7 +194,7 @@ export default function Leaderboards() {
         ]}
         author="Quiz Dangal"
         datePublished="2025-01-15"
-        dateModified="2026-03-16"
+        dateModified={BUILD_DATE}
         jsonLd={[{
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',

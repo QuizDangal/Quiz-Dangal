@@ -1,5 +1,6 @@
 import React from 'react';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 import { Link } from 'react-router-dom';
 import { 
   Target, Users, Trophy, Shield, CheckCircle, Star, Lightbulb, 
@@ -196,7 +197,7 @@ const AboutUs = () => {
           jsonLd={[orgSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
           datePublished="2025-01-15"
-          dateModified="2026-03-16"
+          dateModified={BUILD_DATE}
         />
 
         {/* Hero Section - AI Speakable */}

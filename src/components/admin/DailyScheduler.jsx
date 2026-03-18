@@ -10,24 +10,32 @@ export const CATEGORIES = ['opinion', 'gk'];
 export const PRIZES = [121, 71, 51];
 // Quiz duration in minutes (each quiz runs for 5 minutes)
 export const QUIZ_DURATION_MINUTES = 5;
-// Interval between quiz starts (10 min = 5 min quiz + 5 min gap)
-export const QUIZ_INTERVAL_MINUTES = 10;
-// 00:00 to 23:50 with 10-min intervals = 144 quizzes per day per category (24 hours)
-// (00:00-00:05 quiz, 00:05-00:10 gap, 00:10-00:15 quiz... 23:50-23:55 last quiz)
-// 2 categories × 144 = 288 total quizzes per day
-export const TOTAL_QUIZZES_PER_DAY = 144;
+// Supported quiz counts: 144 (10-min interval) or 288 (5-min interval, back-to-back)
+export const QUIZ_INTERVAL_MINUTES_144 = 10;
+export const QUIZ_INTERVAL_MINUTES_288 = 5;
+export const TOTAL_QUIZZES_144 = 144;
+export const TOTAL_QUIZZES_288 = 288;
+// Default to 288 (back-to-back) for new deployments
+export const QUIZ_INTERVAL_MINUTES = 5;
+export const TOTAL_QUIZZES_PER_DAY = 288;
 const QUESTIONS_PER_QUIZ = 10;
 
-// Generate time slots from 00:00 to 23:50 (10-min intervals) - 24 hour schedule
-function generateDaySchedule() {
+// Generate time slots based on interval
+// intervalMinutes=5 => 288 slots (00:00-23:55), intervalMinutes=10 => 144 slots (00:00-23:50)
+function generateDaySchedule(intervalMinutes = QUIZ_INTERVAL_MINUTES) {
   const times = [];
   let h = 0, m = 0;
   while (h < 24) {
     times.push(String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'));
-    m += QUIZ_INTERVAL_MINUTES; // 10 min intervals
+    m += intervalMinutes;
     if (m >= 60) { h++; m = m - 60; }
   }
-  return times; // 00:00, 00:10, 00:20... 23:50
+  return times;
+}
+
+// Detect interval from quiz count: <=144 = 10 min, >144 = 5 min
+function getIntervalForCount(count) {
+  return count <= 144 ? 10 : 5;
 }
 
 // Category colors
@@ -287,8 +295,8 @@ export default function DailyScheduler() {
       toast({ title: 'No quizzes found', description: 'Could not parse any quizzes from the text.', variant: 'destructive' });
       return;
     }
-    if (slots.length !== TOTAL_QUIZZES_PER_DAY) {
-      toast({ title: 'Quiz count mismatch', description: `Found ${slots.length} quizzes, need exactly ${TOTAL_QUIZZES_PER_DAY}.`, variant: 'destructive' });
+    if (slots.length !== TOTAL_QUIZZES_144 && slots.length !== TOTAL_QUIZZES_288) {
+      toast({ title: 'Quiz count mismatch', description: `Found ${slots.length} quizzes, need exactly ${TOTAL_QUIZZES_144} (10-min gap) or ${TOTAL_QUIZZES_288} (back-to-back).`, variant: 'destructive' });
       return;
     }
 
@@ -373,10 +381,12 @@ export default function DailyScheduler() {
     setBulkProcessing(true);
 
     try {
-      // Validate
-      if (structuredQuizzes.length !== TOTAL_QUIZZES_PER_DAY) {
-        throw new Error(`Need exactly ${TOTAL_QUIZZES_PER_DAY} quizzes, found ${structuredQuizzes.length}`);
+      // Validate: accept 144 (10-min gap) or 288 (back-to-back)
+      const quizCount = structuredQuizzes.length;
+      if (quizCount !== TOTAL_QUIZZES_144 && quizCount !== TOTAL_QUIZZES_288) {
+        throw new Error(`Need exactly ${TOTAL_QUIZZES_144} or ${TOTAL_QUIZZES_288} quizzes, found ${quizCount}`);
       }
+      const detectedInterval = getIntervalForCount(quizCount);
 
       for (const qz of structuredQuizzes) {
         if (!qz.title.trim()) {
@@ -398,8 +408,8 @@ export default function DailyScheduler() {
         }
       }
 
-      // Build payload
-      const autoTimes = generateDaySchedule();
+      // Build payload with auto-detected interval
+      const autoTimes = generateDaySchedule(detectedInterval);
       const quizzesPayload = structuredQuizzes.map((qz, i) => ({
         time: autoTimes[i],
         title: qz.title.trim(),
@@ -426,7 +436,7 @@ export default function DailyScheduler() {
 
       toast({ 
         title: '🎉 Deployed!', 
-        description: `${TOTAL_QUIZZES_PER_DAY} quizzes deployed for ${bulkCategory} on ${bulkDate}.` 
+        description: `${quizCount} quizzes deployed for ${bulkCategory} on ${bulkDate} (${detectedInterval}-min interval).` 
       });
       setShowBulkModal(false);
       loadStatus();
@@ -477,7 +487,7 @@ export default function DailyScheduler() {
             Quiz Scheduler
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {TOTAL_QUIZZES_PER_DAY} quizzes/day × {CATEGORIES.length} categories • 00:00 - 23:50 IST (24hr) • {QUIZ_DURATION_MINUTES} min quiz + {QUIZ_DURATION_MINUTES} min gap
+            {TOTAL_QUIZZES_288} quizzes (5-min, back-to-back) or {TOTAL_QUIZZES_144} quizzes (10-min gap) × {CATEGORIES.length} categories • 24hr IST
           </p>
         </div>
         {loading && (
@@ -632,8 +642,8 @@ export default function DailyScheduler() {
                 <div className="flex-1" />
                 <div className="text-right">
                   <div className="text-[10px] text-slate-500">VALID QUIZZES</div>
-                  <div className={`text-2xl font-bold ${validQuizCount === TOTAL_QUIZZES_PER_DAY ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {validQuizCount}/{TOTAL_QUIZZES_PER_DAY}
+                  <div className={`text-2xl font-bold ${(validQuizCount === TOTAL_QUIZZES_PER_DAY || validQuizCount === TOTAL_QUIZZES_144) ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {validQuizCount}/{structuredQuizzes.length || TOTAL_QUIZZES_PER_DAY}
                   </div>
                 </div>
               </div>
@@ -964,7 +974,7 @@ Title: GK Evening Quiz
                 </button>
                 <button
                   onClick={handleDeploy}
-                  disabled={bulkProcessing || validQuizCount !== TOTAL_QUIZZES_PER_DAY}
+                  disabled={bulkProcessing || (validQuizCount !== TOTAL_QUIZZES_PER_DAY && validQuizCount !== TOTAL_QUIZZES_144)}
                   className="px-6 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   {bulkProcessing ? (
@@ -973,7 +983,7 @@ Title: GK Evening Quiz
                       Deploying...
                     </span>
                   ) : (
-                    `🚀 Deploy ${TOTAL_QUIZZES_PER_DAY} Quizzes`
+                    `🚀 Deploy ${validQuizCount || TOTAL_QUIZZES_PER_DAY} Quizzes`
                   )}
                 </button>
               </div>

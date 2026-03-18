@@ -32,6 +32,9 @@ const OpinionQuiz = lazy(() => import('@/pages/OpinionQuiz'));
 const ReferEarnInfo = lazy(() => import('@/pages/ReferEarnInfo'));
 const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
 const GKQuiz = lazy(() => import('@/pages/seo/GKQuiz'));
+const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
+const CurrentAffairsQuiz = lazy(() => import('@/pages/seo/CurrentAffairsQuiz'));
+const BollywoodQuiz = lazy(() => import('@/pages/seo/BollywoodQuiz'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
@@ -44,6 +47,9 @@ const policyRoutes = (
     <Route path="/about-us/" element={<AboutUs />} />
     <Route path="/contact-us/" element={<ContactUs />} />
     <Route path="/gk-quiz/" element={<GKQuiz />} />
+    <Route path="/cricket-quiz/" element={<CricketQuiz />} />
+    <Route path="/current-affairs-quiz/" element={<CurrentAffairsQuiz />} />
+    <Route path="/bollywood-quiz/" element={<BollywoodQuiz />} />
     <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
     <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
     <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
@@ -62,7 +68,6 @@ const legacyRedirectRoutes = (
     <Route path="/english-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/online-quiz/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
     <Route path="/science-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
-    <Route path="/current-affairs-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/maths-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/quiz-game/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
     <Route path="/quiz-competition/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
@@ -70,7 +75,6 @@ const legacyRedirectRoutes = (
     <Route path="/quiz-for-kids/*" element={<Navigate to="/play-win-quiz-app/" replace />} />
     <Route path="/india-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/sports-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
-    <Route path="/cricket-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/general-knowledge-quiz/*" element={<Navigate to="/gk-quiz/" replace />} />
   </>
 );
@@ -209,14 +213,17 @@ function App() {
                 {/* If recovery flow is active, always route to reset-password */}
                 {isRecoveryFlow ? (
                   <>
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="*" element={<Navigate to="/reset-password" replace />} />
+                        <Route path="/reset-password/" element={<ResetPassword />} />
+                        <Route path="/reset-password" element={<Navigate to="/reset-password/" replace />} />
+                        <Route path="*" element={<Navigate to="/reset-password/" replace />} />
                   </>
                 ) : !authUser ? (
                   <>
                     {/* Public pages accessible without login - with Header */}
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/login" element={<Login />} />
+                        <Route path="/reset-password/" element={<ResetPassword />} />
+                        <Route path="/reset-password" element={<Navigate to="/reset-password/" replace />} />
+                        <Route path="/login/" element={<Login />} />
+                        <Route path="/login" element={<Navigate to="/login/" replace />} />
                     {/* All other public routes get Header + Footer */}
                     <Route path="/*" element={<PublicLayout />} />
                   </>
@@ -224,7 +231,8 @@ function App() {
                   <>
                     {/* Public policy pages accessible during unconfirmed email state as well */}
                     {policyRoutes}
-                    <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/reset-password/" element={<ResetPassword />} />
+                        <Route path="/reset-password" element={<Navigate to="/reset-password/" replace />} />
                     <Route path="*" element={<UnconfirmedEmail />} />
                   </>
                 ) : (
@@ -532,6 +540,30 @@ const MainLayout = () => {
               }
             />
             <Route
+              path="/cricket-quiz/"
+              element={
+                <Page>
+                  <CricketQuiz />
+                </Page>
+              }
+            />
+            <Route
+              path="/current-affairs-quiz/"
+              element={
+                <Page>
+                  <CurrentAffairsQuiz />
+                </Page>
+              }
+            />
+            <Route
+              path="/bollywood-quiz/"
+              element={
+                <Page>
+                  <BollywoodQuiz />
+                </Page>
+              }
+            />
+            <Route
               path="/play-win-quiz-app/"
               element={
                 <Page>
@@ -556,13 +588,14 @@ const MainLayout = () => {
               }
             />
             <Route
-              path="/debug/notifications"
+              path="/debug/notifications/"
               element={
                 <Page>
                   <NotificationsDebug />
                 </Page>
               }
             />
+            <Route path="/debug/notifications" element={<Navigate to="/debug/notifications/" replace />} />
             <Route
               path="/terms-conditions/"
               element={

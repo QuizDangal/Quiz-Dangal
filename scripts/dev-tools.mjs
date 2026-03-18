@@ -8,29 +8,28 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
+// node-fetch not needed — Node 18+ has built-in fetch
 import { Client } from 'pg';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function loadEnvPair(fileNames) {
+  const merged = {};
   for (const name of fileNames) {
     const p = path.join(process.cwd(), name);
     if (fs.existsSync(p)) {
       const raw = fs.readFileSync(p,'utf8');
-      const map = {};
       raw.split(/\r?\n/).forEach(l => {
         const eq = l.indexOf('=');
         if (eq > 0) {
           const key = l.slice(0, eq).trim();
           const val = l.slice(eq+1).trim();
-          if (key) map[key] = val;
+          if (key) merged[key] = val;
         }
       });
-      return map;
     }
   }
-  return {};
+  return merged;
 }
 
 async function listFunctions() {

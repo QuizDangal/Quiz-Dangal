@@ -1,5 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { getCategorySeoContent } from '../src/lib/categorySeoContent.js';
+import { HUB_SEO_ARTICLES } from '../src/lib/hubSeoArticles.js';
 
 /**
  * Prerender shallow HTML shells for important marketing routes so that
@@ -26,6 +28,9 @@ const ROUTES = [
   { path: '/opinion-quiz-app', title: 'Opinion Quiz – Quiz Dangal | Fun & Fast Rounds', description: 'Try quick, low-pressure opinion quizzes on Quiz Dangal. Share your take, compare with others, and earn coins as you play.' },
   { path: '/refer-earn-quiz-app', title: 'Refer & Earn – Quiz Dangal | Invite Friends, Get Coins', description: 'Invite friends to Quiz Dangal and earn bonus coins when they join and play opinion-based and GK quizzes.' },
   { path: '/gk-quiz', title: 'GK Quiz – Quiz Dangal', description: 'Play a GK quiz daily and sharpen your general knowledge. Compete, earn coins, and climb the leaderboards.' },
+  { path: '/cricket-quiz', title: 'Cricket Quiz Online – Quiz Dangal | IPL & World Cup Trivia', description: 'Play the best cricket quiz online. Test your IPL, World Cup, and cricket trivia knowledge daily on Quiz Dangal.' },
+  { path: '/current-affairs-quiz', title: 'Current Affairs Quiz – Quiz Dangal | Daily GK for Exams', description: 'Daily current affairs quiz for UPSC, SSC, and bank exam prep. Stay updated and earn coins on Quiz Dangal.' },
+  { path: '/bollywood-quiz', title: 'Bollywood Quiz – Quiz Dangal | Movie & Celebrity Trivia', description: 'Play Bollywood quiz rounds covering iconic movies, songs, and celebrity trivia. New questions daily on Quiz Dangal.' },
   { path: '/about-us', title: 'About Us – Quiz Dangal', description: 'Quiz Dangal – India’s most exciting quiz and rewards platform where knowledge meets entertainment.' },
   { path: '/contact-us', title: 'Contact Us – Quiz Dangal', description: 'Get in touch with the Quiz Dangal team for support, partnership, or feedback.' },
   { path: '/terms-conditions', title: 'Terms & Conditions – Quiz Dangal', description: 'Read Quiz Dangal’s terms and conditions.' },
@@ -46,11 +51,11 @@ const LEGACY_REDIRECTS = [
   { from: '/gk-questions', to: '/gk-quiz/' },
   { from: '/general-knowledge-quiz', to: '/gk-quiz/' },
   { from: '/science-quiz', to: '/gk-quiz/' },
-  { from: '/current-affairs-quiz', to: '/gk-quiz/' },
+
   { from: '/maths-quiz', to: '/gk-quiz/' },
   { from: '/india-quiz', to: '/gk-quiz/' },
   { from: '/sports-quiz', to: '/gk-quiz/' },
-  { from: '/cricket-quiz', to: '/gk-quiz/' },
+
   { from: '/hindi-quiz', to: '/gk-quiz/' },
   { from: '/english-quiz', to: '/gk-quiz/' },
   { from: '/category/sports', to: '/category/gk/' },
@@ -114,6 +119,58 @@ function replaceStaticLoaderCopy(html, { title, description }) {
   return html;
 }
 
+/**
+ * Inject static SEO content into the body for category pages so non-JS
+ * crawlers (Bing, etc.) can index the keyword-rich introductions.
+ * React will replace #root content on hydration.
+ */
+function injectCategorySeoContent(html, routePath) {
+  if (!routePath.startsWith('/category/')) return html;
+  const slug = routePath.replace('/category/', '').replace(/\/$/, '');
+  const content = getCategorySeoContent(slug);
+  if (!content || !content.paragraphs) return html;
+  const seoHtml = [
+    '<article data-prerender="seo" style="max-width:672px;margin:80px auto 0;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
+    `<h2 style="font-size:1rem;font-weight:700;color:#fff;margin:0 0 12px;">${escapeHtml(content.heading)}</h2>`,
+    ...content.paragraphs.map(p => `<p style="font-size:0.875rem;margin:0 0 10px;color:rgba(203,213,225,0.8);">${escapeHtml(p)}</p>`),
+    '</article>',
+  ].join('');
+  return html.replace('<div id="root"></div>', `<div id="root">${seoHtml}</div>`);
+}
+
+/**
+ * Inject static SEO article into the body for hub landing pages
+ * (/gk-quiz/, /opinion-quiz-app/, /play-win-quiz-app/) so non-JS crawlers
+ * can index the 500-word articles.
+ */
+function injectHubSeoArticle(html, routePath) {
+  const map = {
+    '/gk-quiz': 'gk',
+    '/opinion-quiz-app': 'opinion',
+    '/play-win-quiz-app': 'playwin',
+    '/cricket-quiz': 'cricket',
+    '/current-affairs-quiz': 'currentAffairs',
+    '/bollywood-quiz': 'bollywood',
+  };
+  const clean = routePath.replace(/\/$/, '');
+  const key = map[clean];
+  if (!key || !HUB_SEO_ARTICLES[key]) return html;
+  const article = HUB_SEO_ARTICLES[key];
+  const articleHtml = [
+    '<article data-prerender="hub-seo" style="max-width:672px;margin:40px auto;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
+    `<h2 style="font-size:1.125rem;font-weight:700;color:#fff;margin:0 0 16px;">${escapeHtml(article.title)}</h2>`,
+    ...article.sections.map(s =>
+      `<h3 style="font-size:0.875rem;font-weight:600;color:#e2e8f0;margin:14px 0 6px;">${escapeHtml(s.heading)}</h3><p style="font-size:0.875rem;margin:0 0 10px;color:rgba(148,163,184,0.9);">${escapeHtml(s.text)}</p>`
+    ),
+    '</article>',
+  ].join('');
+  // Append after any existing content inside #root, or inject into empty #root
+  if (html.includes('</div><!-- root-end -->')) {
+    return html.replace('</div><!-- root-end -->', `${articleHtml}</div><!-- root-end -->`);
+  }
+  return html.replace('<div id="root"></div>', `<div id="root">${articleHtml}</div>`);
+}
+
 function buildRedirectHtml(baseHtml, { from, to }) {
   const targetUrl = toUrl(to);
   return `<!doctype html>
@@ -166,6 +223,12 @@ async function main() {
       title: route.title,
       description: route.description,
     });
+
+    // Inject static SEO content for category pages (visible to non-JS crawlers).
+    html = injectCategorySeoContent(html, route.path);
+
+    // Inject static SEO article for hub landing pages.
+    html = injectHubSeoArticle(html, route.path);
 
     const outDir = route.path === '/' ? distDir : path.join(distDir, route.path.replace(/^\//, ''));
     const outPath = path.join(outDir, 'index.html');

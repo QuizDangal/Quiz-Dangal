@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 import { 
   ArrowRight, Star, Trophy, Users, Coins, Shield 
 } from 'lucide-react';
@@ -40,6 +41,7 @@ export default function SeoLanding({
   features = defaultFeatures,
   steps = defaultSteps,
   additionalContent = null,
+  seoArticle = null,
 }) {
   const canonical = useMemo(() => toCanonical(path), [path]);
 
@@ -116,12 +118,40 @@ export default function SeoLanding({
     [canonical, h1, title],
   );
 
+  const quizSchema = useMemo(() => {
+    if (!path || !/gk-quiz|opinion-quiz|play-win-quiz|cricket-quiz|current-affairs-quiz|bollywood-quiz/.test(path)) return null;
+    const isGK = /gk-quiz|current-affairs-quiz|cricket-quiz/.test(path);
+    const isOpinion = /opinion-quiz|bollywood-quiz/.test(path);
+    const aboutName = /cricket-quiz/.test(path)
+      ? 'Cricket Knowledge'
+      : isGK
+        ? 'General Knowledge'
+        : isOpinion
+          ? 'Opinion Polls'
+          : 'Trivia Quizzes';
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Quiz',
+      name: h1 || title,
+      url: canonical,
+      description,
+      educationalLevel: isGK ? 'Intermediate' : 'Beginner',
+      learningResourceType: isOpinion ? 'Poll' : 'Quiz',
+      interactivityType: 'active',
+      isAccessibleForFree: true,
+      inLanguage: ['en', 'hi'],
+      provider: { '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
+      about: { '@type': 'Thing', name: aboutName },
+    };
+  }, [path, h1, title, canonical, description]);
+
   const jsonLd = useMemo(() => {
     const blocks = [webPageSchema, breadcrumbSchema];
     if (faqSchema) blocks.push(faqSchema);
     if (howToSchema) blocks.push(howToSchema);
+    if (quizSchema) blocks.push(quizSchema);
     return blocks;
-  }, [faqSchema, howToSchema, webPageSchema, breadcrumbSchema]);
+  }, [faqSchema, howToSchema, webPageSchema, breadcrumbSchema, quizSchema]);
 
   return (
     <div className="min-h-screen pt-14 text-slate-100">
@@ -134,7 +164,7 @@ export default function SeoLanding({
           jsonLd={jsonLd}
           author="Quiz Dangal"
           datePublished="2025-01-15"
-          dateModified="2026-03-16"
+          dateModified={BUILD_DATE}
         />
 
         {/* Hero Section */}
@@ -267,6 +297,19 @@ export default function SeoLanding({
           </Link>
         </section>
 
+        {/* SEO Article (bottom of page for content depth) */}
+        {seoArticle && (
+          <article className="rounded-2xl border border-slate-700/40 bg-slate-900/50 p-6 md:p-8 space-y-6">
+            <h2 className="text-lg md:text-xl font-bold text-white">{seoArticle.title}</h2>
+            {seoArticle.sections.map((section, idx) => (
+              <div key={idx}>
+                <h3 className="text-sm md:text-base font-semibold text-slate-200 mb-2">{section.heading}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{section.text}</p>
+              </div>
+            ))}
+          </article>
+        )}
+
         {/* Footer Links */}
         <footer className="text-center text-sm">
           <div className="flex flex-wrap justify-center gap-4 text-slate-400">
@@ -307,4 +350,11 @@ SeoLanding.propTypes = {
     desc: PropTypes.string,
   })),
   additionalContent: PropTypes.node,
+  seoArticle: PropTypes.shape({
+    title: PropTypes.string,
+    sections: PropTypes.arrayOf(PropTypes.shape({
+      heading: PropTypes.string,
+      text: PropTypes.string,
+    })),
+  }),
 };

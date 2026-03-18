@@ -1,6 +1,7 @@
 // Quiz Dangal – Home (premium redesign)
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ChevronRight,
@@ -137,7 +138,26 @@ const Home = () => {
         title="Quiz Dangal - Daily Opinion & GK Quiz for IPL Fans"
         description="Play daily opinion polls, IPL season trivia, current affairs, and GK quizzes on Quiz Dangal. Win coins, climb leaderboards, and join fresh live rounds every day."
         canonical="https://quizdangal.com/"
-        jsonLd={[{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Quiz Dangal', url: 'https://quizdangal.com/' }]}
+        datePublished="2025-01-15"
+        dateModified={BUILD_DATE}
+        jsonLd={[
+          { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'Quiz Dangal',
+            operatingSystem: 'Web, Android, iOS',
+            applicationCategory: 'GameApplication',
+            applicationSubCategory: 'Trivia',
+            offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+            aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.7', ratingCount: '1240', bestRating: '5', worstRating: '1' },
+            description: 'Play daily opinion polls, GK quizzes, and current affairs rounds. Earn coins, climb leaderboards, and compete with players across India — 100% free.',
+            url: 'https://quizdangal.com/',
+            image: 'https://quizdangal.com/android-chrome-512x512.png',
+            author: { '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
+            inLanguage: ['en', 'hi'],
+          },
+        ]}
       />
 
       {/* ═══════ HEADER ═══════ */}
@@ -149,6 +169,7 @@ const Home = () => {
               alt="Quiz Dangal"
               width={44}
               height={44}
+              fetchPriority="high"
               className="h-11 w-11 rounded-2xl ring-2 ring-white/10 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(139,92,246,0.35)]"
             />
             <div className="leading-tight">

@@ -53,15 +53,16 @@ function hasFlag(name) {
   return process.argv.includes(`--${name}`);
 }
 
-// -------------------- Quiz slot times (00:00 - 23:50, every 10 min) --------------------
-function generateDaySchedule() {
+// -------------------- Quiz slot times --------------------
+// 144 quizzes = 10-min intervals (00:00-23:50), 288 quizzes = 5-min intervals (00:00-23:55)
+function generateDaySchedule(intervalMinutes = 5) {
   const times = [];
   for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 10) {
+    for (let m = 0; m < 60; m += intervalMinutes) {
       times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
     }
   }
-  return times; // 144 slots
+  return times;
 }
 
 // -------------------- Main --------------------
@@ -104,7 +105,7 @@ async function main() {
     // Find all *_144_bilingual_*.json matching day suffix from date
     const daySuffix = String(parseInt(targetDate.split('-')[2], 10));
     const entries = fs.readdirSync(bulkDir);
-    const pattern = new RegExp(`^(gk|opinion)_144_bilingual_${daySuffix}\\.json$`, 'i');
+    const pattern = new RegExp(`^(gk|opinion)_(144|288)_bilingual_${daySuffix}\\.json$`, 'i');
     for (const e of entries) {
       if (pattern.test(e)) {
         const cat = e.match(/^(gk|opinion)/i)?.[1]?.toLowerCase();
@@ -112,12 +113,16 @@ async function main() {
       }
     }
   } else if (singleCategory) {
-    // Infer file from category + date
+    // Infer file from category + date (try 288 first, fallback to 144)
     const daySuffix = String(parseInt(targetDate.split('-')[2], 10));
-    const fileName = `${singleCategory}_144_bilingual_${daySuffix}.json`;
+    const fileName288 = `${singleCategory}_288_bilingual_${daySuffix}.json`;
+    const fileName144 = `${singleCategory}_144_bilingual_${daySuffix}.json`;
+    const fullPath288 = path.join(bulkDir, fileName288);
+    const fullPath144 = path.join(bulkDir, fileName144);
+    const fileName = fs.existsSync(fullPath288) ? fileName288 : fileName144;
     const fullPath = path.join(bulkDir, fileName);
     if (!fs.existsSync(fullPath)) {
-      console.error(`File not found: ${fullPath}`);
+      console.error(`File not found: ${fullPath288} or ${fullPath144}`);
       process.exit(2);
     }
     filesToDeploy.push({ file: path.join('bulk', fileName), category: singleCategory });
@@ -135,9 +140,6 @@ async function main() {
   console.log(`Files to deploy: ${filesToDeploy.length}`);
   if (dry) console.log('(DRY RUN - no actual deployment)');
 
-  const autoTimes = generateDaySchedule();
-  const PRIZES = [121, 71, 51];
-
   for (const { file, category } of filesToDeploy) {
     const abs = path.resolve(process.cwd(), file);
     if (!fs.existsSync(abs)) {
@@ -153,12 +155,18 @@ async function main() {
       process.exit(2);
     }
 
-    if (quizzes.length > 144) {
-      console.error(`Too many quizzes in ${file}: ${quizzes.length} (max 144)`);
+    if (quizzes.length > 288) {
+      console.error(`Too many quizzes in ${file}: ${quizzes.length} (max 288)`);
       process.exit(2);
     }
 
     console.log(`\n📦 ${category.toUpperCase()}: ${file} (${quizzes.length} quizzes)`);
+
+    // Auto-detect interval: 144 quizzes = 10 min, 288 = 5 min
+    const interval = quizzes.length <= 144 ? 10 : 5;
+    const autoTimes = generateDaySchedule(interval);
+    const PRIZES = [121, 71, 51];
+    console.log(`  ⏱️  Interval: ${interval} min (${autoTimes.length} slots)`);
 
     // Build payload
     const quizzesPayload = quizzes.map((qz, i) => ({

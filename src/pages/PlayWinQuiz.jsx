@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
+import { HUB_SEO_ARTICLES } from '@/lib/hubSeoArticles';
 
 export default function PlayWinQuiz() {
   const canonical = 'https://quizdangal.com/play-win-quiz-app/';
@@ -55,10 +57,23 @@ export default function PlayWinQuiz() {
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
             { '@type': 'ListItem', position: 2, name: 'Play & Win Quiz', item: 'https://quizdangal.com/play-win-quiz-app/' },
           ],
+        }, {
+          '@context': 'https://schema.org',
+          '@type': 'Quiz',
+          name: 'Play & Win Quiz App – Quiz Dangal',
+          url: canonical,
+          description: 'Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India.',
+          educationalLevel: 'Intermediate',
+          learningResourceType: 'Quiz',
+          interactivityType: 'active',
+          isAccessibleForFree: true,
+          inLanguage: ['en', 'hi'],
+          provider: { '@type': 'Organization', name: 'Quiz Dangal', url: 'https://quizdangal.com/' },
+          about: { '@type': 'Thing', name: 'Trivia Quizzes' },
         }]}
         author="Quiz Dangal"
         datePublished="2025-01-15"
-        dateModified="2026-03-16"
+        dateModified={BUILD_DATE}
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent pt-14">
@@ -135,6 +150,17 @@ export default function PlayWinQuiz() {
             <li>IPL season topics inside GK and Opinion instead of thin extra pages</li>
           </ul>
         </div>
+
+        {/* SEO Article — Bottom of page for content depth */}
+        <article className="rounded-xl border border-slate-700/40 bg-slate-900/40 p-4 sm:p-6 space-y-5 max-w-3xl">
+          <h2 className="text-lg font-bold text-white">{HUB_SEO_ARTICLES.playwin.title}</h2>
+          {HUB_SEO_ARTICLES.playwin.sections.map((s, i) => (
+            <div key={i}>
+              <h3 className="text-sm font-semibold text-slate-200 mb-1.5">{s.heading}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">{s.text}</p>
+            </div>
+          ))}
+        </article>
       </div>
     </div>
   );

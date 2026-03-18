@@ -303,7 +303,7 @@ function useAudioEngine() {
     [playTone],
   );
 
-  return { play };
+  return useMemo(() => ({ play }), [play]);
 }
 
 export function SoundProvider({ children }) {

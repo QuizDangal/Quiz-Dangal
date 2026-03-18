@@ -18,6 +18,7 @@ DECLARE
   v_deleted int := 0;
   v_results_computed int := 0;
   v_manual_finished int := 0;
+  v_expired_skipped int := 0;
   rec record;
   new_question_id uuid;
   q_rec record;
@@ -124,6 +125,24 @@ BEGIN
     RETURNING s.id
   )
   SELECT COUNT(*) INTO v_skipped FROM skipped;
+
+  -- ========================================
+  -- STEP B2: Auto-skip expired scheduled slots with no quiz
+  -- If a slot's end time has passed and no quiz was ever created
+  -- (e.g. late deployment), mark it as 'skipped' instead of
+  -- leaving it stuck in 'scheduled' forever.
+  -- ========================================
+  WITH expired_no_quiz AS (
+    UPDATE quiz_slots s
+    SET status = 'skipped'
+    WHERE s.status = 'scheduled'
+      AND s.end_timestamp IS NOT NULL
+      AND s.end_timestamp <= v_now_tz
+      AND NOT EXISTS (SELECT 1 FROM quizzes q WHERE q.slot_id = s.id)
+    RETURNING s.id
+  )
+  SELECT COUNT(*) INTO v_expired_skipped FROM expired_no_quiz;
+  v_skipped := v_skipped + v_expired_skipped;
 
   -- ========================================
   -- STEP C: Activate slots that should be live now

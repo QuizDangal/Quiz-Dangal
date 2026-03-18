@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { m } from '@/lib/motion-lite';
+import { BUILD_DATE } from '@/constants';
 import { getSupabase } from '@/lib/customSupabaseClient';
 import { fetchSlotsForCategory, classifyThreeSlots } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
@@ -13,10 +14,11 @@ import {
   formatSupabaseError,
 } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, MessageSquare, Brain, Clock, Trophy, Play, ChevronRight } from 'lucide-react';
+import { Users, MessageSquare, Brain, Clock, Trophy, Play, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SeoHead from '@/components/SEO';
+import { getCategorySeoContent } from '@/lib/categorySeoContent';
 
 function categoryMeta(slug = '') {
   const s = String(slug || '').toLowerCase();
@@ -33,11 +35,11 @@ function categoryMeta(slug = '') {
         'Vote on trending topics and debates',
         'See how your opinion matches the majority',
         'Win prizes for popular opinions',
-        'New opinion polls every 10 minutes',
+        'New opinion polls every 5 minutes',
       ],
       faqs: [
         { q: 'How do opinion quizzes work?', a: 'Answer questions based on your personal opinion. Points are awarded based on how your answers align with the majority response.' },
-        { q: 'When are new opinion quizzes available?', a: 'New opinion quizzes go live every 10 minutes, 24 hours a day. Each quiz lasts 5 minutes.' },
+        { q: 'When are new opinion quizzes available?', a: 'New opinion quizzes go live every 5 minutes, 24 hours a day. Each quiz lasts 5 minutes with no gap in between.' },
         { q: 'Can I win real prizes?', a: 'Yes! Top performers in each quiz can win cash prizes and coins that can be redeemed.' },
       ],
     };
@@ -55,11 +57,11 @@ function categoryMeta(slug = '') {
         'IPL season and cricket awareness blended into live GK rounds',
         'Competitive leaderboards with real prizes',
         'Learn while you play and earn',
-        'Fresh GK questions every 10 minutes',
+        'Fresh GK questions every 5 minutes',
       ],
       faqs: [
         { q: 'What topics are covered in GK quizzes?', a: 'Our GK quizzes cover current affairs, Indian history, geography, science, polity, economy, and IPL-season sports awareness.' },
-        { q: 'How often are new GK quizzes added?', a: 'New GK quizzes are scheduled every 10 minutes throughout the day. Each quiz runs for 5 minutes.' },
+        { q: 'How often are new GK quizzes added?', a: 'New GK quizzes are scheduled every 5 minutes throughout the day. Each quiz runs for 5 minutes back-to-back with no waiting.' },
         { q: 'Are GK quiz answers verified?', a: 'Yes, all GK questions and answers are carefully verified for accuracy before being added to our platform.' },
       ],
     };
@@ -73,13 +75,13 @@ function categoryMeta(slug = '') {
     description: 'Quiz Dangal currently focuses on Opinion and GK categories. Unsupported category URLs are redirected to active public quiz sections.',
     features: [
       'Opinion Quiz and GK Quiz are live across the platform',
-      'New quizzes every 10 minutes',
+      'New quizzes every 5 minutes',
       'Win cash prizes and coins',
       'Compete on leaderboards',
     ],
     faqs: [
       { q: 'Which categories are active on Quiz Dangal?', a: 'Quiz Dangal currently focuses on Opinion Quiz and GK Quiz as the two active public categories.' },
-      { q: 'How long is each quiz?', a: 'Each quiz lasts 5 minutes with a 5 minute break between quizzes.' },
+      { q: 'How long is each quiz?', a: 'Each quiz lasts 5 minutes and the next quiz starts immediately after, so there is no waiting.' },
       { q: 'Is it free to play?', a: 'Yes. You can join and play public quizzes for free and track your performance on the leaderboard.' },
     ],
   };
@@ -109,10 +111,8 @@ const CategoryQuizzes = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isSubscribed, subscribeToPush } = usePushNotifications();
-  const [quizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
-  const [counts, setCounts] = useState({}); // { [quizId]: joined (pre+joined+completed as joined) }
   const [joinedMap, setJoinedMap] = useState({}); // quiz_id -> 'joined' | 'pre'
   const [tick, setTick] = useState(0); // reintroduced for live countdown display recalculation
 
@@ -121,6 +121,7 @@ const CategoryQuizzes = () => {
   const [slotMode, setSlotMode] = useState('legacy'); // slots | legacy
   const [categoryAutoEnabled, setCategoryAutoEnabled] = useState(true);
   const [slotLoadError, setSlotLoadError] = useState(null);
+  const [seoExpanded, setSeoExpanded] = useState(false);
 
   const pollIntervalMs = 20000; // 20s for slot refresh
 
@@ -168,19 +169,7 @@ const CategoryQuizzes = () => {
     return () => clearInterval(id);
   }, [slotMode, loadSlots]);
 
-  // Live countdown tick (only when there are active/upcoming quizzes)
-  useEffect(() => {
-    const now = Date.now();
-    const hasLive = (quizzes || []).some((q) => {
-      const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-      const et = q.end_time ? new Date(q.end_time).getTime() : 0;
-      return (st && now < st) || (st && et && now >= st && now < et);
-    });
-    if (!hasLive) return;
-    const id = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
-    return () => clearInterval(id);
-  }, [quizzes]);
-
+  // Live countdown tick for slot mode
   useEffect(() => {
     if (slotMode !== 'slots') return;
     const now = Date.now();
@@ -194,53 +183,19 @@ const CategoryQuizzes = () => {
     return () => clearInterval(id);
   }, [slots, slotMode]);
 
-  // Fetch participant counts using bulk RPC; joined = pre_joined + joined(completed included)
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const sb = await getSupabase();
-        if (!sb) return;
-        const ids = (quizzes || []).map((q) => q.id);
-        if (!ids.length) {
-          setCounts({});
-          return;
-        }
-        const { data, error } = await sb.rpc('get_engagement_counts_many', {
-          p_quiz_ids: ids,
-        });
-        if (error) throw error;
-        const map = {};
-        for (const row of data || []) {
-          const pre = row.pre_joined || 0;
-          const joined = row.joined || 0; // already includes completed per SQL
-          map[row.quiz_id] = pre + joined;
-        }
-        setCounts(map);
-      } catch (e) {
-        /* fetch categories fail */
-      }
-    };
-    if (quizzes && quizzes.length) run();
-  }, [quizzes]);
-
   // Fetch whether current user has joined or pre-joined each quiz
   useEffect(() => {
     const run = async () => {
-      // Collect IDs from both quizzes and slots
       // Filter out any null/undefined/empty values and ensure valid UUIDs
       const isValidUuid = (id) => {
         if (!id || typeof id !== 'string') return false;
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
       };
       
-      const quizIds = (quizzes || []).map((q) => q.id).filter(isValidUuid);
       // For slot-based quizzes, use quiz_id (not slot_id) since quiz_participants tracks by quiz_id
       const slotQuizIds = (slots || []).map((s) => s.quizId || s.quiz_id || s.id).filter(isValidUuid);
       
-      // Combine all quiz IDs (legacy quizzes + slot quiz IDs)
-      const allQuizIds = [...new Set([...quizIds, ...slotQuizIds])];
-      
-      if (!user || !allQuizIds.length) {
+      if (!user || !slotQuizIds.length) {
         setJoinedMap({});
         return;
       }
@@ -257,7 +212,7 @@ const CategoryQuizzes = () => {
           .from('quiz_participants')
           .select('quiz_id,status')
           .eq('user_id', user.id)
-          .in('quiz_id', allQuizIds);
+          .in('quiz_id', slotQuizIds);
         
         if (!error && data) {
           for (const r of data) {
@@ -281,7 +236,7 @@ const CategoryQuizzes = () => {
       }
     };
     run();
-  }, [user, quizzes, slots]);
+  }, [user, slots]);
 
   const handleJoin = async (q) => {
     if (!user) {
@@ -377,23 +332,13 @@ const CategoryQuizzes = () => {
     }
   };
 
-  // Show ONLY Active + Upcoming quizzes (exclude recently finished)
-  const filtered = quizzes.filter((q) => {
-    if (slotMode === 'slots') return false; // hide legacy list when in slot mode
-    const now = Date.now();
-    const st = q.start_time ? new Date(q.start_time).getTime() : 0;
-    const et = q.end_time ? new Date(q.end_time).getTime() : 0;
-    const isActive = st && et && now >= st && now < et;
-    const isUpcoming = st && now < st;
-    return isActive || isUpcoming;
-  });
-
   const meta = categoryMeta(slug);
+  const seoContent = getCategorySeoContent(slug);
 
   // Header stats: active/upcoming counts and next start
   const nowHeader = Date.now();
   const slotSource = slotMode === 'slots';
-  const liveItems = slotSource ? slots : quizzes || [];
+  const liveItems = slots;
 
   // Slot display policy: show all LIVE, and only the single NEXT upcoming when it is soon.
   const liveSlots = (slots || []).filter((s) => {
@@ -552,7 +497,7 @@ const CategoryQuizzes = () => {
                 ? 'bg-[conic-gradient(from_0deg,#10b981,#06b6d4,#3b82f6,#10b981)] shadow-[0_0_20px_-5px_rgba(16,185,129,0.25)]'
                 : 'bg-[conic-gradient(from_0deg,#a855f7,#ec4899,#f43f5e,#a855f7)] shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
         }`}>
-          <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 overflow-hidden">
+          <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 lg:p-6 overflow-hidden">
             {/* Top shimmer glow */}
             <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
               isActive 
@@ -731,7 +676,7 @@ const CategoryQuizzes = () => {
         robots="index, follow"
         author="Quiz Dangal"
         datePublished="2025-01-15"
-        dateModified="2026-03-16"
+        dateModified={BUILD_DATE}
         jsonLd={[{
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
@@ -744,7 +689,7 @@ const CategoryQuizzes = () => {
       <span className="hidden" aria-hidden>
         {tick}
       </span>
-      <div className="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto space-y-4">
+      <div className="max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto space-y-4">
         {/* Category Header - Responsive */}
         <div className="p-[1px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500/50 via-violet-500/40 to-fuchsia-500/50">
           <div className="rounded-xl sm:rounded-2xl bg-slate-900/95 p-3 sm:p-4 lg:p-5">
@@ -754,13 +699,21 @@ const CategoryQuizzes = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">{meta.title}</h1>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-1 flex-wrap">
                   <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-emerald-600/20 text-emerald-300 border border-emerald-600/30">
                     {activeCount} live
                   </span>
                   <span className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-sky-600/20 text-sky-300 border border-sky-600/30">
                     {upcomingCount} upcoming
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setSeoExpanded((prev) => !prev)}
+                    className="inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-orange-500/15 text-orange-300 border border-orange-500/30 hover:bg-orange-500/25 transition-colors font-medium cursor-pointer select-none"
+                  >
+                    {seoExpanded ? 'Read Less' : 'Read More'} ℹ️
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${seoExpanded ? 'rotate-180' : ''}`} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -781,309 +734,56 @@ const CategoryQuizzes = () => {
           </div>
         )}
 
-      {slotMode === 'slots' ? (
+      {slotMode === 'slots' && (
         <>
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-40 sm:h-48 lg:h-52 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
+                  className="h-40 sm:h-52 lg:h-60 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
                 />
               ))}
             </div>
           ) : (
             <>
               {displaySlots.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
                   {/* Show LIVE slots + only the next UPCOMING (soon) */}
                   {displaySlots.map((slot) => renderSlotCard(slot, null))}
                 </div>
               ) : (
-                /* Rich static content when no quizzes are live - helps SEO & AdSense */
-                <div className="space-y-6">
-                  {/* Next quiz coming soon banner */}
-                  <div className="rounded-xl sm:rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-900/40 to-violet-900/40 p-4 sm:p-6 text-center">
-                    <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-indigo-400" />
-                    <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Next Quiz Starting Soon!</h2>
-                    <p className="text-sm sm:text-base text-slate-300 mb-3">
-                      Quizzes run every 10 minutes. The next {meta.title.replace(' Quizzes', '')} quiz will start shortly.
-                    </p>
-                    <p className="text-xs sm:text-sm text-slate-400">
-                      Refresh this page or wait for the countdown to appear.
-                    </p>
-                  </div>
-
-                  {/* Category description */}
-                  {meta.description && (
-                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
-                      <h2 className="text-base sm:text-lg font-semibold text-white mb-3">About {meta.title}</h2>
-                      <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                        {meta.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Features grid */}
-                  {meta.features && meta.features.length > 0 && (
-                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
-                      <h2 className="text-base sm:text-lg font-semibold text-white mb-4">Why Play {meta.title}?</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {meta.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800/50">
-                            <span className="text-emerald-400 mt-0.5">✓</span>
-                            <span className="text-sm text-slate-300">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* FAQ Section */}
-                  {meta.faqs && meta.faqs.length > 0 && (
-                    <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
-                      <h2 className="text-base sm:text-lg font-semibold text-white mb-4">Frequently Asked Questions</h2>
-                      <div className="space-y-4">
-                        {meta.faqs.map((faq, idx) => (
-                          <div key={idx} className="border-b border-slate-700/50 pb-4 last:border-0 last:pb-0">
-                            <h3 className="text-sm sm:text-base font-medium text-white mb-2">{faq.q}</h3>
-                            <p className="text-sm text-slate-400">{faq.a}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* How it works */}
-                  <div className="rounded-xl sm:rounded-2xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
-                    <h2 className="text-base sm:text-lg font-semibold text-white mb-4">How Quiz Dangal Works</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
-                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-indigo-600/30 flex items-center justify-center text-xl">1</div>
-                        <h3 className="font-medium text-white mb-1">Join a Quiz</h3>
-                        <p className="text-xs text-slate-400">Click JOIN when a quiz is live or upcoming</p>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
-                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-violet-600/30 flex items-center justify-center text-xl">2</div>
-                        <h3 className="font-medium text-white mb-1">Answer Questions</h3>
-                        <p className="text-xs text-slate-400">You have 5 minutes to answer all questions</p>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-slate-800/50">
-                        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-emerald-600/30 flex items-center justify-center text-xl">3</div>
-                        <h3 className="font-medium text-white mb-1">Win Prizes</h3>
-                        <p className="text-xs text-slate-400">Top 3 players win cash prizes & coins</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quiz schedule info */}
-                  <div className="rounded-xl sm:rounded-2xl border border-amber-500/20 bg-amber-900/10 p-4 sm:p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">📅</span>
-                      <div>
-                        <h3 className="font-medium text-amber-200 mb-1">Quiz Schedule</h3>
-                        <p className="text-sm text-slate-300">
-                          {meta.title} run every 10 minutes, 24 hours a day. Each quiz is 5 minutes long with a 5 minute break between quizzes. 
-                          Check back regularly for the next live quiz!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="rounded-xl sm:rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-900/40 to-violet-900/40 p-4 sm:p-6 text-center">
+                  <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-indigo-400" />
+                  <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Next Quiz Starting Soon!</h2>
+                  <p className="text-sm sm:text-base text-slate-300">
+                    Quizzes run every 5 minutes back-to-back. Refresh or wait for the countdown.
+                  </p>
                 </div>
               )}
             </>
           )}
         </>
-      ) : loading ? (
-        <div className="grid gap-3 sm:gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-24 sm:h-28 rounded-xl sm:rounded-2xl bg-slate-800/60 border border-slate-700/60 animate-pulse"
-            />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        /* Rich static content for non-slot mode empty state */
-        <div className="space-y-6">
-          <div className="rounded-xl sm:rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-900/40 to-violet-900/40 p-4 sm:p-6 text-center">
-            <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-indigo-400" />
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Quizzes Coming Soon!</h2>
-            <p className="text-sm sm:text-base text-slate-300">
-              {meta.description || `New ${meta.title} are added regularly. Check back soon!`}
-            </p>
-          </div>
-          {meta.features && (
-            <div className="rounded-xl border border-slate-700/50 bg-slate-900/50 p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-white mb-3">What to Expect</h2>
-              <ul className="space-y-2">
-                {meta.features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                    <span className="text-emerald-400">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {filtered.map((q, idx) => {
-            const now = Date.now();
-            const st = q.start_time ? new Date(q.start_time).getTime() : null;
-            const et = q.end_time ? new Date(q.end_time).getTime() : null;
-            const isActive = st && et && now >= st && now < et;
-            const isUpcoming = st && now < st;
-            const canJoin = isActive || isUpcoming;
-            const secs =
-              isUpcoming && st
-                ? Math.max(0, Math.floor((st - now) / 1000))
-                : isActive && et
-                  ? Math.max(0, Math.floor((et - now) / 1000))
-                  : null;
-            const mins = secs !== null ? Math.floor(secs / 60) : 0;
-            const secsR = secs !== null ? secs % 60 : 0;
-            const prizes = Array.isArray(q.prizes) ? q.prizes : [];
-            const prizeType = q.prize_type || 'coins';
-            const p1 = prizes[0] ?? 0;
-            const p2 = prizes[1] ?? 0;
-            const p3 = prizes[2] ?? 0;
-            const formatPrize = (value) => getPrizeDisplay(prizeType, value, { fallback: 0 }).formatted;
-            const joined = counts[q.id] || 0;
-            const myStatus = joinedMap[q.id];
-            const already = !!myStatus;
-            const totalWindow = st && et ? Math.max(1, et - st) : null;
-            const progressed =
-              isActive && totalWindow
-                ? Math.min(100, Math.max(0, Math.round(((now - st) / totalWindow) * 100)))
-                : null;
-            return (
-              <m.div
-                key={q.id}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.04, type: 'spring', stiffness: 100, damping: 14 }}
-                className="group"
-              >
-                <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
-                  isActive 
-                    ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
-                    : 'bg-[conic-gradient(from_0deg,#a855f7,#ec4899,#f43f5e,#a855f7)] shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
-                }`}>
-                  <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 overflow-hidden">
-                    <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
-                      isActive 
-                        ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
-                        : 'bg-gradient-to-b from-violet-500/25 via-fuchsia-500/10 to-transparent'
-                    }`} />
-
-                    {/* Badge Row */}
-                    <div className="relative flex items-center justify-between mb-3">
-                      <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
-                        isActive
-                          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
-                          : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_15px_-3px_rgba(168,85,247,0.5)]'
-                      }`}>
-                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                        {isActive ? '🔴 LIVE NOW' : '⏰ UPCOMING'}
-                      </span>
-                      <div className="flex items-center gap-1 text-slate-500">
-                        <Users className="w-3 h-3" />
-                        <span className="text-[10px] font-bold">{joined}</span>
-                      </div>
-                    </div>
-
-                    <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">{q.title}</h3>
-
-                    {/* Timer */}
-                    {secs !== null && (
-                      <div className={`relative mb-4 rounded-2xl overflow-hidden ${
-                        isActive 
-                          ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
-                          : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
-                      }`}>
-                        <div className="px-4 py-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
-                            <div>
-                              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                                {isActive ? 'Ends in' : 'Starts in'}
-                              </div>
-                              <div className="flex items-baseline gap-1 mt-0.5">
-                                <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(mins).padStart(2, '0')}</span>
-                                <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
-                                <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(secsR).padStart(2, '0')}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
-                            <div className="text-[11px] text-slate-300 font-semibold">
-                              {q.start_time ? formatTimeOnly(q.start_time) : '—'} → {q.end_time ? formatTimeOnly(q.end_time) : '—'}
-                            </div>
-                          </div>
-                        </div>
-                        {progressed !== null && (
-                          <div className="h-1 bg-black/30">
-                            <m.div 
-                              className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${progressed}%` }}
-                              transition={{ duration: 0.8 }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Prizes */}
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      {[
-                        { label: '1st', emoji: '🥇', value: formatPrize(p1), bg: 'from-rose-500/20 to-pink-600/10', border: 'border-rose-500/25', text: 'text-rose-300', glow: 'shadow-rose-500/10' },
-                        { label: '2nd', emoji: '🥈', value: formatPrize(p2), bg: 'from-violet-400/15 to-purple-500/10', border: 'border-violet-400/20', text: 'text-violet-300', glow: 'shadow-violet-400/5' },
-                        { label: '3rd', emoji: '🥉', value: formatPrize(p3), bg: 'from-cyan-500/15 to-teal-600/10', border: 'border-cyan-500/20', text: 'text-cyan-300', glow: 'shadow-cyan-500/10' },
-                      ].map((prize) => (
-                        <div key={prize.label} className={`relative text-center py-3 rounded-2xl bg-gradient-to-b ${prize.bg} border ${prize.border} shadow-lg ${prize.glow}`}>
-                          <div className="text-lg leading-none">{prize.emoji}</div>
-                          <div className={`text-sm font-black ${prize.text} mt-1`}>{prize.value}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA Button (full width) */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (already || !canJoin) navigate(`/quiz/${q.id}`);
-                        else handleJoin(q);
-                      }}
-                      onMouseEnter={() => prefetchRoute('/quiz')}
-                      disabled={joiningId === q.id}
-                      className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
-                        joiningId === q.id ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
-                        isActive
-                          ? 'bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white shadow-[0_8px_25px_-5px_rgba(244,63,94,0.5)]'
-                          : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_8px_25px_-5px_rgba(168,85,247,0.5)]'
-                      }`}
-                    >
-                      {joiningId === q.id ? 'Joining...' : isActive ? (
-                        <><Play className="w-4 h-4" fill="currentColor" /> PLAY NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
-                      ) : already ? (
-                        <><Play className="w-4 h-4" fill="currentColor" /> PLAY <ChevronRight className="w-4 h-4 opacity-60" /></>
-                      ) : !canJoin ? (
-                        'VIEW'
-                      ) : (
-                        <><Play className="w-4 h-4" fill="currentColor" /> JOIN NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </m.div>
-            );
-          })}
-        </div>
       )}
+
+        {/* SEO Content Panel — Always in DOM for search engine indexing; CSS controls visibility */}
+        <article
+          className={`cat-seo-panel rounded-xl sm:rounded-2xl ${seoExpanded ? 'cat-seo-panel--open' : ''}`}
+          aria-expanded={seoExpanded}
+        >
+          <div className="p-[1px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-orange-500/50 via-fuchsia-500/30 to-blue-500/50">
+            <div className="cat-seo-panel__body rounded-[11px] sm:rounded-[15px] bg-[#0a0a16]/95 px-4 sm:px-6 py-4">
+              <h2 className="text-sm sm:text-base font-bold bg-gradient-to-r from-orange-300 via-fuchsia-300 to-blue-300 bg-clip-text text-transparent mb-3">
+                {seoContent.heading}
+              </h2>
+              <div className="text-xs sm:text-sm text-slate-300/90 leading-relaxed space-y-2.5">
+                {seoContent.paragraphs.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
     </div>
   );

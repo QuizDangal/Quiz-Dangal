@@ -308,7 +308,7 @@ export const ActiveQuizView = ({
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <div className="quiz-timer" role="timer" aria-live="polite" aria-label={`Time remaining: ${formatTime(timeLeft)}`}>
+                <div className={`quiz-timer${timeLeft != null && timeLeft <= 15 ? ' quiz-timer-danger' : ''}`} role="timer" aria-live="polite" aria-label={`Time remaining: ${formatTime(timeLeft)}`}>
                   <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>{formatTime(timeLeft)}</span>
                 </div>
@@ -355,7 +355,9 @@ export const ActiveQuizView = ({
                     disabled={
                       submitting || quizState !== 'active' || participantStatus === 'completed'
                     }
-                    whileTap={{ scale: 0.98 }}
+                    whileTap={{ scale: 0.96 }}
+                    animate={selected ? { scale: [1, 1.03, 1] } : {}}
+                    transition={selected ? { duration: 0.25 } : {}}
                     className={`quiz-option ${selected ? 'quiz-option-selected' : ''}`}
                     role="radio"
                     aria-checked={selected}

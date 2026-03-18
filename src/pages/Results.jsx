@@ -14,6 +14,8 @@ import {
   Share2,
   ListChecks,
   BookOpenCheck,
+  Play,
+  ChevronRight,
 } from 'lucide-react';
 import { normalizeReferralCode, saveReferralCode, loadReferralCode } from '@/lib/referralStorage';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
@@ -21,6 +23,26 @@ import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Tiny count-up number animation — counts from 0 to `value` over ~1.2s */
+function CountUp({ value, className }) {
+  const [display, setDisplay] = useState(0);
+  const num = typeof value === 'number' ? value : parseInt(value, 10) || 0;
+  useEffect(() => {
+    if (!num) { setDisplay(0); return; }
+    let start = 0;
+    const duration = 1200;
+    const step = Math.max(1, Math.floor(num / 40));
+    const interval = duration / (num / step);
+    const id = setInterval(() => {
+      start += step;
+      if (start >= num) { setDisplay(num); clearInterval(id); }
+      else setDisplay(start);
+    }, interval);
+    return () => clearInterval(id);
+  }, [num]);
+  return <m.p className={className} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>{display}</m.p>;
+}
 
 const Results = () => {
   const { id: quizIdParam, slotId: slotIdParam } = useParams();
@@ -1224,15 +1246,29 @@ const Results = () => {
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
                     <p className="text-[10px] text-slate-400 mb-0.5">Rank</p>
-                    <p className="text-base font-bold text-amber-400">#{userRank.rank}</p>
+                    <m.p
+                      className="text-base font-bold text-amber-400"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 12 }}
+                    >
+                      #{userRank.rank}
+                    </m.p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
                     <p className="text-[10px] text-slate-400 mb-0.5">Score</p>
-                    <p className="text-base font-bold text-emerald-400">{userRank.score}</p>
+                    <CountUp value={userRank.score} className="text-base font-bold text-emerald-400" />
                   </div>
                   <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
                     <p className="text-[10px] text-slate-400 mb-0.5">Prize</p>
-                    <p className="text-base font-bold text-purple-400">{userPrizeDisplay.formatted}</p>
+                    <m.p
+                      className="text-base font-bold text-purple-400"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 12 }}
+                    >
+                      {userPrizeDisplay.formatted}
+                    </m.p>
                   </div>
                 </div>
               ) : (
@@ -1289,6 +1325,50 @@ const Results = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Up Next — Related Quiz Suggestion */}
+        {quiz?.category && (
+          <m.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 120, damping: 16 }}
+            className="p-[1px] rounded-xl bg-gradient-to-r from-fuchsia-500/50 via-violet-500/40 to-indigo-500/50"
+          >
+            <div className="rounded-xl bg-slate-900/95 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold text-fuchsia-300">🎮 Up Next</span>
+                {userRank?.score != null && (
+                  <span className="text-[10px] text-slate-400">
+                    You scored {userRank.score}! Can you beat it?
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const cat = (quiz.category || '').toLowerCase();
+                  navigate(cat.includes('opinion') ? '/category/opinion/' : '/category/gk/');
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r from-fuchsia-950/60 via-violet-950/40 to-indigo-950/60 border border-violet-500/20 hover:border-violet-500/40 transition-all group"
+              >
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-lg">
+                  {(quiz.category || '').toLowerCase().includes('opinion') ? '💬' : '🧠'}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-xs font-bold text-white truncate">
+                    {(quiz.category || '').toLowerCase().includes('opinion') ? 'More Opinion Quizzes' : 'More GK Quizzes'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">New quiz every 5 min • Win coins & prizes</p>
+                </div>
+                <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold group-hover:from-violet-400 group-hover:to-fuchsia-400 transition-all shadow-lg shadow-violet-500/25">
+                  <Play className="w-3 h-3" fill="currentColor" />
+                  Play Next
+                  <ChevronRight className="w-3 h-3 opacity-60" />
+                </div>
+              </button>
+            </div>
+          </m.div>
         )}
 
         {/* Leaderboard */}

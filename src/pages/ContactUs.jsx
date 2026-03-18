@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 import { Link } from 'react-router-dom';
 import { 
   Mail, Phone, MapPin, Send, Instagram, Facebook, Twitter, 
@@ -197,7 +198,7 @@ Sent via Quiz Dangal Contact Form`
           jsonLd={[contactSchema, faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
           datePublished="2025-01-15"
-          dateModified="2026-03-16"
+          dateModified={BUILD_DATE}
         />
 
         <AnimatePresence>

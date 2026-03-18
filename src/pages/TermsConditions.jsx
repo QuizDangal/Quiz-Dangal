@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE, BUILD_DATE_DISPLAY } from '@/constants';
 import {
   Shield,
   Users,
@@ -244,7 +245,7 @@ const TermsConditions = () => {
           jsonLd={[faqSchema, breadcrumbSchema]}
           author="Quiz Dangal"
           datePublished="2025-01-15"
-          dateModified="2026-03-16"
+          dateModified={BUILD_DATE}
         />
 
         {/* Header */}
@@ -254,7 +255,7 @@ const TermsConditions = () => {
           </h1>
           <div className="flex items-center justify-center space-x-2 text-slate-300 mb-4">
             <Calendar className="w-4 h-4" />
-            <span className="text-sm">Last Updated: December 29, 2025</span>
+            <span className="text-sm">Last Updated: {BUILD_DATE_DISPLAY}</span>
           </div>
           <p className="text-base text-slate-300 leading-relaxed max-w-3xl mx-auto">
             Welcome to Quiz Dangal! These Terms & Conditions govern your use of our platform. 

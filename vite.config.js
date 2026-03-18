@@ -11,6 +11,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const analyze = process.env.ANALYZE === 'true';
 
 export default defineConfig({
+	define: {
+		__BUILD_DATE__: JSON.stringify(new Date().toISOString().split('T')[0]),
+	},
 	plugins: [react(), analyze && visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true, open: false })].filter(Boolean),
 	// Using a custom domain (quizdangal.com) from public/CNAME; site is served at domain root.
 	// Base must be '/' so assets resolve correctly under https://quizdangal.com/.
@@ -36,7 +39,7 @@ export default defineConfig({
 		minify: 'esbuild',
 		target: 'es2018',
 		cssTarget: 'es2018',
-		brotliSize: false,
+		reportCompressedSize: false,
 		sourcemap: false,
 		// Keep a simple manualChunks split for major libs to improve cacheability.
 		// If you ever see strange React runtime issues, you can remove manualChunks

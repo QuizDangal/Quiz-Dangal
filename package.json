@@ -38,7 +38,7 @@
     "lint": "eslint \"src/**/*.{js,jsx}\" --max-warnings=0",
     "lint:fix": "eslint \"src/**/*.{js,jsx}\" --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "clean": "node -e \"import('fs').then(m=>m.rmSync('dist',{recursive:true,force:true}))\"",
     "browserslist:update": "npx update-browserslist-db@latest",
     "check": "npm run lint && npm test",
     "prepare": "husky"

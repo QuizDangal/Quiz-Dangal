@@ -51,15 +51,16 @@ function hasFlag(name) {
   return process.argv.includes(`--${name}`);
 }
 
-// -------------------- Quiz slot times (00:00 - 23:50, every 10 min) --------------------
-function generateDaySchedule() {
+// -------------------- Quiz slot times --------------------
+// 144 quizzes = 10-min intervals (00:00-23:50), 288 quizzes = 5-min intervals (00:00-23:55)
+function generateDaySchedule(intervalMinutes = 5) {
   const times = [];
   for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 10) {
+    for (let m = 0; m < 60; m += intervalMinutes) {
       times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
     }
   }
-  return times; // 144 slots
+  return times;
 }
 
 const PRIZES = [121, 71, 51];
@@ -98,17 +99,26 @@ async function main() {
 
   if (deployAll) {
     for (const cat of CATEGORIES) {
-      const fileName = `${cat}_144_bilingual_${daySuffix}.json`;
-      const fullPath = path.join(bulkDir, fileName);
-      if (fs.existsSync(fullPath)) {
-        filesToDeploy.push({ file: fullPath, category: cat });
+      // Try 288 first (5-min interval), fallback to 144 (10-min interval)
+      const fileName288 = `${cat}_288_bilingual_${daySuffix}.json`;
+      const fileName144 = `${cat}_144_bilingual_${daySuffix}.json`;
+      const fullPath288 = path.join(bulkDir, fileName288);
+      const fullPath144 = path.join(bulkDir, fileName144);
+      if (fs.existsSync(fullPath288)) {
+        filesToDeploy.push({ file: fullPath288, category: cat });
+      } else if (fs.existsSync(fullPath144)) {
+        filesToDeploy.push({ file: fullPath144, category: cat });
       }
     }
   } else if (singleCategory) {
-    const fileName = `${singleCategory}_144_bilingual_${daySuffix}.json`;
-    const fullPath = path.join(bulkDir, fileName);
+    // Try 288 first (5-min interval), fallback to 144 (10-min interval)
+    const fileName288 = `${singleCategory}_288_bilingual_${daySuffix}.json`;
+    const fileName144 = `${singleCategory}_144_bilingual_${daySuffix}.json`;
+    const fullPath288 = path.join(bulkDir, fileName288);
+    const fullPath144 = path.join(bulkDir, fileName144);
+    const fullPath = fs.existsSync(fullPath288) ? fullPath288 : fullPath144;
     if (!fs.existsSync(fullPath)) {
-      console.error(`File not found: ${fullPath}`);
+      console.error(`File not found: ${fullPath288} or ${fullPath144}`);
       process.exit(2);
     }
     filesToDeploy.push({ file: fullPath, category: singleCategory });
@@ -125,8 +135,6 @@ async function main() {
   console.log(`Target date: ${targetDate}`);
   console.log(`Files to deploy: ${filesToDeploy.length}`);
   if (dry) console.log('(DRY RUN - no actual deployment)');
-
-  const autoTimes = generateDaySchedule();
 
   // Connect to PostgreSQL
   const client = new Client({ connectionString: databaseUrl });
@@ -146,12 +154,17 @@ async function main() {
         process.exit(2);
       }
 
-      if (quizzes.length > 144) {
-        console.error(`Too many quizzes in ${file}: ${quizzes.length} (max 144)`);
+      if (quizzes.length > 288) {
+        console.error(`Too many quizzes in ${file}: ${quizzes.length} (max 288)`);
         process.exit(2);
       }
 
       console.log(`\n📦 ${category.toUpperCase()}: ${path.basename(file)} (${quizzes.length} quizzes)`);
+
+      // Auto-detect interval: 144 quizzes = 10 min, 288 = 5 min, else match closest
+      const interval = quizzes.length <= 144 ? 10 : 5;
+      const autoTimes = generateDaySchedule(interval);
+      console.log(`  ⏱️  Interval: ${interval} min (${autoTimes.length} slots)`);
 
       if (dry) {
         console.log(`  [dry] Would insert ${quizzes.length} slots for ${category} on ${targetDate}`);

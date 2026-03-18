@@ -1,6 +1,6 @@
 -- ============================================================
 -- Updated admin_seed_quiz_day_multi for 24-hour schedule
--- Changed: Start hour 8 → 0, Max quizzes 96 → 144
+-- Auto-detects interval: 144 quizzes = 10 min, 288 quizzes = 5 min
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.admin_seed_quiz_day_multi(p_payload jsonb)
@@ -20,7 +20,7 @@ DECLARE
   v_time text;
   v_count int;
   v_batch_id uuid;
-  v_quiz_interval_minutes int := 10;
+  v_quiz_interval_minutes int;
   v_expected_times text[];
   v_h int;
   v_m int;
@@ -31,15 +31,6 @@ BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'permission denied';
   END IF;
-
-  -- Generate expected times array (00:00 to 23:50, every 10 min) - 24 hour schedule
-  v_expected_times := ARRAY[]::text[];
-  v_h := 0; v_m := 0;
-  WHILE v_h < 24 LOOP
-    v_expected_times := array_append(v_expected_times, lpad(v_h::text, 2, '0') || ':' || lpad(v_m::text, 2, '0'));
-    v_m := v_m + v_quiz_interval_minutes;
-    IF v_m >= 60 THEN v_h := v_h + 1; v_m := v_m - 60; END IF;
-  END LOOP;
 
   -- Validate target_date
   v_target_date := (p_payload->>'target_date')::date;
@@ -54,7 +45,23 @@ BEGIN
   FOR v_cat IN SELECT jsonb_object_keys(v_categories) LOOP
     v_slots := v_categories->v_cat;
     v_count := jsonb_array_length(v_slots);
-    IF v_count > 144 OR v_count < 1 THEN RAISE EXCEPTION 'Need 1-144 quizzes per category'; END IF;
+    IF v_count > 288 OR v_count < 1 THEN RAISE EXCEPTION 'Need 1-288 quizzes per category'; END IF;
+
+    -- Auto-detect interval: <=144 quizzes = 10 min interval, >144 = 5 min interval
+    IF v_count <= 144 THEN
+      v_quiz_interval_minutes := 10;
+    ELSE
+      v_quiz_interval_minutes := 5;
+    END IF;
+
+    -- Generate expected times for this interval
+    v_expected_times := ARRAY[]::text[];
+    v_h := 0; v_m := 0;
+    WHILE v_h < 24 LOOP
+      v_expected_times := array_append(v_expected_times, lpad(v_h::text, 2, '0') || ':' || lpad(v_m::text, 2, '0'));
+      v_m := v_m + v_quiz_interval_minutes;
+      IF v_m >= 60 THEN v_h := v_h + 1; v_m := v_m - 60; END IF;
+    END LOOP;
 
     -- Create or update batch record
     INSERT INTO public.quiz_day_batches(target_date, category, seed_source)

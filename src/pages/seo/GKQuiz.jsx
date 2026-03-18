@@ -1,6 +1,7 @@
 import React from 'react';
 import SeoLanding from './SeoLanding';
 import { BookOpen, Globe, Lightbulb, Clock } from 'lucide-react';
+import { HUB_SEO_ARTICLES } from '@/lib/hubSeoArticles';
 
 export default function GKQuiz() {
   const features = [
@@ -66,6 +67,7 @@ export default function GKQuiz() {
       ]}
       features={features}
       additionalContent={additionalContent}
+      seoArticle={HUB_SEO_ARTICLES.gk}
       relatedLinks={[
         { to: '/category/gk/', label: 'Play GK Quizzes' },
         { to: '/opinion-quiz-app/', label: 'Opinion Quiz Guide' },

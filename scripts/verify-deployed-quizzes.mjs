@@ -53,7 +53,7 @@ function hasFlag(name) {
 }
 
 const CATEGORIES = ['gk', 'opinion'];
-const EXPECTED_SLOTS = 144;
+const EXPECTED_SLOTS_OPTIONS = [144, 288]; // 144 = 10min interval, 288 = 5min (back-to-back)
 const EXPECTED_QUESTIONS = 10;
 
 async function main() {
@@ -128,8 +128,8 @@ async function main() {
 
         let issues = [];
 
-        if (slotCount !== EXPECTED_SLOTS) {
-          issues.push(`expected ${EXPECTED_SLOTS} slots, found ${slotCount}`);
+        if (!EXPECTED_SLOTS_OPTIONS.includes(slotCount)) {
+          issues.push(`expected ${EXPECTED_SLOTS_OPTIONS.join(' or ')} slots, found ${slotCount}`);
         }
 
         for (const row of sampleRes.rows) {

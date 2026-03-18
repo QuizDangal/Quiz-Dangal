@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '@/components/SEO';
+import { BUILD_DATE } from '@/constants';
 
 export default function ReferEarnInfo() {
   const canonical = 'https://quizdangal.com/refer-earn-quiz-app/';
@@ -57,7 +58,7 @@ export default function ReferEarnInfo() {
         }]}
         author="Quiz Dangal"
         datePublished="2025-01-15"
-        dateModified="2026-03-16"
+        dateModified={BUILD_DATE}
       />
       <div className="container mx-auto px-4 py-8 space-y-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">

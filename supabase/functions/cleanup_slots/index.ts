@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const url = Deno.env.get('SUPABASE_URL');
 const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const RETENTION_DAYS = parseInt(Deno.env.get('CLEANUP_RETENTION_DAYS') || '3', 10);
+const RETENTION_DAYS = parseInt(Deno.env.get('CLEANUP_RETENTION_DAYS') || '3', 10) || 3;
 
 function isAuthorizedCron(req: Request, serviceRoleKey: string | null): boolean {
   // Prefer a dedicated cron secret if configured.

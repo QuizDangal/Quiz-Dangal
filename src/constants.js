@@ -2,6 +2,19 @@
 // Adjust here instead of hunting magic numbers across the codebase.
 // NOTE: Optimized for Supabase free tier (reduced polling = less API calls & bandwidth)
 
+/** Build date injected at compile time by Vite (YYYY-MM-DD). */
+export const BUILD_DATE = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '2026-03-18';
+
+const buildDateValue = `${BUILD_DATE}T00:00:00Z`;
+export const BUILD_DATE_DISPLAY = Number.isNaN(Date.parse(buildDateValue))
+	? BUILD_DATE
+	: new Intl.DateTimeFormat('en-US', {
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric',
+			timeZone: 'UTC',
+		}).format(new Date(buildDateValue));
+
 export const STREAK_CLAIM_DELAY_MS = 1500; // Header daily streak claim delay
 export const QUIZ_ENGAGEMENT_POLL_INTERVAL_MS = 30000; // Quiz engagement refresh (was 15s, now 30s for free tier)
 
