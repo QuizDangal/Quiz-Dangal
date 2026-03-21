@@ -3,28 +3,96 @@
 // Provides graceful fallback to legacy quiz list if slot view or RPCs are missing.
 
 import { logger } from '@/lib/logger';
+import { getSupabase } from '@/lib/customSupabaseClient';
 
 // ── Slot data prefetch cache ──
 // Allows starting the data fetch before the CategoryQuizzes component mounts.
 const _prefetchCache = new Map(); // category -> { promise, ts }
-const PREFETCH_TTL_MS = 15_000; // cache valid for 15 seconds
+const PREFETCH_TTL_MS = 30_000; // cache valid for 30 seconds
+const SLOT_SNAPSHOT_CACHE_KEY = 'qd_slot_snapshot_v1';
+const SLOT_SNAPSHOT_TTL_MS = 90_000;
+
+function readSlotSnapshotStore() {
+  try {
+    const raw = sessionStorage.getItem(SLOT_SNAPSHOT_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeSlotSnapshotStore(store) {
+  try {
+    sessionStorage.setItem(SLOT_SNAPSHOT_CACHE_KEY, JSON.stringify(store));
+  } catch {
+    // Ignore storage write failures.
+  }
+}
+
+function cacheSlotSnapshot(category, result) {
+  if (!category || !result || !Array.isArray(result.slots)) return;
+  const nextStore = readSlotSnapshotStore();
+  nextStore[category] = {
+    ts: Date.now(),
+    value: {
+      slots: result.slots,
+      mode: result.mode,
+      auto: result.auto,
+    },
+  };
+  writeSlotSnapshotStore(nextStore);
+}
+
+export function getCachedSlotSnapshot(category) {
+  if (!category) return null;
+  const store = readSlotSnapshotStore();
+  const cached = store[category];
+  if (!cached || !cached.value) return null;
+  if (Date.now() - Number(cached.ts || 0) > SLOT_SNAPSHOT_TTL_MS) {
+    delete store[category];
+    writeSlotSnapshotStore(store);
+    return null;
+  }
+  return cached.value;
+}
 
 /**
  * Start fetching slot data for a category in the background.
  * Call this on navigation click so data is already in-flight when the page mounts.
+ * MUST set cache synchronously so consumePrefetchedSlotData() can find it.
  */
 export function prefetchSlotData(category) {
   if (!category) return;
   const existing = _prefetchCache.get(category);
   if (existing && Date.now() - existing.ts < PREFETCH_TTL_MS) return; // already cached/in-flight
-  // Lazy import getSupabase to avoid circular dependency at module level
-  import('@/lib/customSupabaseClient').then(({ getSupabase }) => {
-    const promise = getSupabase().then((sb) => {
-      if (!sb) return null;
-      return fetchSlotsForCategory(sb, category);
-    }).catch(() => null);
-    _prefetchCache.set(category, { promise, ts: Date.now() });
-  }).catch(() => {});
+
+  const cachedSnapshot = getCachedSlotSnapshot(category);
+  if (cachedSnapshot) {
+    _prefetchCache.set(category, { promise: Promise.resolve(cachedSnapshot), ts: Date.now() });
+    return;
+  }
+
+  // Set cache entry synchronously with a deferred promise.
+  // The actual fetch starts as soon as getSupabase resolves.
+  let resolve;
+  const promise = new Promise((r) => { resolve = r; });
+  _prefetchCache.set(category, { promise, ts: Date.now() });
+
+  // Fire the fetch chain — use fast RPC first, fallback to full fetch
+  getSupabase().then(async (sb) => {
+    if (!sb) return resolve(null);
+    try {
+      const { current, upcoming, is_paused } = await getCurrentAndUpcomingQuiz(sb, category);
+      const fastSlots = [current, upcoming].filter(Boolean);
+      if (fastSlots.length > 0) {
+        const fastResult = { slots: fastSlots, mode: 'slots', auto: !is_paused };
+        return resolve(fastResult);
+      }
+    } catch { /* RPC unavailable — fall through */ }
+    return fetchSlotsForCategory(sb, category).then(resolve, () => resolve(null));
+  }).catch(() => resolve(null));
 }
 
 /**
@@ -166,7 +234,9 @@ export async function fetchSlotsForCategory(supabase, category) {
   });
   
   const mode = slotsFromView.length > 0 ? 'slots' : (uniqueLegacy.length > 0 ? 'legacy' : 'none');
-  return { slots: allSlots, mode, auto: autoEnabled };
+  const result = { slots: allSlots, mode, auto: autoEnabled };
+  cacheSlotSnapshot(category, result);
+  return result;
 }
 
 function deriveLegacyStatus(q, nowMs) {

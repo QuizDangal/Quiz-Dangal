@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BUILD_DATE } from '@/constants';
 import { getSupabase } from '@/lib/customSupabaseClient';
-import { fetchSlotsForCategory, classifyThreeSlots, consumePrefetchedSlotData } from '@/lib/slots';
+import { fetchSlotsForCategory, classifyThreeSlots, consumePrefetchedSlotData, getCachedSlotSnapshot, getCurrentAndUpcomingQuiz } from '@/lib/slots';
 import { smartJoinQuiz } from '@/lib/smartJoinQuiz';
 import { rateLimit } from '@/lib/security';
 import {
@@ -185,58 +185,119 @@ const CategoryQuizzes = () => {
   const [categoryAutoEnabled, setCategoryAutoEnabled] = useState(true);
   const [slotLoadError, setSlotLoadError] = useState(null);
   const [seoExpanded, setSeoExpanded] = useState(false);
+  const slotRequestRef = useRef(0);
 
   const pollIntervalMs = 60000; // 60s for slot refresh
 
-  const loadSlots = useCallback(async () => {
-    try {
-      // Check if data was prefetched during navigation
-      const prefetched = consumePrefetchedSlotData(slug);
-      let result;
-      if (prefetched) {
-        result = await prefetched;
-      }
-      if (!result) {
-        const sb = await getSupabase();
-        if (!sb) {
-          setSlots([]);
-          setCategoryAutoEnabled(true);
-          setSlotMode('legacy');
-          setSlotLoadError('Supabase is not configured.');
-          return;
-        }
-        result = await fetchSlotsForCategory(sb, slug);
-      }
-
-      const { slots: s, mode, auto } = result;
-      // Always set slots regardless of mode - fetchSlotsForCategory now returns merged results
-      setSlots(s);
-      setCategoryAutoEnabled(auto);
-      setSlotLoadError(null);
-      if (mode === 'slots' || mode === 'legacy') {
-        setSlotMode('slots'); // Use slots UI for both - they're unified now
-      } else {
-        setSlotMode('legacy');
-      }
-    } catch (e) {
-      setSlotLoadError(formatSupabaseError(e) || e?.message || 'Could not load category quizzes.');
+  const applySlotResult = useCallback((result) => {
+    if (!result) return;
+    const { slots: s, mode, auto } = result;
+    setSlots(s);
+    setCategoryAutoEnabled(auto);
+    setSlotLoadError(null);
+    if (mode === 'slots' || mode === 'legacy') {
+      setSlotMode('slots');
+    } else {
       setSlotMode('legacy');
     }
-  }, [slug]);
+  }, []);
+
+  const loadSlots = useCallback(async (requestId = slotRequestRef.current) => {
+    try {
+      const sb = await getSupabase();
+      if (requestId !== slotRequestRef.current) return null;
+      if (!sb) {
+        setSlots([]);
+        setCategoryAutoEnabled(true);
+        setSlotMode('legacy');
+        setSlotLoadError('Supabase is not configured.');
+        return null;
+      }
+      const result = await fetchSlotsForCategory(sb, slug);
+      if (requestId !== slotRequestRef.current) return null;
+      applySlotResult(result);
+      return result;
+    } catch (e) {
+      if (requestId !== slotRequestRef.current) return null;
+      setSlotLoadError(formatSupabaseError(e) || e?.message || 'Could not load category quizzes.');
+      setSlotMode('legacy');
+      return null;
+    }
+  }, [applySlotResult, slug]);
 
   useEffect(() => {
-    setLoading(true);
-    // Load all quizzes (both slots and legacy are now merged in loadSlots)
-    loadSlots().finally(() => {
+    const requestId = slotRequestRef.current + 1;
+    slotRequestRef.current = requestId;
+    const cachedSnapshot = getCachedSlotSnapshot(slug);
+    if (cachedSnapshot) {
+      applySlotResult(cachedSnapshot);
       setLoading(false);
-    });
-  }, [loadSlots]);
+    } else {
+      setLoading(true);
+    }
+
+    // Fast path: try RPC for just live + upcoming (1 query vs 3), then refine
+    const fastLoad = async () => {
+      if (cachedSnapshot) {
+        await loadSlots(requestId);
+        return;
+      }
+
+      try {
+        // First check prefetch cache
+        const prefetched = consumePrefetchedSlotData(slug);
+        if (prefetched) {
+          const result = await prefetched;
+          if (requestId !== slotRequestRef.current) return;
+          if (result) {
+            applySlotResult(result);
+            setLoading(false);
+            void loadSlots(requestId);
+            return;
+          }
+        }
+        // Try fast RPC — returns just current + upcoming in ONE call
+        const sb = await getSupabase();
+        if (requestId !== slotRequestRef.current) return;
+        if (!sb) {
+          setSlots([]);
+          setLoading(false);
+          return;
+        }
+        const { current, upcoming, is_paused } = await getCurrentAndUpcomingQuiz(sb, slug);
+        if (requestId !== slotRequestRef.current) return;
+        const fastSlots = [current, upcoming].filter(Boolean);
+        if (fastSlots.length > 0) {
+          applySlotResult({ slots: fastSlots, mode: 'slots', auto: !is_paused });
+          setLoading(false);
+          // Background: fetch full list for accuracy (e.g. multiple live slots)
+          void loadSlots(requestId);
+          return;
+        }
+        // RPC returned nothing — fall through to full fetch
+      } catch {
+        // RPC failed — fall through
+      }
+      // Fallback: full fetch
+      await loadSlots(requestId);
+      if (requestId === slotRequestRef.current) {
+        setLoading(false);
+      }
+    };
+    void fastLoad();
+
+    return () => {
+      if (slotRequestRef.current === requestId) {
+        slotRequestRef.current += 1;
+      }
+    };
+  }, [applySlotResult, slug, loadSlots]);
 
   // Poll slots for updates
   useEffect(() => {
     if (slotMode === 'none') return;
     const id = setInterval(() => {
-      loadSlots();
+      void loadSlots(slotRequestRef.current);
     }, pollIntervalMs);
     return () => clearInterval(id);
   }, [slotMode, loadSlots]);

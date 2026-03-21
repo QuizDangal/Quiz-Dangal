@@ -132,9 +132,7 @@ function AuthProviderInner({ children }) {
       return false;
     })();
 
-    // Init immediately for returning sessions or for non-home routes.
-    // For anonymous home ('/'), defer init to keep Mobile PSI clean.
-    const shouldInitNow = hasStoredSession || path !== '/';
+    const isHomeRoute = path === '/';
 
     const initAuth = async ({ showLoading } = {}) => {
       if (authSubRef.current) return; // already initialized
@@ -187,16 +185,24 @@ function AuthProviderInner({ children }) {
       }
     };
 
-    if (shouldInitNow) {
+    if (!isHomeRoute) {
       void initAuth({ showLoading: true });
     } else {
-      // Anonymous home: don't block render.
+      // Home should paint immediately; hydrate auth in the background.
       setLoading(false);
 
       // Warm Supabase after user interaction or after a delay.
       const warm = () => {
         void initAuth({ showLoading: false });
       };
+
+      if (hasStoredSession) {
+        void warm();
+        return () => {
+          authSubRef.current?.unsubscribe?.();
+        };
+      }
+
       const opts = { once: true, passive: true };
       window.addEventListener('pointerdown', warm, opts);
       window.addEventListener('touchstart', warm, opts);

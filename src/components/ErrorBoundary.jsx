@@ -33,12 +33,16 @@ class ErrorBoundary extends React.Component {
     
     if (isChunkError) {
       // Prevent infinite reload loops
-      const lastReload = sessionStorage.getItem('qd_chunk_reload');
-      const now = Date.now();
-      if (!lastReload || (now - parseInt(lastReload, 10)) > 10000) {
-        sessionStorage.setItem('qd_chunk_reload', now.toString());
-        globalThis.location.reload();
-        return;
+      try {
+        const lastReload = sessionStorage.getItem('qd_chunk_reload');
+        const now = Date.now();
+        if (!lastReload || (now - parseInt(lastReload, 10)) > 10000) {
+          sessionStorage.setItem('qd_chunk_reload', now.toString());
+          globalThis.location.reload();
+          return;
+        }
+      } catch {
+        // sessionStorage unavailable (e.g. Safari private mode) — skip auto-reload
       }
     }
   }

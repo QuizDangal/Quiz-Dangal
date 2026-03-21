@@ -1142,7 +1142,7 @@ function RewardsPanel() {
   const [showNewReward, setShowNewReward] = React.useState(false);
   // rewardForm fields: reward_type (text), reward_value (text), coins_required (int), is_active (bool)
   const [rewardForm, setRewardForm] = React.useState({
-    reward_type: 'coins',
+    reward_type: 'cash',
     reward_value: '',
     coins_required: '',
     is_active: true,

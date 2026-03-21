@@ -130,6 +130,27 @@ const Home = () => {
     getSupabase().catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const categories = ['opinion', 'gk'];
+    const warmAll = () => {
+      for (const category of categories) {
+        prefetchRoute(`/category/${category}`);
+        prefetchSlotData(category);
+      }
+      // Warm secondary routes on idle
+      prefetchRoute('/wallet');
+      prefetchRoute('/profile');
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(warmAll, { timeout: 1500 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(warmAll, 600);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   const go = useCallback((id) => {
     prefetchSlotData(id);
     navigate(`/category/${id}/`);

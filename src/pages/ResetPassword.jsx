@@ -66,6 +66,7 @@ export default function ResetPassword() {
         const { data: sessData } = await supabase.auth.getSession();
         if (sessData?.session && window.location.pathname.includes('/reset-password')) {
           setInRecovery(true);
+          setMessage(''); // clear any stale error from code exchange race
         }
       } catch (e) {
         /* password update fail */

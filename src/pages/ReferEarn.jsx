@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
 import { Users, Coins, Share2, Copy, Check, Loader2, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { normalizeReferralCode, saveReferralCode } from '@/lib/referralStorage';
+import { normalizeReferralCode } from '@/lib/referralStorage';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getSignedAvatarUrls } from '@/lib/avatar';
@@ -159,10 +159,6 @@ Referral Link: ${referralLink}`,
     }
     shareToWhatsApp();
   };
-
-  useEffect(() => {
-    if (referralCode) saveReferralCode(referralCode);
-  }, [referralCode]);
 
   useEffect(() => {
     if (userProfile) {

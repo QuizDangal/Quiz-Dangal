@@ -129,15 +129,20 @@ export default function Redemptions() {
         return;
       }
       setRewardsLoading(true);
-      const res2 = await supabase
-        .from('reward_catalog')
-        .select('*')
-        .eq('is_active', true)
-        .order('coins_required', { ascending: true })
-        .order('id', { ascending: false });
-      if (res2.error) setRewards([]);
-      else setRewards(res2.data || []);
-      setRewardsLoading(false);
+      try {
+        const res2 = await supabase
+          .from('reward_catalog')
+          .select('*')
+          .eq('is_active', true)
+          .order('coins_required', { ascending: true })
+          .order('id', { ascending: false });
+        if (res2.error) setRewards([]);
+        else setRewards(res2.data || []);
+      } catch {
+        setRewards([]);
+      } finally {
+        setRewardsLoading(false);
+      }
     }
     loadRewards();
   }, []);

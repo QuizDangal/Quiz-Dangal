@@ -5,11 +5,13 @@ import { Cookie, X } from 'lucide-react';
 const CONSENT_KEY = 'qd_cookie_consent';
 
 // Get GA ID from env or runtime config (same as index.html)
+const GA_ID_RE = /^G-[A-Z0-9]{6,12}$/;
 const getGAId = () => {
   const runtimeEnv = typeof window !== 'undefined' && window.__QUIZ_DANGAL_ENV__ 
     ? window.__QUIZ_DANGAL_ENV__ 
     : {};
-  return import.meta.env?.VITE_GA_ID || runtimeEnv.VITE_GA_ID || 'G-98624Q56YT';
+  const raw = import.meta.env?.VITE_GA_ID || runtimeEnv.VITE_GA_ID || 'G-98624Q56YT';
+  return GA_ID_RE.test(raw) ? raw : '';
 };
 
 /**
@@ -29,8 +31,9 @@ const triggerGALoad = () => {
     // Manually trigger GA load since consent was just given
     const loadGA = () => {
       if (window.__qdGAReady) return;
-      window.__qdGAReady = true;
       const gaId = getGAId();
+      if (!gaId) return;
+      window.__qdGAReady = true;
       const s = document.createElement('script');
       s.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
       s.async = true;
