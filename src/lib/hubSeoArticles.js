@@ -83,6 +83,32 @@ export const HUB_SEO_ARTICLES = {
     ],
   },
 
+  ipl: {
+    title: 'IPL 2026 Prediction Quiz — The Complete Guide on Quiz Dangal',
+    sections: [
+      {
+        heading: 'What Is an IPL Prediction Quiz?',
+        text: 'An IPL prediction quiz is a fast-paced opinion-style quiz where you vote on outcomes of IPL 2026 matches — who will win, who will top-score, which bowler will dominate — and then see how the rest of India voted. Unlike traditional GK quizzes with fixed right answers, prediction quizzes reward cricket intuition and crowd-reading skills. Every round is a social experiment that reveals what the nation thinks about tonight\'s game.',
+      },
+      {
+        heading: 'IPL 2026 Match-Day Specials — Live Polls Every Game',
+        text: 'During IPL season, Quiz Dangal runs dedicated prediction rounds before and during every match. Questions cover toss outcomes, powerplay run rates, man-of-the-match picks, highest individual scores, best bowling figures, and fan sentiment polls like "Which team has the best middle order?" New quizzes go live every 5 minutes, so whether you are watching the first ball or the last over, there is always a prediction round waiting for you.',
+      },
+      {
+        heading: 'How Scoring Works in IPL Prediction Quizzes',
+        text: 'Scoring follows the opinion quiz format: your prediction earns +1 point when it matches the majority vote. No negative marking, no penalty for bold contrarian picks. Tie-breakers favour the fastest submission, so quick instincts are rewarded. Top predictors in each round win coins and cash prizes, and your season-long performance is tracked on the IPL leaderboard. The more rounds you play, the better your cumulative score — consistency is key.',
+      },
+      {
+        heading: 'Why IPL Fans Love Prediction Quizzes',
+        text: 'Every IPL fan has an opinion — "RCB will finally win this year" or "Jasprit Bumrah will take 4 wickets tonight." Quiz Dangal turns these watercooler debates into competitive fun. When 73% of players back CSK and you are the 27% who picked the underdog — and the underdog wins — that is a bragging moment worth sharing on WhatsApp and Instagram. The social proof of seeing live vote breakdowns after each round makes every quiz feel like a live stadium poll.',
+      },
+      {
+        heading: 'Play Free IPL Predictions All Season Long',
+        text: 'IPL prediction quizzes on Quiz Dangal are 100% free — no entry fee, no subscription, no paywall. Rounds run 24/7 during IPL season with new polls every 5 minutes. Play in Hindi and English, compete on season-long leaderboards, build your daily streak for bonus coins, and redeem earnings for real rewards. From the opening ceremony to the final — every match is a chance to predict and win. Quiz Dangal — where your cricket IQ actually pays off!',
+      },
+    ],
+  },
+
   cricket: {
     title: 'The Ultimate Cricket Quiz Experience on Quiz Dangal',
     sections: [

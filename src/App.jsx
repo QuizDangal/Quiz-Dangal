@@ -48,6 +48,7 @@ const policyRoutes = (
     <Route path="/contact-us/" element={<ContactUs />} />
     <Route path="/gk-quiz/" element={<GKQuiz />} />
     <Route path="/cricket-quiz/" element={<CricketQuiz />} />
+    <Route path="/ipl-prediction-quiz/" element={<Navigate to="/category/opinion/" replace />} />
     <Route path="/current-affairs-quiz/" element={<CurrentAffairsQuiz />} />
     <Route path="/bollywood-quiz/" element={<BollywoodQuiz />} />
     <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
@@ -545,6 +546,14 @@ const MainLayout = () => {
               element={
                 <Page>
                   <CricketQuiz />
+                </Page>
+              }
+            />
+            <Route
+              path="/ipl-prediction-quiz/"
+              element={
+                <Page>
+                  <Navigate to="/category/opinion/" replace />
                 </Page>
               }
             />

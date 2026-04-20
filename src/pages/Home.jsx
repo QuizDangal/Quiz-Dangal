@@ -21,24 +21,24 @@ import { prefetchSlotData } from '@/lib/slots';
 /* ─── tiny static data ─── */
 const HOT_PICKS = [
   {
-    emoji: '🏏', title: 'IPL & Cricket',
-    sub: 'Predict scores, win big',
+    emoji: '💬', title: 'Opinion Quiz',
+    sub: 'Share your views',
     cat: 'opinion', tag: 'TRENDING',
-    gradient: 'from-orange-500 via-amber-500 to-yellow-500',
-    glow: 'rgba(245,158,11,0.25)',
-    hoverGlow: 'rgba(245,158,11,0.4)',
-  },
-  {
-    emoji: '🗳️', title: "Today's Opinion",
-    sub: 'Vote & earn coins instantly',
-    cat: 'opinion', tag: 'HOT',
     gradient: 'from-pink-500 via-rose-500 to-fuchsia-600',
     glow: 'rgba(236,72,153,0.25)',
     hoverGlow: 'rgba(236,72,153,0.4)',
   },
   {
+    emoji: '🏏', title: 'IPL Quiz',
+    sub: 'Match predictions',
+    cat: 'opinion', tag: 'HOT',
+    gradient: 'from-orange-500 via-amber-500 to-yellow-500',
+    glow: 'rgba(245,158,11,0.25)',
+    hoverGlow: 'rgba(245,158,11,0.4)',
+  },
+  {
     emoji: '🧠', title: 'GK Quiz',
-    sub: 'Test your brain daily',
+    sub: 'Test your brain',
     cat: 'gk', tag: 'POPULAR',
     gradient: 'from-violet-500 via-purple-500 to-indigo-600',
     glow: 'rgba(139,92,246,0.25)',
@@ -46,7 +46,7 @@ const HOT_PICKS = [
   },
   {
     emoji: '📰', title: 'Current Affairs',
-    sub: 'Stay sharp, earn rewards',
+    sub: 'Stay updated',
     cat: 'gk', tag: 'NEW',
     gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
     glow: 'rgba(16,185,129,0.25)',
@@ -57,21 +57,21 @@ const HOT_PICKS = [
 const HERO_MODES = [
   {
     id: 'opinion',
-    icon: '🗳️',
-    title: 'Opinion Quiz',
-    description: 'Vote on hot topics and win coins.',
+    icon: '🏏',
+    title: 'IPL Quiz',
+    description: 'IPL predictions & opinion polls',
     accentClass: 'from-rose-500 via-pink-500 to-fuchsia-600',
     glowClass: 'shadow-[0_24px_60px_rgba(236,72,153,0.24)]',
-    buttonLabel: 'Play Now',
+    buttonLabel: 'Play',
   },
   {
     id: 'gk',
     icon: '🧠',
-    title: 'Master Quiz',
-    description: 'Test your knowledge and earn rewards.',
+    title: 'GK Quiz',
+    description: 'Daily GK & current affairs',
     accentClass: 'from-indigo-500 via-violet-500 to-cyan-500',
     glowClass: 'shadow-[0_24px_60px_rgba(99,102,241,0.24)]',
-    buttonLabel: 'Play Now',
+    buttonLabel: 'Play',
   },
 ];
 
@@ -313,23 +313,23 @@ const Home = () => {
                   type="button"
                   onClick={() => go(id)}
                   onPointerEnter={() => warmCategory(id)}
-                  className={`home-shine group relative overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0818] text-left transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] ${glowClass}`}
+                  className={`home-shine group relative min-h-[190px] overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0818] text-left transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] ${glowClass}`}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${accentClass} opacity-[0.95]`} />
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.22))]" />
                   <div className="absolute -right-8 top-10 h-20 w-20 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
 
-                  <div className="relative flex h-full flex-col px-3.5 pb-3.5 pt-3.5">
+                  <div className="relative flex h-full flex-col px-4 pb-4 pt-4">
                     <div className="mb-3 flex items-start justify-between gap-2">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-white/20 bg-white/20 text-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/20 bg-white/20 text-[1.45rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
                         <span>{icon}</span>
                       </div>
                     </div>
 
-                    <div className="mt-1 text-[1rem] font-black leading-tight text-white">{title}</div>
-                    <p className="mt-2 min-h-[2.25rem] text-[0.64rem] font-medium leading-4 text-white/74">{description}</p>
+                    <div className="mt-1 text-[1.02rem] font-black leading-tight text-white">{title}</div>
+                    <p className="mt-2 min-h-[2.6rem] text-[0.68rem] font-medium leading-4 text-white/74">{description}</p>
 
-                    <div className="mt-4 flex items-center justify-between rounded-2xl border border-black/5 bg-white px-3.5 py-2.5 shadow-[0_14px_32px_rgba(255,255,255,0.18)] transition-all duration-200 group-hover:bg-white group-hover:shadow-[0_18px_36px_rgba(255,255,255,0.22)]">
+                    <div className="mt-auto flex items-center justify-between rounded-2xl border border-black/5 bg-white px-3.5 py-2.5 shadow-[0_14px_32px_rgba(255,255,255,0.18)] transition-all duration-200 group-hover:bg-white group-hover:shadow-[0_18px_36px_rgba(255,255,255,0.22)]">
                       <div className="flex items-center gap-1.5">
                         <Play size={11} className="text-slate-900" fill="rgb(15,23,42)" />
                         <span className="text-[0.68rem] font-black uppercase tracking-[0.08em] text-slate-900">{buttonLabel}</span>
@@ -352,7 +352,7 @@ const Home = () => {
             </div>
             <button
               type="button"
-              onClick={() => go('gk')}
+              onClick={() => go('opinion')}
               className="inline-flex items-center gap-1 text-[0.68rem] font-semibold text-violet-400/70 hover:text-violet-300 transition-colors duration-200"
             >
               All <ChevronRight size={12} />

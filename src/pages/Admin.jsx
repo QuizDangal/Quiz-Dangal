@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { formatDateTime } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import DailyScheduler from '@/components/admin/DailyScheduler';
+import IPLPredictionManager from '@/components/admin/IPLPredictionManager';
 
 // ---------------- Constants & Helpers ----------------
 const categoryOptions = [
@@ -586,6 +587,9 @@ export default function Admin() {
               New Quiz
             </Button>
           </div>
+
+          <IPLPredictionManager />
+
           <AnimatePresence>
             {showCreate && (
               <m.div

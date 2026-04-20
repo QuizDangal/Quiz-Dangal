@@ -25,7 +25,8 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export function usePushNotifications() {
-  const { user } = useAuth?.() || { user: null };
+  // Hooks should be called unconditionally. `useAuth` is always defined from context.
+  const { user } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [error, setError] = useState(null);

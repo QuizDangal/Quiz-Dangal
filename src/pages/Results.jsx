@@ -14,21 +14,33 @@ import {
   Share2,
   ListChecks,
   BookOpenCheck,
-  Play,
-  ChevronRight,
 } from 'lucide-react';
 import { normalizeReferralCode, saveReferralCode, loadReferralCode } from '@/lib/referralStorage';
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { logger } from '@/lib/logger';
 import SeoHead from '@/components/SEO';
+import { getIplPredictionMeta, isIplPredictionQuiz } from '@/lib/iplTeams';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function formatScoreValue(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '0';
+  if (Number.isInteger(num)) return String(num);
+  return num.toFixed(2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+}
 
 /** Tiny count-up number animation — counts from 0 to `value` over ~1.2s */
 function CountUp({ value, className }) {
   const [display, setDisplay] = useState(0);
-  const num = typeof value === 'number' ? value : parseInt(value, 10) || 0;
+  const parsed = Number(value);
+  const num = Number.isFinite(parsed) ? parsed : 0;
+  const isDecimal = !Number.isInteger(num);
   useEffect(() => {
+    if (isDecimal) {
+      setDisplay(num);
+      return undefined;
+    }
     if (!num) { setDisplay(0); return; }
     let start = 0;
     const duration = 1200;
@@ -40,8 +52,8 @@ function CountUp({ value, className }) {
       else setDisplay(start);
     }, interval);
     return () => clearInterval(id);
-  }, [num]);
-  return <m.p className={className} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>{display}</m.p>;
+  }, [isDecimal, num]);
+  return <m.p className={className} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>{isDecimal ? formatScoreValue(display) : display}</m.p>;
 }
 
 const Results = () => {
@@ -263,16 +275,17 @@ const Results = () => {
 
         // === Q&A and Profile enrichment (background) ===
         const category = (quizData?.category || '').toLowerCase();
-        const shouldLoadQA = category !== 'opinion' && (amParticipant || normalized.length);
+        const shouldLoadQA = (category !== 'opinion' || quizData?.is_prediction === true) && (amParticipant || normalized.length);
         const topIds = normalized.slice(0, 10).map((e) => e.user_id).filter(Boolean);
 
         Promise.all([
           shouldLoadQA
             ? supabase
                 .from('questions')
-                .select('id, question_text, options ( id, option_text, is_correct )')
+                .select('*, options ( id, option_text, is_correct )')
                 .eq('quiz_id', quizId)
-                .order('id')
+                .order('position', { ascending: true, nullsFirst: false })
+                .order('id', { ascending: true })
             : Promise.resolve({ data: [] }),
           topIds.length
             ? supabase.rpc('profiles_public_by_ids', { p_ids: topIds })
@@ -297,6 +310,7 @@ const Results = () => {
               const mapped = qaResult.data.map((q) => ({
                 id: q.id,
                 question_text: q.question_text,
+                points: Math.max(1, Number(q.points) || 1),
                 options: (q.options || []).map((o) => ({
                   id: o.id,
                   option_text: o.option_text,
@@ -361,27 +375,46 @@ const Results = () => {
   };
   // Prize related derived values (needed before poster effect dependencies)
   const prizeType = quiz?.prize_type || 'coins';
-  const userPrizeVal =
-    userRank?.rank && Array.isArray(quiz?.prizes) && quiz.prizes[userRank.rank - 1]
-      ? quiz.prizes[userRank.rank - 1]
-      : 0;
-  const userPrizeDisplay = getPrizeDisplay(prizeType, userPrizeVal, { fallback: 0 });
+  const isPredictionQuiz = quiz?.is_prediction === true;
+  const predictionMeta = isIplPredictionQuiz(quiz) ? getIplPredictionMeta(quiz) : null;
+  const consolationCoins = Math.max(0, Number(predictionMeta?.consolationCoins || 0));
+  const predictionFinalPublishAt = predictionMeta?.resultPublishAt || null;
+  const predictionFinalPublishMs = predictionFinalPublishAt ? new Date(predictionFinalPublishAt).getTime() : null;
+  const isPredictionFinalPublished = isPredictionQuiz && String(quiz?.status || '').toLowerCase() === 'completed';
+  const isPredictionLivePreResult =
+    isPredictionQuiz &&
+    (timeLeftMs ?? 0) === 0 &&
+    !isPredictionFinalPublished &&
+    (!predictionFinalPublishMs || Date.now() < predictionFinalPublishMs || results.length > 0);
+  const topPrizeCount = Array.isArray(quiz?.prizes)
+    ? quiz.prizes.filter((amount) => Number(amount) > 0).length
+    : 0;
+  const getPrizeValueForRank = (rank) => {
+    if (!rank) return 0;
+    const directPrize = Array.isArray(quiz?.prizes) ? Number(quiz.prizes[rank - 1] || 0) : 0;
+    if (directPrize > 0) return directPrize;
+    if (isPredictionQuiz && consolationCoins > 0 && rank > topPrizeCount) return consolationCoins;
+    return 0;
+  };
+  const getPrizeTypeForRank = (rank) => {
+    if (isPredictionQuiz && consolationCoins > 0 && rank > topPrizeCount) return 'coins';
+    return prizeType;
+  };
+  const userPrizeVal = getPrizeValueForRank(userRank?.rank);
+  const userPrizeDisplay = getPrizeDisplay(getPrizeTypeForRank(userRank?.rank), userPrizeVal, { fallback: 0 });
+  const shouldRefreshWalletAfterResults =
+    !!user?.id &&
+    (getPrizeValueForRank(userRank?.rank) > 0 || (isPredictionFinalPublished && isPredictionQuiz && consolationCoins > 0 && isParticipant));
 
   // As soon as user has a prize decided, refresh profile so wallet updates without manual refresh
   useEffect(() => {
     try {
-      if (!user?.id) return;
-      if (!Array.isArray(quiz?.prizes)) return;
-      if (!userRank?.rank) return;
-      const prizeVal = quiz.prizes[userRank.rank - 1] || 0;
-      if (prizeVal > 0) {
-        // Fire-and-forget; AuthContext will update userProfile state
-        refreshUserProfile(user);
-      }
+      if (!shouldRefreshWalletAfterResults) return;
+      refreshUserProfile(user);
     } catch {
       /* ignore */
     }
-  }, [user, userRank?.rank, quiz?.prizes, refreshUserProfile]);
+  }, [user, refreshUserProfile, shouldRefreshWalletAfterResults]);
 
   // Compose a dynamic Results poster (portrait-only) with strict flow and QR footer (memoized)
   const generateComposedResultsPoster = useCallback(async () => {
@@ -589,7 +622,7 @@ const Results = () => {
       const rankText = userRank?.rank ? `#${userRank.rank} Rank!` : 'Results Live!';
       const prizeDisplay = getPrizeDisplay(prizeType, userPrizeVal, { fallback: 0 });
       const prizeText = `👑 Prize: ${prizeDisplay.formatted}`;
-      const scoreText = typeof userRank?.score === 'number' ? `☑️ Score: ${userRank.score}` : '';
+      const scoreText = userRank?.score != null ? `☑️ Score: ${formatScoreValue(userRank.score)}` : '';
       const rankSize = fitFontSize(rankText, boxW - 100, '900', 112, 80);
       const prizeSize = fitFontSize(prizeText, boxW - 100, '900', 48, 32);
       const scoreSize = scoreText ? fitFontSize(scoreText, boxW - 100, '900', 44, 28) : 0;
@@ -873,10 +906,12 @@ const Results = () => {
     }
   })();
   useRealtimeChannel({
-    enabled: results.length === 0 && canUseRealtime,
+    enabled: canUseRealtime && (results.length === 0 || (isPredictionQuiz && !isPredictionFinalPublished)),
     channelName: `quiz-results-${quizId}`,
-    table: 'quiz_results',
-    filter: `quiz_id=eq.${quizId}`,
+    changes: [
+      { event: '*', table: 'quiz_results', filter: `quiz_id=eq.${quizId}` },
+      { event: 'UPDATE', table: 'quizzes', filter: `id=eq.${quizId}` },
+    ],
     onChange: fetchResults,
     joinTimeoutMs: 5000,
   });
@@ -1102,18 +1137,20 @@ const Results = () => {
           author="Quiz Dangal"
         />
         <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
-          <h2 className="text-xl font-bold mb-2 text-white">Results will be published soon.</h2>
-          <p className="text-slate-300 mb-4">Quiz ends in</p>
+          <h2 className="text-xl font-bold mb-2 text-white">{isPredictionQuiz ? 'Prediction window is live.' : 'Results will be published soon.'}</h2>
+          <p className="text-slate-300 mb-4">{isPredictionQuiz ? 'Prediction closes in' : 'Quiz ends in'}</p>
           <div className="flex items-center justify-center gap-2 mb-4">
             {days > 0 && part(days, 'Days')}
             {part(hours, 'Hours')}
             {part(minutes, 'Minutes')}
             {part(seconds, 'Seconds')}
           </div>
-          {quiz?.end_time && (
-            <p className="text-xs text-slate-400 mb-4">
-              Expected publish time: {new Date(quiz.end_time).toLocaleString()}
-            </p>
+          {predictionMeta && (
+            <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3 text-left">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>
+              <div className="mt-2 text-sm font-bold text-white">{predictionMeta.fixtureLabel}</div>
+              <div className="mt-1 text-xs text-slate-300">Official result match ke baad admin finalize karega.</div>
+            </div>
           )}
           <Button
             variant="brand"
@@ -1127,8 +1164,39 @@ const Results = () => {
     );
   }
 
+  if (!loading && isPredictionQuiz && quiz?.status !== 'completed' && (timeLeftMs ?? 0) === 0 && results.length === 0) {
+    return (
+      <div className="min-h-screen p-4 flex items-center justify-center">
+        <SeoHead
+          title="Results – Awaiting Official Match Result | Quiz Dangal"
+          description="Official IPL prediction results will be published after admin verifies the match outcome."
+          robots="noindex, nofollow"
+          author="Quiz Dangal"
+        />
+        <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
+          <h2 className="text-xl font-bold mb-2 text-white">Official match result pending</h2>
+          <p className="text-slate-300 mb-4">Prediction quiz submit ho chuki hai. Winners tab dikhenge jab official answers match ke baad verify ho jayenge.</p>
+          {predictionMeta && (
+            <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3 text-left">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>
+              <div className="mt-2 text-sm font-bold text-white">{predictionMeta.fixtureLabel}</div>
+            </div>
+          )}
+          <div className="flex justify-center gap-3">
+            <Button variant="brand" onClick={handleRetry}>
+              Refresh
+            </Button>
+            <Button variant="white" onClick={() => navigate('/my-quizzes/')}>
+              Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Quiz ended but leaderboard still empty: keep UX stable (no blank/flicker)
-  if (!loading && (timeLeftMs ?? 0) === 0 && results.length === 0 && (finalizing || quiz?.end_time)) {
+  if (!loading && !isPredictionQuiz && (timeLeftMs ?? 0) === 0 && results.length === 0 && (finalizing || quiz?.end_time)) {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
         <SeoHead
@@ -1188,7 +1256,12 @@ const Results = () => {
                   <Trophy className="w-5 h-5 text-amber-400" />
                   <h1 className="text-lg font-bold text-white">Results</h1>
                 </div>
-                <p className="text-xs text-slate-400 truncate">{quiz?.title}</p>
+                {predictionMeta && (
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">
+                    <span>🏏</span>
+                    <span>{predictionMeta.fixtureLabel}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
                   <Users className="w-3 h-3" />
                   <span>{participantsCount || results?.length || 0} participants</span>
@@ -1220,6 +1293,23 @@ const Results = () => {
             )}
           </div>
         </div>
+
+        {isPredictionLivePreResult && (
+          <div className="relative rounded-xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-sky-500/15 to-blue-500/20" />
+            <div className="relative border border-cyan-400/25 rounded-xl p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20">
+                  <span className="text-sm">⏳</span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">Live Score</div>
+                  <div className="text-[10px] text-cyan-200">Final result coming soon</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* User Summary Card - show for all participants (including admins who played) */}
         {user && (userRank || isParticipant) && (
@@ -1272,7 +1362,9 @@ const Results = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-[10px] text-slate-400 mt-2">Review your answers using the Q&A button above.</p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-[10px] text-slate-400">Review your answers using the Q&A button above.</p>
+                </div>
               )}
             </div>
           </div>
@@ -1297,9 +1389,14 @@ const Results = () => {
             <div className="space-y-2">
               {qaItems.map((q, idx) => (
                 <div key={q.id} className="rounded-lg bg-slate-800/50 border border-slate-700/40 p-2.5">
-                  <div className="text-[11px] font-medium text-white mb-1.5">
-                    <span className="text-slate-500 mr-1">Q{idx + 1}.</span>
-                    {q.question_text}
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <div className="text-[11px] font-medium text-white">
+                      <span className="text-slate-500 mr-1">Q{idx + 1}.</span>
+                      {q.question_text}
+                    </div>
+                    <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-300">
+                      {q.points || 1} pts
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {q.options.map((o) => {
@@ -1327,49 +1424,6 @@ const Results = () => {
           </div>
         )}
 
-        {/* Up Next — Related Quiz Suggestion */}
-        {quiz?.category && (
-          <m.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 120, damping: 16 }}
-            className="p-[1px] rounded-xl bg-gradient-to-r from-fuchsia-500/50 via-violet-500/40 to-indigo-500/50"
-          >
-            <div className="rounded-xl bg-slate-900/95 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold text-fuchsia-300">🎮 Up Next</span>
-                {userRank?.score != null && (
-                  <span className="text-[10px] text-slate-400">
-                    You scored {userRank.score}! Can you beat it?
-                  </span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const cat = (quiz.category || '').toLowerCase();
-                  navigate(cat.includes('opinion') ? '/category/opinion/' : '/category/gk/');
-                }}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r from-fuchsia-950/60 via-violet-950/40 to-indigo-950/60 border border-violet-500/20 hover:border-violet-500/40 transition-all group"
-              >
-                <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-lg">
-                  {(quiz.category || '').toLowerCase().includes('opinion') ? '💬' : '🧠'}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-xs font-bold text-white truncate">
-                    {(quiz.category || '').toLowerCase().includes('opinion') ? 'More Opinion Quizzes' : 'More Master Quizzes'}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">New quiz every 5 min • Win coins & prizes</p>
-                </div>
-                <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold group-hover:from-violet-400 group-hover:to-fuchsia-400 transition-all shadow-lg shadow-violet-500/25">
-                  <Play className="w-3 h-3" fill="currentColor" />
-                  Play Next
-                  <ChevronRight className="w-3 h-3 opacity-60" />
-                </div>
-              </button>
-            </div>
-          </m.div>
-        )}
 
         {/* Leaderboard */}
         <div className="rounded-xl border border-slate-700/60 bg-slate-900/80 p-3">
@@ -1384,11 +1438,8 @@ const Results = () => {
               </div>
             )}
             {results.map((participant, index) => {
-              const prizeVal =
-                participant.rank && Array.isArray(quiz?.prizes) && quiz.prizes[participant.rank - 1]
-                  ? quiz.prizes[participant.rank - 1]
-                  : 0;
-              const prizeDisplay = getPrizeDisplay(prizeType, prizeVal, { fallback: 0 });
+              const prizeVal = getPrizeValueForRank(participant.rank);
+              const prizeDisplay = getPrizeDisplay(getPrizeTypeForRank(participant.rank), prizeVal, { fallback: 0 });
               const isMe = participant.user_id === user?.id;
               const isTop3 = index < 3;
               const rankMedal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
@@ -1429,7 +1480,7 @@ const Results = () => {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-[11px] font-bold text-emerald-400">{participant.score}</p>
+                      <p className="text-[11px] font-bold text-emerald-400">{formatScoreValue(participant.score)}</p>
                     </div>
                     <div className="text-right min-w-[50px]">
                       <p className="text-[11px] font-bold text-purple-400">{prizeDisplay.formatted}</p>

@@ -18,39 +18,42 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SeoHead from '@/components/SEO';
 import { getCategorySeoContent } from '@/lib/categorySeoContent';
+import { getIplPredictionMeta, isIplPredictionQuiz } from '@/lib/iplTeams';
 
 function categoryMeta(slug = '') {
   const s = String(slug || '').toLowerCase();
   if (s.includes('opinion'))
     return {
-      title: 'Opinion Quizzes',
-      emoji: '💬',
+      title: 'IPL / Opinion Quizzes',
+      emoji: '🏏',
       Icon: MessageSquare,
       from: 'from-indigo-600/30',
       to: 'to-fuchsia-600/30',
       ring: 'ring-fuchsia-500/30',
-      description: 'Share your views and see if the majority agrees with you! Opinion quizzes on Quiz Dangal challenge your perspective on trending topics, current affairs, and popular debates.',
+      description: 'Play IPL prediction contests first, then explore opinion-style polls inside the same lobby. Quiz Dangal keeps official IPL match quizzes and public opinion rounds together for now.',
       features: [
-        'Vote on trending topics and debates',
+        'Play official IPL prediction quizzes in the Opinion lobby',
+        'Join opinion-style fan polls around match-day moments',
         'See how your opinion matches the majority',
         'Win prizes for popular opinions',
-        'New opinion polls every 5 minutes',
+        'New IPL and opinion rounds every 5 minutes',
       ],
       faqs: [
         { q: 'How do opinion quizzes work?', a: 'Answer questions based on your personal opinion. Points are awarded based on how your answers align with the majority response.' },
+        { q: 'Are IPL prediction quizzes also inside Opinion?', a: 'Yes. IPL match prediction quizzes appear in the same Opinion lobby, but their official results are published only after admin finalizes the correct outcomes after the match.' },
         { q: 'When are new opinion quizzes available?', a: 'New opinion quizzes go live every 5 minutes, 24 hours a day. Each quiz lasts 5 minutes with no gap in between.' },
         { q: 'Can I win real prizes?', a: 'Yes! Top performers in each quiz can win cash prizes and coins that can be redeemed.' },
       ],
     };
   if (s.includes('gk'))
     return {
-      title: 'Master Quizzes',
+      title: 'GK / Current Affairs Quizzes',
       emoji: '🧠',
       Icon: Brain,
       from: 'from-emerald-600/30',
       to: 'to-teal-600/30',
       ring: 'ring-emerald-500/30',
-      description: 'Test your General Knowledge with Quiz Dangal. From current affairs and Indian history to IPL season sports awareness and science, every GK round is built for real daily players.',
+      description: 'Test your General Knowledge and current affairs with Quiz Dangal. Daily rounds cover news, history, science, geography, polity, economy, and more.',
       features: [
         'Questions from current affairs, history, science and geography',
         'IPL season and cricket awareness blended into live GK rounds',
@@ -188,6 +191,12 @@ const CategoryQuizzes = () => {
   const slotRequestRef = useRef(0);
 
   const pollIntervalMs = 60000; // 60s for slot refresh
+
+  useEffect(() => {
+    if (String(slug || '').toLowerCase().includes('ipl')) {
+      navigate('/category/opinion/', { replace: true });
+    }
+  }, [slug, navigate]);
 
   const applySlotResult = useCallback((result) => {
     if (!result) return;
@@ -460,11 +469,17 @@ const CategoryQuizzes = () => {
   const liveItems = slots;
 
   // Slot display policy: show all LIVE, and only the single NEXT upcoming when it is soon.
+  // Also show finished IPL prediction quizzes until admin removes them (status !== 'completed' means still visible)
   const liveSlots = (slots || []).filter((s) => {
     const st = slotStartMs(s);
     const et = slotEndMs(s);
     const now = nowHeader;
-    return (st && et && now >= st && now < et) || String(s?.status || '').toLowerCase() === 'active';
+    // Never show explicitly hidden quizzes
+    if (s?.meta?.hidden_from_category === true) return false;
+    const isLive = (st && et && now >= st && now < et) || String(s?.status || '').toLowerCase() === 'active';
+    // Show finished/completed IPL prediction quizzes until admin explicitly hides them
+    const isFinishedIpl = isIplPredictionQuiz(s) && ['finished', 'completed'].includes(String(s?.status || '').toLowerCase());
+    return isLive || isFinishedIpl;
   });
   const nextUpcomingSlot = (() => {
     const upcoming = (slots || [])
@@ -527,6 +542,11 @@ const CategoryQuizzes = () => {
     const participantsJoined = slot.participants_total || slot.participants_joined || 0;
     const qCount = slot.questions_count || 10;
     const stopped = !categoryAutoEnabled && !isActive && !upcoming;
+    const iplMeta = isIplPredictionQuiz(slot) ? getIplPredictionMeta(slot) : null;
+    const teamA = iplMeta?.teamA;
+    const teamB = iplMeta?.teamB;
+    const resultPublishAtMs = iplMeta?.resultPublishAt ? new Date(iplMeta.resultPublishAt).getTime() : null;
+    const isLiveResult = !!iplMeta && isFinished && slot.status !== 'completed' && !!resultPublishAtMs && now < resultPublishAtMs;
     const badge = (() => {
       if (isActive && !isFinished) return 'LIVE';
       if (isPaused) return 'PAUSED';
@@ -540,10 +560,12 @@ const CategoryQuizzes = () => {
     const myJoinStatus = joinedMap[cardId];
     const hasJoined = !!myJoinStatus;
     const isJoining = joiningId === cardId;
+    const playRoute = slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`;
+    const resultsRoute = slot.isLegacy ? `/results/${slot.quizId}` : `/results/slot/${slot.slotId}`;
     
     const handleClick = async () => {
       if (isFinished) {
-        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        navigate(resultsRoute);
         return;
       }
       if (!user) {
@@ -556,11 +578,11 @@ const CategoryQuizzes = () => {
         return;
       }
       if (hasJoined && !isActive) {
-        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        navigate(playRoute);
         return;
       }
       if (isActive) {
-        navigate(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`);
+        navigate(playRoute);
         return;
       }
       if (upcoming && !hasJoined) {
@@ -579,7 +601,13 @@ const CategoryQuizzes = () => {
       >
         {/* Animated conic gradient border */}
         <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
-          isActive 
+          iplMeta
+            ? isFinished
+              ? 'bg-[conic-gradient(from_0deg,#10b981,#22c55e,#06b6d4,#10b981)] shadow-[0_0_24px_-5px_rgba(34,197,94,0.28)]'
+              : isActive
+                ? 'bg-[conic-gradient(from_0deg,#f97316,#facc15,#fb7185,#38bdf8,#f97316)] shadow-[0_0_34px_-6px_rgba(249,115,22,0.34)]'
+                : 'bg-[conic-gradient(from_0deg,#f97316,#facc15,#8b5cf6,#ec4899,#f97316)] shadow-[0_0_34px_-6px_rgba(249,115,22,0.28)]'
+            : isActive 
             ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
             : isPaused
               ? 'bg-[conic-gradient(from_0deg,#f59e0b,#d97706,#b45309,#f59e0b)] shadow-[0_0_20px_-5px_rgba(245,158,11,0.25)]'
@@ -590,7 +618,11 @@ const CategoryQuizzes = () => {
           <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 lg:p-6 overflow-hidden">
             {/* Top shimmer glow */}
             <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
-              isActive 
+              iplMeta
+                ? isFinished
+                  ? 'bg-gradient-to-b from-emerald-500/20 via-teal-500/10 to-transparent'
+                  : 'bg-gradient-to-b from-orange-500/25 via-amber-500/15 to-transparent'
+                : isActive 
                 ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
                 : isPaused
                   ? 'bg-gradient-to-b from-amber-500/20 via-yellow-500/10 to-transparent'
@@ -602,7 +634,11 @@ const CategoryQuizzes = () => {
             {/* Badge Row */}
             <div className="relative flex items-center justify-between mb-3">
               <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
-                isActive
+                iplMeta
+                  ? isFinished
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.5)]'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_15px_-3px_rgba(249,115,22,0.5)]'
+                  : isActive
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
                   : isPaused
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-[0_4px_15px_-3px_rgba(245,158,11,0.5)]'
@@ -620,9 +656,49 @@ const CategoryQuizzes = () => {
             </div>
 
             {/* Title */}
-            <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">
-              {slot.quiz_title || slot.title || 'Quiz'}
-            </h3>
+            {iplMeta ? (
+              <div className="relative mb-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>
+                <h3 className="mt-2 text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
+                  {iplMeta.fixtureLabel}
+                </h3>
+              </div>
+            ) : (
+              <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">
+                {slot.quiz_title || slot.title || 'Quiz'}
+              </h3>
+            )}
+
+            {iplMeta && (
+              <div className="relative mb-4 rounded-[20px] overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-amber-500/10 to-cyan-500/15" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.15),transparent_60%)]" />
+                <div className="relative border border-white/10 rounded-[20px] p-4">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="text-center">
+                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-lg font-black shadow-lg ${teamA?.chipClass || 'border-orange-400/40 bg-gradient-to-br from-orange-500/25 to-amber-500/15 text-orange-100'}`}>
+                        {teamA?.short || iplMeta.team_a_short || 'A'}
+                      </div>
+                      <div className="mt-1.5 text-[10px] font-bold text-slate-300 truncate max-w-[70px]">{teamA?.name || iplMeta.team_a || 'Team A'}</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-cyan-500 blur-md opacity-40" />
+                        <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-white/20">
+                          <span className="text-xs font-black text-white">VS</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-lg font-black shadow-lg ${teamB?.chipClass || 'border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 to-sky-500/15 text-cyan-100'}`}>
+                        {teamB?.short || iplMeta.team_b_short || 'B'}
+                      </div>
+                      <div className="mt-1.5 text-[10px] font-bold text-slate-300 truncate max-w-[70px]">{teamB?.name || iplMeta.team_b || 'Team B'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Timer — Self-contained countdown (only this component re-renders every 1s) */}
             {needsCountdown && (
@@ -655,9 +731,11 @@ const CategoryQuizzes = () => {
               <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-400 font-medium">
                 📝 {qCount} Qs
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-400 font-medium">
-                🌐 Hindi / English
-              </span>
+              {isLiveResult && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 font-medium">
+                  📡 Live Result
+                </span>
+              )}
             </div>
 
             {/* CTA Button (full width) */}
@@ -665,7 +743,7 @@ const CategoryQuizzes = () => {
               type="button"
               disabled={isJoining}
               onClick={(e) => { e.stopPropagation(); handleClick(); }}
-              onMouseEnter={() => prefetchRoute(slot.isLegacy ? `/quiz/${slot.quizId}` : `/quiz/slot/${slot.slotId}`)}
+              onMouseEnter={() => prefetchRoute(isFinished ? resultsRoute : playRoute)}
               className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
                 isJoining ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
                 isActive 
@@ -680,7 +758,7 @@ const CategoryQuizzes = () => {
               {isJoining ? (
                 'Joining...'
               ) : isFinished ? (
-                <><Trophy className="w-4 h-4" /> RESULTS <ChevronRight className="w-4 h-4 opacity-60" /></>
+                <><Trophy className="w-4 h-4" /> {isLiveResult ? 'LIVE RESULT' : 'RESULTS'} <ChevronRight className="w-4 h-4 opacity-60" /></>
               ) : isActive ? (
                 <><Play className="w-4 h-4" fill="currentColor" /> PLAY NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
               ) : hasJoined ? (
@@ -765,7 +843,7 @@ const CategoryQuizzes = () => {
                     onClick={() => setSeoExpanded((prev) => !prev)}
                     className="inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md bg-orange-500/15 text-orange-300 border border-orange-500/30 hover:bg-orange-500/25 transition-colors font-medium cursor-pointer select-none"
                   >
-                    {seoExpanded ? 'Read Less' : 'Read More'} ℹ️
+                    Read
                     <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${seoExpanded ? 'rotate-180' : ''}`} />
                   </button>
                 </div>

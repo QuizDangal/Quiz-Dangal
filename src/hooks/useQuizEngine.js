@@ -246,9 +246,10 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       // Always fetch from questions table (tick_quiz_slots populates it before quiz starts)
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
-        .select(`id, question_text, options ( id, option_text )`)
+        .select(`*, options ( id, option_text )`)
         .eq('quiz_id', effectiveId)
-        .order('id');
+        .order('position', { ascending: true, nullsFirst: false })
+        .order('id', { ascending: true });
       
       if (questionsError) {
         logger.error('Questions fetch error:', questionsError);

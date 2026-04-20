@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useQuizEngine } from '@/hooks/useQuizEngine';
 import SeoHead from '@/components/SEO';
+import { getIplPredictionMeta, isIplPredictionQuiz } from '@/lib/iplTeams';
 import {
   LoadingView,
   ErrorView,
@@ -111,6 +112,7 @@ const Quiz = () => {
     ? (Array.isArray(slot?.prizes) ? slot.prizes : [])
     : (Array.isArray(quiz?.prizes) ? quiz.prizes : []);
   const prizeType = isSlotQuiz ? 'coins' : (quiz?.prize_type || 'coins');
+  const predictionMeta = !isSlotQuiz && isIplPredictionQuiz(quiz) ? getIplPredictionMeta(quiz) : null;
   
   // Get effective times
   const effectiveStartTime = isSlotQuiz ? slot?.start_time : quiz?.start_time;
@@ -159,6 +161,7 @@ const Quiz = () => {
         prizes={prizes}
         prizeType={prizeType}
         formatTime={formatTime}
+        predictionMeta={predictionMeta}
         onJoin={handleJoinOrPrejoin}
         onClose={handleClose}
       />
@@ -176,6 +179,7 @@ const Quiz = () => {
         prizes={prizes}
         prizeType={prizeType}
         formatTime={formatTime}
+        predictionMeta={predictionMeta}
         onClose={handleClose}
       />
     );
@@ -224,6 +228,7 @@ const Quiz = () => {
         quizState={quizState}
         participantStatus={participantStatus}
         formatTime={formatTime}
+        predictionMeta={predictionMeta}
         onAnswerSelect={handleAnswerSelect}
         onNext={handleNext}
         onSubmit={handleSubmit}

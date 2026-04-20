@@ -14,6 +14,15 @@ const CATEGORY_SEO = {
       'Join thousands of daily players from across India. Play free opinion quizzes in Hindi and English, compete on leaderboards, grow your streak, and redeem coins for real rewards. Quiz Dangal \u2014 where your opinion actually pays off!',
     ],
   },
+  ipl: {
+    heading: 'IPL 2026 Prediction Quiz — Predict, Play & Win on Quiz Dangal',
+    paragraphs: [
+      'IPL 2026 is here, and Quiz Dangal\u2019s IPL Prediction Quiz is the ultimate destination for every cricket fan who thinks they know the game. Unlike traditional GK quizzes, IPL prediction quizzes let you vote on match outcomes \u2014 who will win tonight\u2019s clash, who will score the most runs, which bowler will take the most wickets, and more. After each round, see how the crowd voted and find out if your cricket instincts match the majority.',
+      'New IPL prediction quizzes go live every 5 minutes on Quiz Dangal throughout the IPL season. Match-day specials appear before and during every game, covering toss predictions, powerplay scores, man of the match picks, and fan sentiment polls. Whether you are a stats nerd who tracks every ball or a casual fan who backs their gut feeling, our IPL quizzes are designed for every level of cricket passion.',
+      'Scoring in IPL prediction quizzes follows the opinion format: your prediction earns points when it matches the majority vote. No negative marking, no wrong answers \u2014 just pure prediction fun. The faster you submit, the better your tie-breaker position. Top predictors in each round win coins and cash prizes, and your cumulative performance is tracked on the IPL leaderboard all season long.',
+      'Join thousands of IPL fans from across India on Quiz Dangal. Play free IPL prediction quizzes in Hindi and English, compete on season-long leaderboards, build your daily streak, and redeem coins for real rewards. From the opening ceremony to the final \u2014 every match, every over, every moment is a chance to predict and win. Quiz Dangal \u2014 where your cricket IQ actually pays off!',
+    ],
+  },
   gk: {
     heading: 'Sharpen Your Mind with Daily GK Quizzes on Quiz Dangal',
     paragraphs: [
@@ -28,6 +37,7 @@ const CATEGORY_SEO = {
 export function getCategorySeoContent(slug) {
   const key = String(slug || '').toLowerCase();
   if (key.includes('opinion')) return CATEGORY_SEO.opinion;
+  if (key.includes('ipl')) return CATEGORY_SEO.opinion;
   if (key.includes('gk')) return CATEGORY_SEO.gk;
   return {
     heading: 'Play Daily Quizzes & Win Prizes on Quiz Dangal',

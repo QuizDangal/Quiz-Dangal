@@ -154,7 +154,7 @@ export async function fetchSlotsForCategory(supabase, category) {
   const windowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const windowEnd = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   
-  // Fire all three queries in parallel
+  // Fire all queries in parallel
   const [slotsResult, legacyResult, overrideResult] = await Promise.allSettled([
     supabase
       .from('quiz_slots_view')
@@ -166,7 +166,7 @@ export async function fetchSlotsForCategory(supabase, category) {
       .limit(20),
     supabase
       .from('quizzes')
-      .select('id,title,start_time,end_time,status,prizes,prize_type,slot_id,questions(count)')
+      .select('*,questions(count)')
       .eq('category', category)
       .gte('start_time', windowStart)
       .lte('start_time', windowEnd)
@@ -194,7 +194,7 @@ export async function fetchSlotsForCategory(supabase, category) {
       const now = Date.now();
       const legacyQuizzes = (data || []).filter(q => !q.slot_id);
 
-      // Build legacy slots immediately with 0 counts — don't block on RPC
+      // Build legacy slots with initial 0 counts
       legacySlots = legacyQuizzes.map((q) => ({
         slotId: q.id,
         quizId: q.id,
@@ -206,12 +206,36 @@ export async function fetchSlotsForCategory(supabase, category) {
         status: deriveLegacyStatus(q, now),
         prizes: Array.isArray(q.prizes) ? q.prizes : [],
         prize_type: q.prize_type || 'coins',
+        is_prediction: q.is_prediction === true,
+        meta: q.meta && typeof q.meta === 'object' ? q.meta : {},
         participants_joined: 0,
         participants_total: 0,
         questions_count: q.questions?.[0]?.count || 0,
         auto_enabled: true,
         isLegacy: true,
       }));
+
+      // Fetch participant counts for legacy quizzes (non-blocking, best-effort)
+      if (legacySlots.length > 0) {
+        const legacyIds = legacySlots.map(s => s.quizId).filter(Boolean);
+        try {
+          const { data: pData } = await supabase
+            .from('quiz_participants')
+            .select('quiz_id')
+            .in('quiz_id', legacyIds);
+          if (pData) {
+            const countMap = {};
+            for (const row of pData) {
+              countMap[row.quiz_id] = (countMap[row.quiz_id] || 0) + 1;
+            }
+            legacySlots = legacySlots.map(s => ({
+              ...s,
+              participants_joined: countMap[s.quizId] || 0,
+              participants_total: countMap[s.quizId] || 0,
+            }));
+          }
+        } catch { /* best-effort, ignore errors */ }
+      }
     }
   }
 
@@ -240,6 +264,9 @@ export async function fetchSlotsForCategory(supabase, category) {
 }
 
 function deriveLegacyStatus(q, nowMs) {
+  const explicitStatus = String(q?.status || '').toLowerCase();
+  if (explicitStatus === 'completed') return 'completed';
+  if (explicitStatus === 'finished') return 'finished';
   const st = q.start_time ? new Date(q.start_time).getTime() : null;
   const et = q.end_time ? new Date(q.end_time).getTime() : null;
   if (st && et && nowMs >= st && nowMs < et) return 'active';
