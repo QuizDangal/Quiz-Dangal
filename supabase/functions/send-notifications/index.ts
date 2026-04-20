@@ -86,13 +86,7 @@ function json(data: unknown, init?: { status?: number; headers?: Record<string,s
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight FIRST, before any try-catch
   if (req.method === 'OPTIONS') {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": req.headers.get("Origin") || "https://quizdangal.com",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      // Mirror allowed methods here
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Vary": "Origin",
-    };
+    const corsHeaders = makeCorsHeaders(req);
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 

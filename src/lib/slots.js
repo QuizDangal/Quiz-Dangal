@@ -150,9 +150,11 @@ export async function fetchSlotsForCategory(supabase, category) {
   let legacySlots = [];
   let autoEnabled = true;
 
-  // Only fetch recent past + upcoming slots (1 hour ago to 24 hours ahead)
+  // Slot window: recent past + upcoming slots (1 hour ago to 24 hours ahead)
   const windowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const windowEnd = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  // Legacy window: wider — 7 days back to catch finished IPL quizzes still visible
+  const legacyWindowStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   
   // Fire all queries in parallel
   const [slotsResult, legacyResult, overrideResult] = await Promise.allSettled([
@@ -168,10 +170,10 @@ export async function fetchSlotsForCategory(supabase, category) {
       .from('quizzes')
       .select('*,questions(count)')
       .eq('category', category)
-      .gte('start_time', windowStart)
+      .gte('start_time', legacyWindowStart)
       .lte('start_time', windowEnd)
       .order('start_time', { ascending: true })
-      .limit(20),
+      .limit(30),
     supabase
       .from('category_runtime_overrides')
       .select('category,auto_enabled:is_auto')

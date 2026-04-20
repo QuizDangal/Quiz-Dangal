@@ -34,6 +34,18 @@ function hasAdConsent() {
   }
 }
 
+function shouldDeferAdsForDevice() {
+  try {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!connection) return false;
+    if (connection.saveData) return true;
+    const effectiveType = String(connection.effectiveType || '').toLowerCase();
+    return effectiveType === 'slow-2g' || effectiveType === '2g';
+  } catch {
+    return false;
+  }
+}
+
 export default function AdSenseLoader() {
   const location = useLocation();
   const [hasConsent, setHasConsent] = useState(() =>
@@ -55,17 +67,41 @@ export default function AdSenseLoader() {
   useEffect(() => {
     if (!hasConsent) return;
     if (!isAdEligiblePath(location.pathname)) return;
+    if (shouldDeferAdsForDevice()) return;
     if (document.querySelector('script[data-qd-adsense="true"]')) return;
 
-    const script = document.createElement('script');
-    script.async = true;
-    script.crossOrigin = 'anonymous';
-    script.src = ADSENSE_SRC;
-    script.dataset.qdAdsense = 'true';
-    document.body.appendChild(script);
+    let cancelled = false;
+    let fallbackTimer = null;
+
+    const injectScript = () => {
+      if (cancelled) return;
+      if (document.querySelector('script[data-qd-adsense="true"]')) return;
+      const script = document.createElement('script');
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.src = ADSENSE_SRC;
+      script.dataset.qdAdsense = 'true';
+      document.body.appendChild(script);
+    };
+
+    const scheduleInjection = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(injectScript, { timeout: 5000 });
+      } else {
+        fallbackTimer = window.setTimeout(injectScript, 1500);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleInjection();
+    } else {
+      window.addEventListener('load', scheduleInjection, { once: true });
+    }
 
     return () => {
-      // Keep a single script instance for eligible public pages only.
+      cancelled = true;
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      window.removeEventListener('load', scheduleInjection);
     };
   }, [hasConsent, location.pathname]);
 

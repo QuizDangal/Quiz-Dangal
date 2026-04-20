@@ -457,25 +457,55 @@ export default function IPLPredictionManager() {
     if (!supabase || !editingQuestionsQuiz) return;
     setSavingQuestions(true);
     try {
-      const payload = questionDrafts.map((q, idx) => ({
-        id: q.id || null,
-        text: q.text.trim(),
-        points: Math.max(1, Number(q.points) || 1),
-        options: q.options.map((o) => ({ id: o.id || null, text: o.text.trim() })),
-        delete: false,
-        position: idx + 1,
-      }));
-      const { error } = await supabase.rpc('admin_manage_quiz_questions', {
-        p_quiz_id: editingQuestionsQuiz.id,
-        p_questions: payload,
-      });
-      if (error) throw error;
+      for (const [idx, q] of questionDrafts.entries()) {
+        const questionText = q.text.trim();
+        const validOptions = q.options.map((o) => o.text.trim()).filter(Boolean);
+        if (!questionText || validOptions.length < 2) continue;
+
+        if (q.isNew || !q.id) {
+          const { data: newQ, error: qErr } = await supabase
+            .from('questions')
+            .insert({ quiz_id: editingQuestionsQuiz.id, question_text: questionText, points: q.points, position: idx + 1 })
+            .select('id').single();
+          if (qErr) throw qErr;
+          const { error: newOptErr } = await supabase
+            .from('options')
+            .insert(validOptions.map((t) => ({ question_id: newQ.id, option_text: t, is_correct: false })));
+          if (newOptErr) throw newOptErr;
+        } else {
+          const { error: updQuestionErr } = await supabase
+            .from('questions')
+            .update({ question_text: questionText, points: q.points, position: idx + 1 })
+            .eq('id', q.id);
+          if (updQuestionErr) throw updQuestionErr;
+          for (const opt of q.options) {
+            const optText = opt.text.trim();
+            if (!optText) continue;
+            if (opt.id) {
+              const { error: updOptErr } = await supabase
+                .from('options')
+                .update({ option_text: optText })
+                .eq('id', opt.id);
+              if (updOptErr) throw updOptErr;
+            } else {
+              const { error: addOptErr } = await supabase
+                .from('options')
+                .insert({ question_id: q.id, option_text: optText, is_correct: false });
+              if (addOptErr) throw addOptErr;
+            }
+          }
+        }
+      }
       toast({ title: 'Questions saved!' });
       setEditingQuestionsQuiz(null);
       setQuestionDrafts([]);
       await loadQuizzes();
     } catch (err) {
-      toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
+      const msg = String(err?.message || 'Could not save questions.');
+      const friendly = msg.includes('prediction_questions_locked_after_start')
+        ? 'Quiz start ho chuki hai. Questions edit/delete allowed nahi hai.'
+        : msg;
+      toast({ title: 'Save failed', description: friendly, variant: 'destructive' });
     } finally {
       setSavingQuestions(false);
     }
@@ -484,11 +514,16 @@ export default function IPLPredictionManager() {
   const deleteQuestion = async (q, idx) => {
     if (q.id && supabase) {
       try {
-        await supabase.rpc('admin_manage_quiz_questions', {
-          p_quiz_id: editingQuestionsQuiz?.id,
-          p_questions: [{ id: q.id, text: '', points: 1, options: [], delete: true }],
-        });
-      } catch { /* ignore */ }
+        const { error: delErr } = await supabase.from('questions').delete().eq('id', q.id);
+        if (delErr) throw delErr;
+      } catch (err) {
+        const msg = String(err?.message || 'Could not delete question.');
+        const friendly = msg.includes('prediction_questions_locked_after_start')
+          ? 'Quiz start ho chuki hai. Ab question delete nahi ho sakta.'
+          : msg;
+        toast({ title: 'Delete failed', description: friendly, variant: 'destructive' });
+        return;
+      }
     }
     setQuestionDrafts((prev) => prev.filter((_, i) => i !== idx));
   };
@@ -498,7 +533,11 @@ export default function IPLPredictionManager() {
     setBusyQuizId(quiz.id);
     setBusyTarget('hide');
     try {
-      const { error } = await supabase.rpc('admin_hide_quiz_from_category', { p_quiz_id: quiz.id });
+      const currentMeta = (quiz.meta && typeof quiz.meta === 'object') ? quiz.meta : {};
+      const { error } = await supabase
+        .from('quizzes')
+        .update({ meta: { ...currentMeta, hidden_from_category: true } })
+        .eq('id', quiz.id);
       if (error) throw error;
       toast({ title: 'Hidden from category', description: 'Quiz ab category se nahi dikhegi.' });
       await loadQuizzes();

@@ -2,11 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/toaster';
-import CookieConsent from '@/components/CookieConsent';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import PWAInstallButton from '@/components/PWAInstallButton';
-import AdSenseLoader from '@/components/AdSenseLoader';
 import Home from '@/pages/Home';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -38,6 +35,9 @@ const BollywoodQuiz = lazy(() => import('@/pages/seo/BollywoodQuiz'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Footer = lazy(() => import('@/components/Footer'));
 const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
+const CookieConsent = lazy(() => import('@/components/CookieConsent'));
+const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
+const AdSenseLoader = lazy(() => import('@/components/AdSenseLoader'));
 
 // Reusable group of static public informational routes (as a fragment – not a component – so <Routes> accepts it)
 const policyRoutes = (
@@ -202,7 +202,9 @@ function App() {
             <meta name="revisit-after" content="3 days" />
           </Helmet>
           {/* Initialize notifications for authenticated, confirmed users outside of <Routes> */}
-          <AdSenseLoader />
+          <Suspense fallback={null}>
+            <AdSenseLoader />
+          </Suspense>
           {authUser &&
             !isRecoveryFlow &&
             !(authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at) && (
@@ -263,7 +265,9 @@ function App() {
             </RouteFocusWrapper>
           </Suspense>
           <Toaster />
-          <CookieConsent />
+          <Suspense fallback={null}>
+            <CookieConsent />
+          </Suspense>
         </div>
       </Router>
     </ErrorBoundary>
@@ -392,7 +396,9 @@ const PublicLayout = () => {
           </Routes>
         </Suspense>
       </main>
-      <PWAInstallButton />
+      <Suspense fallback={null}>
+        <PWAInstallButton />
+      </Suspense>
     </>
   );
 };
@@ -656,7 +662,9 @@ const MainLayout = () => {
       <Suspense fallback={null}>
         <Footer />
       </Suspense>
-      <PWAInstallButton />
+      <Suspense fallback={null}>
+        <PWAInstallButton />
+      </Suspense>
       {hasSupabaseConfig && profileModalOpen && (
         <Suspense fallback={null}>
           <ProfileUpdateModal

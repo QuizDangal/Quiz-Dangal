@@ -110,6 +110,36 @@ async function ensureAdmin(headers: Headers) {
   return { ok: true as const, userId: userResp.user.id, adminClient };
 }
 
+async function assertQuizCanEditQuestions(adminClient: ReturnType<typeof createClient>, quizId: string) {
+  const { data: quiz, error } = await adminClient
+    .from('quizzes')
+    .select('id,is_prediction,start_time,status')
+    .eq('id', quizId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false as const, status: 500, reason: error.message || 'quiz_lookup_failed' };
+  }
+
+  if (!quiz?.id) {
+    return { ok: false as const, status: 404, reason: 'Quiz not found' };
+  }
+
+  const isPrediction = quiz.is_prediction === true;
+  const quizStartMs = quiz.start_time ? Date.parse(quiz.start_time) : NaN;
+
+  // IPL prediction requirement: questions can be edited only before quiz start.
+  if (isPrediction && Number.isFinite(quizStartMs) && Date.now() >= quizStartMs) {
+    return {
+      ok: false as const,
+      status: 409,
+      reason: 'Quiz already started. Questions can only be edited before start time.',
+    };
+  }
+
+  return { ok: true as const };
+}
+
 async function runRpcOrFallback(adminClient: ReturnType<typeof createClient>, quizId: string, items: QuestionPayload[], mode: string) {
   const payload = items.map((item) => ({
     question_text: item.question_text,
@@ -228,6 +258,14 @@ Deno.serve(async (req: Request) => {
     if (!adminCheck.ok) {
       return new Response(JSON.stringify({ error: adminCheck.reason }), {
         status: adminCheck.status,
+        headers: { "Content-Type": "application/json", ...dynamicCors },
+      });
+    }
+
+    const quizGate = await assertQuizCanEditQuestions(adminCheck.adminClient, quizId);
+    if (!quizGate.ok) {
+      return new Response(JSON.stringify({ error: quizGate.reason }), {
+        status: quizGate.status,
         headers: { "Content-Type": "application/json", ...dynamicCors },
       });
     }

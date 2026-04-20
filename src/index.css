@@ -184,6 +184,13 @@ html,
 
 /* Mobile Performance - Simplified background */
 @media (max-width: 1024px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .app-bg,
+  .app-bg-base,
+  .app-bg-scan,
+  .app-bg-grid,
+  .app-bg-vignette {
+    display: none !important;
+  }
   .app-bg-scan {
     animation: none;
   }
