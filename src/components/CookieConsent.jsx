@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cookie, X } from 'lucide-react';
 
@@ -63,67 +63,16 @@ const broadcastConsentUpdate = () => {
  */
 const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
-  const dialogRef = useRef(null);
-  const acceptButtonRef = useRef(null);
-  const previouslyFocusedRef = useRef(null);
 
   useEffect(() => {
     // Check if user has already consented
     const hasConsented = localStorage.getItem(CONSENT_KEY);
     if (!hasConsented) {
       // Delay showing banner to not interfere with initial page load
-      const timer = setTimeout(() => setVisible(true), 2000);
+      const timer = setTimeout(() => setVisible(true), 10000);
       return () => clearTimeout(timer);
     }
   }, []);
-
-  useEffect(() => {
-    if (!visible) return undefined;
-
-    previouslyFocusedRef.current = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const focusTimer = setTimeout(() => {
-      acceptButtonRef.current?.focus();
-    }, 0);
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        handleDecline();
-        return;
-      }
-
-      if (event.key !== 'Tab' || !dialogRef.current) return;
-
-      const focusableElements = dialogRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-
-      if (!focusableElements.length) return;
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      clearTimeout(focusTimer);
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocusedRef.current?.focus?.();
-    };
-  }, [visible]);
 
   const handleAccept = () => {
     localStorage.setItem(CONSENT_KEY, 'accepted');
@@ -144,46 +93,42 @@ const CookieConsent = () => {
 
   return (
     <div
-      ref={dialogRef}
-      className="fixed left-3 right-3 z-[100] mx-auto max-w-lg animate-in slide-in-from-bottom-4 duration-300 sm:left-4 sm:right-4"
+      className="fixed left-3 right-3 z-[100] mx-auto max-w-sm animate-in slide-in-from-bottom-4 duration-300 sm:left-4 sm:right-4"
       style={{
         bottom: 'calc(var(--qd-footer-offset, 0px) + 4px)',
       }}
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-labelledby="cookie-consent-title"
       aria-describedby="cookie-consent-desc"
     >
-      <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-4 shadow-2xl shadow-black/40">
+      <div className="bg-slate-900/95 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-3 shadow-xl shadow-black/35">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 p-2 rounded-full bg-amber-500/20">
-            <Cookie className="w-5 h-5 text-amber-400" aria-hidden="true" />
+          <div className="flex-shrink-0 p-1.5 rounded-full bg-amber-500/20">
+            <Cookie className="w-4 h-4 text-amber-400" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="cookie-consent-title" className="text-white font-semibold text-sm">
               🍪 We use cookies
             </h3>
-            <p id="cookie-consent-desc" className="text-slate-400 text-xs mt-1 leading-relaxed">
-              We use cookies for analytics and personalized ads to improve your experience. 
-              By clicking &quot;Accept&quot;, you consent to our use of cookies.{' '}
+            <p id="cookie-consent-desc" className="text-slate-400 text-[11px] mt-1 leading-relaxed">
+              Analytics and ads cookies help improve Quiz Dangal.{' '}
               <Link 
                 to="/privacy-policy/" 
                 className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
               >
-                Privacy Policy
+                Learn more
               </Link>
             </p>
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 mt-2.5">
               <button
-                ref={acceptButtonRef}
                 onClick={handleAccept}
-                className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                className="flex-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
-                Accept All
+                Accept
               </button>
               <button
                 onClick={handleDecline}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 Decline
               </button>

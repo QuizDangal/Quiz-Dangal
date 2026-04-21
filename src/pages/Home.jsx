@@ -6,9 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ChevronRight,
   Coins,
-  Crown,
   Flame,
-  Play,
   User,
 } from 'lucide-react';
 import { getSupabase, supabase } from '@/lib/customSupabaseClient';
@@ -19,61 +17,63 @@ import { prefetchRoute } from '@/lib/utils';
 import { prefetchSlotData } from '@/lib/slots';
 
 /* ─── tiny static data ─── */
-const HOT_PICKS = [
+const QUICK_ARENAS = [
   {
-    emoji: '💬', title: 'Opinion Quiz',
-    sub: 'Share your views',
-    cat: 'opinion', tag: 'TRENDING',
-    gradient: 'from-pink-500 via-rose-500 to-fuchsia-600',
-    glow: 'rgba(236,72,153,0.25)',
-    hoverGlow: 'rgba(236,72,153,0.4)',
+    id: 'gk',
+    title: 'Brain Dangal',
+    subtitle: 'GK & Trivia',
+    emoji: '🧠',
+    bg: 'from-violet-600 to-fuchsia-700',
+    ring: 'ring-fuchsia-500/30',
+    shadow: 'shadow-[0_10px_40px_rgba(192,38,211,0.25)]'
   },
-  {
-    emoji: '🏏', title: 'IPL Quiz',
-    sub: 'Match predictions',
-    cat: 'opinion', tag: 'HOT',
-    gradient: 'from-orange-500 via-amber-500 to-yellow-500',
-    glow: 'rgba(245,158,11,0.25)',
-    hoverGlow: 'rgba(245,158,11,0.4)',
-  },
-  {
-    emoji: '🧠', title: 'GK Quiz',
-    sub: 'Test your brain',
-    cat: 'gk', tag: 'POPULAR',
-    gradient: 'from-violet-500 via-purple-500 to-indigo-600',
-    glow: 'rgba(139,92,246,0.25)',
-    hoverGlow: 'rgba(139,92,246,0.4)',
-  },
-  {
-    emoji: '📰', title: 'Current Affairs',
-    sub: 'Stay updated',
-    cat: 'gk', tag: 'NEW',
-    gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
-    glow: 'rgba(16,185,129,0.25)',
-    hoverGlow: 'rgba(16,185,129,0.4)',
-  },
-];
-
-const HERO_MODES = [
   {
     id: 'opinion',
-    icon: '🏏',
-    title: 'IPL Quiz',
-    description: 'IPL predictions & opinion polls',
-    accentClass: 'from-rose-500 via-pink-500 to-fuchsia-600',
-    glowClass: 'shadow-[0_24px_60px_rgba(236,72,153,0.24)]',
-    buttonLabel: 'Play',
+    title: 'Opinion Wars',
+    subtitle: 'Share views',
+    emoji: '💬',
+    bg: 'from-emerald-500 to-teal-700',
+    ring: 'ring-teal-500/30',
+    shadow: 'shadow-[0_10px_40px_rgba(20,184,166,0.25)]'
   },
   {
     id: 'gk',
-    icon: '🧠',
-    title: 'GK Quiz',
-    description: 'Daily GK & current affairs',
-    accentClass: 'from-indigo-500 via-violet-500 to-cyan-500',
-    glowClass: 'shadow-[0_24px_60px_rgba(99,102,241,0.24)]',
-    buttonLabel: 'Play',
+    title: 'Daily Clash',
+    subtitle: 'Current Affairs',
+    emoji: '📰',
+    bg: 'from-blue-600 to-indigo-800',
+    ring: 'ring-indigo-500/30',
+    shadow: 'shadow-[0_10px_40px_rgba(79,70,229,0.25)]'
   },
+  {
+    id: 'gk',
+    title: 'Bollywood',
+    subtitle: 'Movie Magic',
+    emoji: '🎬',
+    bg: 'from-rose-500 to-pink-700',
+    ring: 'ring-pink-500/30',
+    shadow: 'shadow-[0_10px_40px_rgba(236,72,153,0.25)]'
+  }
 ];
+
+const shouldSkipStartupPrefetch = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const saveData = Boolean(connection?.saveData);
+    const effectiveType = String(connection?.effectiveType || '').toLowerCase();
+    return (
+      isCoarse
+      || saveData
+      || effectiveType === 'slow-2g'
+      || effectiveType === '2g'
+      || effectiveType === '3g'
+    );
+  } catch {
+    return false;
+  }
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -92,6 +92,7 @@ const Home = () => {
     const first = s.split(/\s+/)[0];
     return first.length > 14 ? `${first.slice(0, 14)}…` : first;
   }, [userProfile?.full_name, userProfile?.name, user?.email]);
+
 
   // Auto claim streak
   useEffect(() => {
@@ -127,28 +128,48 @@ const Home = () => {
 
   // Warm Supabase in background on Home mount so it's ready when user taps a category
   useEffect(() => {
-    getSupabase().catch(() => {});
+    if (shouldSkipStartupPrefetch()) return;
+    const timeoutId = window.setTimeout(() => {
+      getSupabase().catch(() => {});
+    }, 1200);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
-    const categories = ['opinion', 'gk'];
-    const warmAll = () => {
-      for (const category of categories) {
-        prefetchRoute(`/category/${category}`);
-        prefetchSlotData(category);
-      }
-      // Warm secondary routes on idle
-      prefetchRoute('/wallet');
-      prefetchRoute('/profile');
+    if (shouldSkipStartupPrefetch()) return;
+
+    let timeoutId = null;
+    let idleId = null;
+    let started = false;
+
+    const warmRoutes = () => {
+      prefetchRoute('/category/opinion');
+      prefetchRoute('/category/gk');
     };
 
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(warmAll, { timeout: 1500 });
-      return () => window.cancelIdleCallback?.(idleId);
-    }
+    const startWarmup = () => {
+      if (started) return;
+      started = true;
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(warmRoutes, { timeout: 2200 });
+      } else {
+        timeoutId = window.setTimeout(warmRoutes, 900);
+      }
+    };
 
-    const timeoutId = window.setTimeout(warmAll, 600);
-    return () => window.clearTimeout(timeoutId);
+    window.addEventListener('pointerdown', startWarmup, { once: true, passive: true });
+    window.addEventListener('touchstart', startWarmup, { once: true, passive: true });
+    window.addEventListener('keydown', startWarmup, { once: true });
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      window.removeEventListener('pointerdown', startWarmup);
+      window.removeEventListener('touchstart', startWarmup);
+      window.removeEventListener('keydown', startWarmup);
+    };
   }, []);
 
   const go = useCallback((id) => {
@@ -162,7 +183,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[480px] px-4 pb-[calc(var(--qd-footer-h)+24px)]">
+    <div className="mx-auto w-full max-w-[520px] px-0 pb-[calc(var(--qd-footer-h)+24px)] sm:px-4 md:max-w-[780px] md:px-8 lg:max-w-[860px] lg:px-12 xl:max-w-[920px] xl:px-16">
       <SeoHead
         title="Quiz Dangal - Daily Opinion & GK Quiz for IPL Fans"
         description="Play daily opinion polls, IPL season trivia, current affairs, and GK quizzes on Quiz Dangal. Win coins, climb leaderboards, and join fresh live rounds every day."
@@ -189,211 +210,156 @@ const Home = () => {
         ]}
       />
 
-      {/* ═══════ HEADER ═══════ */}
-      <header className="sticky top-0 z-20 -mx-4 px-4 pt-3 pb-3 bg-[#050508]/95 border-b border-white/[0.06]">
-        <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-3 no-underline group">
+      {/* ═══════ FLOATING HEADER ═══════ */}
+      <header className="sticky top-0 z-50 mx-0 mt-0 mb-5 px-4 py-3.5 sm:top-3 sm:mx-2 sm:mt-3 sm:mb-6 sm:px-4 sm:py-3 rounded-none sm:rounded-xl bg-[#090412]/85 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center justify-between gap-2">
+          <Link to="/" className="flex items-center gap-2.5 no-underline group shrink-0">
             <img
               src="/logo-48.png"
               alt="Quiz Dangal"
               width={44}
               height={44}
               fetchPriority="high"
-              className="h-11 w-11 rounded-2xl ring-2 ring-white/10 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(139,92,246,0.35)]"
+              className="h-11 w-11 sm:h-10 sm:w-10 rounded-[12px] transition-transform duration-300 group-hover:scale-[1.05]"
             />
-            <div className="leading-tight">
-              <div className="text-[1.12rem] font-black tracking-tight bg-gradient-to-r from-violet-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent">
-                Quiz Dangal
-              </div>
-              <div className="text-[0.68rem] font-medium text-white/50 tracking-wide">Play · Win · Repeat</div>
+            <div className="text-[1.35rem] sm:text-[1.35rem] md:text-[1.55rem] font-black tracking-tight bg-gradient-to-r from-violet-200 via-fuchsia-200 to-amber-200 bg-clip-text text-transparent">
+              Quiz Dangal
             </div>
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setModal({ open: true, day: streak, coins: nextStreakReward })}
-                className="home-shine inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-extrabold border border-orange-400/25 bg-gradient-to-r from-orange-500 to-red-600 shadow-[0_4px_20px_rgba(249,115,22,0.3)] transition-all duration-200 hover:shadow-[0_4px_28px_rgba(249,115,22,0.45)] hover:scale-[1.03] active:scale-[0.97]"
+                className="home-shine flex items-center gap-1.5 rounded-full px-3.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-orange-500/30 bg-gradient-to-br from-orange-600 to-red-700 shadow-[0_4px_15px_rgba(249,115,22,0.3)] transition-all hover:scale-[1.05] active:scale-95"
                 aria-label="Open streak rewards"
               >
-                <Flame size={15} className="text-amber-100" />
-                <span>{streak}</span>
+                <Flame size={14} className="text-amber-200" />
+                <span className="text-white drop-shadow-md">{streak}</span>
               </button>
               <Link
                 to="/wallet/"
-                className="home-shine inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-extrabold border border-violet-400/25 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-[0_4px_20px_rgba(139,92,246,0.3)] transition-all duration-200 hover:shadow-[0_4px_28px_rgba(139,92,246,0.45)] hover:scale-[1.03] active:scale-[0.97]"
+                className="home-shine flex items-center gap-1.5 rounded-full px-3.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-violet-400/30 bg-gradient-to-br from-indigo-600 to-purple-700 shadow-[0_4px_15px_rgba(139,92,246,0.3)] transition-all hover:scale-[1.05] active:scale-95"
                 aria-label="Open wallet"
               >
-                <Coins size={15} className="text-yellow-200" />
-                <span>{coins.toLocaleString()}</span>
+                <Coins size={14} className="text-yellow-300" />
+                <span className="text-white drop-shadow-md">{coins.toLocaleString()}</span>
               </Link>
             </div>
           ) : (
             <Link
               to="/login/"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold border border-white/15 bg-[#0d0818]/90 hover:bg-white/[0.12] transition-all duration-200 hover:border-white/25"
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 sm:px-5 sm:py-2.5 text-sm sm:text-sm md:text-base font-bold border border-violet-500/50 bg-violet-600/20 hover:bg-violet-600/40 text-violet-100 transition-all shadow-[0_0_15px_rgba(139,92,246,0.2)] shrink-0"
             >
-              <User size={15} className="text-white/70" />
+              <User size={14} className="text-violet-300" />
               <span>Sign In</span>
             </Link>
           )}
         </div>
       </header>
 
-      <div className="pt-5 space-y-6">
+      <div className="pt-2 space-y-7 px-0">
 
-        {/* ═══════ HERO ═══════ */}
-        <section
-          className="animate-fade-up relative overflow-hidden rounded-[32px] border border-white/10 bg-[#070311] shadow-[0_24px_90px_rgba(12,1,24,0.65)]"
-          style={{ '--fade-delay': '0ms' }}
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.22),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_12%_90%,rgba(244,63,94,0.18),transparent_24%),linear-gradient(180deg,#12051f_0%,#080412_48%,#07030d_100%)]" />
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-violet-500/30 blur-3xl" />
-          <div className="pointer-events-none absolute -right-12 top-10 h-40 w-40 rounded-full bg-cyan-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute -left-12 bottom-10 h-40 w-40 rounded-full bg-rose-500/20 blur-3xl" />
+        {/* ═══════ HERO BATTLE ═══════ */}
+        <section className="animate-fade-up px-0" style={{ '--fade-delay': '0ms' }}>
 
-          <div className="relative px-5 pb-5 pt-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[0.76rem] font-medium text-white/50">
-                  {user ? (
-                    <>Hey <span className="font-bold text-amber-300">{displayName}</span>{' '}<span className="inline-block hero-wave">👋</span></>
-                  ) : (
-                    <>Welcome to <span className="font-bold text-violet-300">Quiz Dangal</span></>
-                  )}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-[0.58rem] font-extrabold uppercase tracking-[0.22em] text-emerald-300" role="status" aria-label="Quizzes are live now">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
-                Live now
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0d0818]/95 px-3.5 pb-4 pt-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_60px_rgba(0,0,0,0.35)]">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
-              <div className="absolute -right-10 top-4 h-28 w-28 rounded-full bg-amber-400/15 blur-[50px]" />
-              <div className="absolute left-0 top-0 h-24 w-24 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_70%)]" />
-
-              <div className="relative flex items-start justify-between gap-2.5">
-                <div className="max-w-[70%]">
-                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[0.58rem] font-bold text-violet-200 shadow-[0_10px_30px_rgba(139,92,246,0.16)] hero-pill-fade">
-                    <Crown size={12} className="text-amber-300" />
-                    Live quiz drops
-                  </div>
-
-                  <h1 className="text-left leading-[1.03]">
-                    <span className="block pb-0.5 text-[1.72rem] font-black tracking-[-0.05em] text-white">Play Smart.</span>
-                    <span className="mt-0.5 block pb-1 bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-400 bg-clip-text text-[1.96rem] font-black tracking-[-0.05em] text-transparent">Earn Big. ✨</span>
-                  </h1>
-
-                  <p className="mt-2.5 max-w-[15rem] text-[0.7rem] font-medium leading-[1.35] text-white/68">
-                    Choose a quiz, play fast, and win daily rewards.
-                  </p>
-                </div>
-
-                <div className="relative flex h-[6.1rem] w-[6.1rem] shrink-0 items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_200deg_at_50%_50%,rgba(251,191,36,0.42),rgba(255,255,255,0.12),rgba(34,211,238,0.16),rgba(168,85,247,0.22),rgba(251,191,36,0.42))] opacity-95 shadow-[0_18px_48px_rgba(251,191,36,0.24)]" />
-                  <div className="absolute inset-[2px] rounded-full bg-[linear-gradient(180deg,rgba(32,15,52,0.98),rgba(12,7,22,0.98))] shadow-[inset_0_0_28px_rgba(251,191,36,0.08)]" />
-                  <div className="absolute inset-[16px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.14),transparent_30%),radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.14),transparent_70%)]" />
-                  <Crown className="relative h-[3.15rem] w-[3.15rem] text-amber-300 drop-shadow-[0_6px_18px_rgba(251,191,36,0.35)] hero-crown-anim" strokeWidth={2} />
-                </div>
-              </div>
-
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {HERO_MODES.map(({ id, icon, title, description, accentClass, glowClass, buttonLabel }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => go(id)}
-                  onPointerEnter={() => warmCategory(id)}
-                  className={`home-shine group relative min-h-[190px] overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0818] text-left transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] ${glowClass}`}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${accentClass} opacity-[0.95]`} />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.22))]" />
-                  <div className="absolute -right-8 top-10 h-20 w-20 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
-
-                  <div className="relative flex h-full flex-col px-4 pb-4 pt-4">
-                    <div className="mb-3 flex items-start justify-between gap-2">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/20 bg-white/20 text-[1.45rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_12px_24px_rgba(0,0,0,0.12)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        <span>{icon}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-1 text-[1.02rem] font-black leading-tight text-white">{title}</div>
-                    <p className="mt-2 min-h-[2.6rem] text-[0.68rem] font-medium leading-4 text-white/74">{description}</p>
-
-                    <div className="mt-auto flex items-center justify-between rounded-2xl border border-black/5 bg-white px-3.5 py-2.5 shadow-[0_14px_32px_rgba(255,255,255,0.18)] transition-all duration-200 group-hover:bg-white group-hover:shadow-[0_18px_36px_rgba(255,255,255,0.22)]">
-                      <div className="flex items-center gap-1.5">
-                        <Play size={11} className="text-slate-900" fill="rgb(15,23,42)" />
-                        <span className="text-[0.68rem] font-black uppercase tracking-[0.08em] text-slate-900">{buttonLabel}</span>
-                      </div>
-                      <ChevronRight size={13} className="text-slate-500 transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="mb-4 px-4 sm:px-0">
+            <h1 className="flex items-center gap-2 text-[1.55rem] sm:text-[1.8rem] font-black tracking-tight">
+              <span className="text-white">Hey!</span>
+              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent">
+                {user ? displayName : 'Player'}
+              </span>
+            </h1>
           </div>
+
+          <button
+            type="button"
+            onClick={() => go('opinion')}
+            onPointerEnter={() => warmCategory('opinion')}
+            className="group relative block w-full overflow-hidden rounded-[36px] bg-[#030008] text-center border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(249,115,22,0.5)] hover:border-orange-500/50"
+          >
+            {/* Deep Explosive Background */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.3)_0%,transparent_60%)] group-hover:bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.5)_0%,transparent_70%)] transition-colors duration-700" />
+            <div className="absolute inset-0 opacity-[0.08] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#030008] to-transparent" />
+
+            {/* Enhanced Background Image with Higher Exposure */}
+            <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1614294148960-9aa740632a87?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center group-hover:opacity-30 transition-opacity duration-500" />
+
+            {/* Massive Background Emoji with More Intensity */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[16rem] sm:text-[20rem] md:text-[28rem] opacity-15 blur-md transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] group-hover:opacity-25 pointer-events-none">
+              🏏
+            </div>
+
+            {/* Additional Animated Elements for Chaos */}
+            <div className="absolute left-[-10%] top-[-10%] h-[120%] w-[120%] bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.2)_0%,transparent_50%)] animate-[spin_10s_linear_infinite]" />
+            <div className="absolute right-[-10%] bottom-[-10%] h-[120%] w-[120%] bg-[radial-gradient(circle_at_center,rgba(255,165,0,0.2)_0%,transparent_50%)] animate-[spin_8s_linear_infinite_reverse]" />
+
+            {/* Center Aligned Content */}
+            <div className="relative z-10 flex min-h-[300px] sm:min-h-[360px] md:min-h-[440px] flex-col items-center justify-center px-4 py-10 sm:px-8">
+              
+              {/* Center Live Badge with More Intensity */}
+              <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/20 px-4 py-2 text-[0.65rem] sm:text-[0.7rem] font-black uppercase tracking-[0.25em] text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-[pulse_2s_ease-in-out_infinite] group-hover:shadow-[0_0_20px_rgba(239,68,68,0.8)] transition-all duration-300">
+                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[blink_1.5s_ease-in-out_infinite]" />
+                LIVE ARENA
+                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[blink_1.5s_ease-in-out_infinite]" />
+              </div>
+
+              {/* IPL Dangal Title with Explosive Effects */}
+              <div className="mb-2 sm:mb-3 text-center text-[2.2rem] sm:text-[3rem] md:text-[4.2rem] font-black leading-[1.1] tracking-tight text-orange-500 drop-shadow-[0_8px_16px_rgba(249,115,22,0.7)] animate-[titlePulse_3s_ease-in-out_infinite]">
+                IPL DANGAL
+              </div>
+
+              {/* Emoji Overload with Animation */}
+              <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-3 sm:gap-4 text-[1.5rem] sm:text-[2rem] animate-[bounce_2s_ease-in-out_infinite]">
+                <span className="animate-[spin_5s_linear_infinite]">🔥</span>
+                <span className="animate-[spin_6s_linear_infinite_reverse]">⚡</span>
+                <span className="animate-[spin_4s_linear_infinite]">💥</span>
+                <span className="animate-[spin_7s_linear_infinite_reverse]">🏆</span>
+                <span className="animate-[spin_5.5s_linear_infinite]">🛡️</span>
+              </div>
+
+              {/* CTA Button with Explosive Animation */}
+              <div className="mt-6 sm:mt-8 px-6 py-3 sm:px-8 sm:py-4 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_10px_30px_rgba(249,115,22,0.5)] transition-all duration-300 hover:shadow-[0_15px_40px_rgba(249,115,22,0.8)] hover:scale-105 animate-[buttonPulse_3.5s_ease-in-out_infinite] group-hover:bg-gradient-to-r group-hover:from-red-600 group-hover:to-orange-500">
+                ENTER BATTLE ROYALE
+              </div>
+            </div>
+          </button>
         </section>
 
-        {/* ═══════ TRENDING ═══════ */}
-        <section className="animate-fade-up" style={{ '--fade-delay': '100ms' }}>
-          <div className="flex items-center justify-between px-1 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🔥</span>
-              <h2 className="text-[0.82rem] font-extrabold text-white/70">Trending Now</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => go('opinion')}
-              className="inline-flex items-center gap-1 text-[0.68rem] font-semibold text-violet-400/70 hover:text-violet-300 transition-colors duration-200"
-            >
-              All <ChevronRight size={12} />
-            </button>
+        {/* ═══════ QUICK ARENAS (Premium Refined 2x2 Grid) ═══════ */}
+        <section className="animate-fade-up px-0" style={{ '--fade-delay': '100ms' }}>
+          <div className="flex items-center mb-4 px-4 sm:px-0">
+            <h2 className="text-[1rem] sm:text-[0.95rem] font-black text-white/90 tracking-widest uppercase">Quick Arenas</h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {HOT_PICKS.map(({ emoji, title, sub, cat, tag, gradient, glow, hoverGlow }) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-4 sm:px-0">
+            {QUICK_ARENAS.map(({ id, emoji, title, subtitle, bg, ring, shadow }) => (
               <button
                 key={title}
                 type="button"
-                onClick={() => go(cat)}
-                onPointerEnter={() => warmCategory(cat)}
-                aria-label={`Play ${title} quiz`}
-                className={`home-shine hot-pick-card group relative overflow-hidden rounded-[22px] bg-gradient-to-br ${gradient} text-left transition-all duration-300 hover:-translate-y-1.5 active:translate-y-0`}
-                style={{ '--glow': glow, '--hover-glow': hoverGlow }}
+                onClick={() => go(id)}
+                onPointerEnter={() => warmCategory(id)}
+                className={`group relative overflow-hidden rounded-[24px] p-4 sm:p-5 text-left transition-all duration-300 hover:-translate-y-1 active:translate-y-0 bg-gradient-to-br ${bg} ${shadow} ring-1 ring-inset ${ring} min-h-[180px] md:min-h-[200px]`}
               >
-                {/* Glass overlay */}
-                <div className="relative rounded-[22px] bg-gradient-to-b from-black/[0.05] via-black/[0.15] to-black/[0.35] p-4">
-                  {/* Top shine orb */}
-                  <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/[0.1] blur-2xl" />
-                  <div className="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-black/20 blur-2xl" />
+                <div className="absolute -right-4 -bottom-4 text-[4.8rem] leading-none opacity-20 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">{emoji}</div>
+                
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_60%)]" />
 
-                  {/* Tag */}
-                  <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-[3px] text-[0.48rem] font-black tracking-[0.12em] text-white/90 uppercase mb-3">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse" />
-                    {tag}
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="h-12 w-12 rounded-[16px] bg-white/20 grid place-items-center backdrop-blur-md mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <span className="text-[1.2rem] drop-shadow-md">{emoji}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-[1.05rem] font-black text-white leading-tight drop-shadow-md">{title}</h3>
+                    <p className="text-[0.65rem] font-bold text-white/75 mt-1 tracking-widest uppercase">{subtitle}</p>
                   </div>
 
-                  {/* Emoji */}
-                  <div className="text-[2.4rem] leading-none mb-3 drop-shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">{emoji}</div>
-
-                  {/* Title */}
-                  <div className="text-[0.95rem] font-black leading-tight drop-shadow-sm">{title}</div>
-                  <div className="text-[0.6rem] text-white/50 mt-1">{sub}</div>
-
-                  {/* Play CTA */}
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[0.62rem] font-bold text-white/50 group-hover:text-white/70 transition-colors">Play now</span>
-                    <div className="h-7 w-7 rounded-full bg-white/20 grid place-items-center transition-all duration-200 group-hover:bg-white/30 group-hover:scale-110">
-                      <Play size={11} className="text-white ml-0.5" />
+                  <div className="mt-auto pt-4 flex items-center justify-between">
+                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-white/85">Play</span>
+                    <div className="h-8 w-8 rounded-full bg-white/20 grid place-items-center border border-white/25 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                      <ChevronRight size={16} className="text-white" strokeWidth={3} />
                     </div>
                   </div>
                 </div>

@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Home from '@/pages/Home';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
@@ -110,6 +110,41 @@ const Fallback = () => (
   </div>
 );
 
+const DeferredRender = ({ children, delayMs = 2200 }) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let timeoutId = null;
+    let idleId = null;
+
+    const activate = () => setReady(true);
+    const schedule = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(activate, { timeout: delayMs });
+      } else {
+        timeoutId = window.setTimeout(activate, delayMs);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      schedule();
+    } else {
+      window.addEventListener('load', schedule, { once: true });
+    }
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      window.removeEventListener('load', schedule);
+    };
+  }, [delayMs]);
+
+  if (!ready) return null;
+  return <>{children}</>;
+};
+
 function RouteChangeTracker() {
   const location = useLocation();
   useEffect(() => {
@@ -126,7 +161,14 @@ function RouteChangeTracker() {
 // Simple focus management hook for route changes
 function useRouteFocus() {
   const location = useLocation();
+  const firstRouteRef = useRef(true);
+
   useEffect(() => {
+    if (firstRouteRef.current) {
+      firstRouteRef.current = false;
+      return;
+    }
+
     const main = document.getElementById('app-main');
     if (main) {
       // Using setTimeout to allow React suspense content to paint first
@@ -202,9 +244,11 @@ function App() {
             <meta name="revisit-after" content="3 days" />
           </Helmet>
           {/* Initialize notifications for authenticated, confirmed users outside of <Routes> */}
-          <Suspense fallback={null}>
-            <AdSenseLoader />
-          </Suspense>
+          <DeferredRender delayMs={2400}>
+            <Suspense fallback={null}>
+              <AdSenseLoader />
+            </Suspense>
+          </DeferredRender>
           {authUser &&
             !isRecoveryFlow &&
             !(authUser.app_metadata?.provider === 'email' && !authUser.email_confirmed_at) && (
@@ -265,9 +309,11 @@ function App() {
             </RouteFocusWrapper>
           </Suspense>
           <Toaster />
-          <Suspense fallback={null}>
-            <CookieConsent />
-          </Suspense>
+          <DeferredRender delayMs={10000}>
+            <Suspense fallback={null}>
+              <CookieConsent />
+            </Suspense>
+          </DeferredRender>
         </div>
       </Router>
     </ErrorBoundary>
@@ -396,9 +442,11 @@ const PublicLayout = () => {
           </Routes>
         </Suspense>
       </main>
-      <Suspense fallback={null}>
-        <PWAInstallButton />
-      </Suspense>
+      <DeferredRender delayMs={3000}>
+        <Suspense fallback={null}>
+          <PWAInstallButton />
+        </Suspense>
+      </DeferredRender>
     </>
   );
 };
@@ -662,9 +710,11 @@ const MainLayout = () => {
       <Suspense fallback={null}>
         <Footer />
       </Suspense>
-      <Suspense fallback={null}>
-        <PWAInstallButton />
-      </Suspense>
+      <DeferredRender delayMs={3000}>
+        <Suspense fallback={null}>
+          <PWAInstallButton />
+        </Suspense>
+      </DeferredRender>
       {hasSupabaseConfig && profileModalOpen && (
         <Suspense fallback={null}>
           <ProfileUpdateModal
