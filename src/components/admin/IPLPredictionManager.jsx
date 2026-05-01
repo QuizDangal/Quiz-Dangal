@@ -8,10 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { buildIplPredictionMeta, getIplPredictionMeta, getIplTeam, IPL_TEAMS, isIplPredictionQuiz } from '@/lib/iplTeams';
 import { formatDateTime, getPrizeDisplay } from '@/lib/utils';
+import { callAdminRpc } from '@/lib/adminRpc';
 
 const createQuestion = () => ({ text: '', points: 1, options: ['', ''] });
 
 const defaultPrizes = ['121', '71', '51'];
+const MAX_PRIZE_TIERS = 10;
+
+const MAX_DAYS_AHEAD = 3;
+const MAX_QUIZZES_PER_DAY = 2;
 
 function TeamBadge({ team, align = 'left' }) {
   if (!team) return null;
@@ -77,15 +82,20 @@ function PredictionCard({ quiz, action }) {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px]">
-            {prizes.slice(0, 3).map((value, index) => {
+            {prizes.map((value, index) => {
               const prize = getPrizeDisplay(quiz.prize_type || 'coins', value, { fallback: 0 });
-              const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+              const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
               return (
                 <span key={`${quiz.id}-${index}`} className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 font-semibold text-violet-200">
                   {medal} {prize.formatted}
                 </span>
               );
             })}
+            {meta?.consolationCoins > 0 ? (
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-200">
+                🎁 +{meta.consolationCoins} for all participants
+              </span>
+            ) : null}
           </div>
 
           {action ? <div className="mt-4">{action}</div> : null}
@@ -116,6 +126,7 @@ export default function IPLPredictionManager() {
     end_time: '',
     result_publish_at: '',
     prizes: [...defaultPrizes],
+    consolation_coins: '',
     questions: Array.from({ length: 5 }).map(() => createQuestion()),
   });
 
@@ -139,7 +150,7 @@ export default function IPLPredictionManager() {
       .eq('category', 'opinion')
       .eq('is_prediction', true)
       .order('start_time', { ascending: false })
-      .limit(40);
+      .limit(200);
 
     if (error) {
       toast({ title: 'IPL quizzes load failed', description: error.message, variant: 'destructive' });
@@ -163,6 +174,7 @@ export default function IPLPredictionManager() {
       end_time: '',
       result_publish_at: '',
       prizes: [...defaultPrizes],
+      consolation_coins: '',
       questions: Array.from({ length: 5 }).map(() => createQuestion()),
     });
   }, []);
@@ -237,6 +249,7 @@ export default function IPLPredictionManager() {
       }))
       .filter((item) => item.question_text && item.options.length >= 2);
     const prizes = form.prizes.map((value) => parseInt(value || '0', 10)).filter((value) => Number.isFinite(value) && value > 0);
+    const consolationCoins = Math.max(0, parseInt(form.consolation_coins || '0', 10) || 0);
     const resultPublishAt = form.result_publish_at ? new Date(form.result_publish_at) : null;
 
     if (!teamA || !teamB) {
@@ -259,6 +272,24 @@ export default function IPLPredictionManager() {
       toast({ title: 'Invalid schedule', description: 'End time must be after start time.', variant: 'destructive' });
       return;
     }
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + MAX_DAYS_AHEAD);
+    maxDate.setHours(23, 59, 59, 999);
+    if (new Date(form.start_time) > maxDate) {
+      toast({ title: 'Too far ahead', description: `IPL quiz sirf ${MAX_DAYS_AHEAD} din aage tak schedule ho sakti hai.`, variant: 'destructive' });
+      return;
+    }
+
+    const startDate = new Date(form.start_time).toISOString().slice(0, 10);
+    const sameDayCount = quizzes.filter((q) => {
+      if (!q.start_time) return false;
+      return new Date(q.start_time).toISOString().slice(0, 10) === startDate;
+    }).length;
+    if (sameDayCount >= MAX_QUIZZES_PER_DAY) {
+      toast({ title: 'Daily limit reached', description: `Ek din mai maximum ${MAX_QUIZZES_PER_DAY} IPL prediction quiz schedule kar sakte ho. Us din already ${sameDayCount} hai.`, variant: 'destructive' });
+      return;
+    }
     if (resultPublishAt <= new Date(form.end_time)) {
       toast({ title: 'Invalid final result time', description: 'Final result time must be after quiz end time.', variant: 'destructive' });
       return;
@@ -270,12 +301,16 @@ export default function IPLPredictionManager() {
 
     setSaving(true);
     try {
-      const meta = buildIplPredictionMeta(teamA.name, teamB.name, {
+      const metaExtras = {
         team_a_id: teamA.id,
         team_b_id: teamB.id,
         fixture_label: `${teamA.short} vs ${teamB.short}`,
         result_publish_at: resultPublishAt.toISOString(),
-      });
+      };
+      if (consolationCoins > 0) {
+        metaExtras.consolation_coins = String(consolationCoins);
+      }
+      const meta = buildIplPredictionMeta(teamA.name, teamB.name, metaExtras);
       const title = `IPL Prediction • ${teamA.short} vs ${teamB.short}`;
       const prizePool = prizes.reduce((sum, value) => sum + value, 0);
 
@@ -391,17 +426,15 @@ export default function IPLPredictionManager() {
     setBusyQuizId(editingQuiz.id);
     setBusyTarget(publishNow ? 'publish' : questionId || 'save-all');
     try {
-      const { error: answersError } = await supabase.rpc('admin_update_correct_answers', {
+      await callAdminRpc('updateCorrectAnswers', {
         p_quiz_id: editingQuiz.id,
         p_answers: payload,
       });
-      if (answersError) throw answersError;
 
       if (publishNow) {
-        const { error: finalizeError } = await supabase.rpc('admin_finalize_prediction_quiz', {
+        await callAdminRpc('finalizePredictionQuiz', {
           p_quiz_id: editingQuiz.id,
         });
-        if (finalizeError) throw finalizeError;
 
         toast({ title: 'Results published', description: 'Official IPL answers saved and final results are now live.' });
         setEditingQuiz(null);
@@ -528,6 +561,26 @@ export default function IPLPredictionManager() {
     setQuestionDrafts((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleDeleteQuiz = async (quiz) => {
+    if (!supabase) return;
+    const label = getIplPredictionMeta(quiz)?.fixtureLabel || quiz.title || 'this IPL quiz';
+    if (!window.confirm(`Delete "${label}"?\nAll questions, options, participants and results will be removed permanently. This cannot be undone.`)) {
+      return;
+    }
+    setBusyQuizId(quiz.id);
+    setBusyTarget('delete');
+    try {
+      await callAdminRpc('deleteQuiz', { p_quiz_id: quiz.id });
+      toast({ title: 'IPL quiz deleted', description: `${label} removed with all related data.` });
+      await loadQuizzes();
+    } catch (err) {
+      toast({ title: 'Delete failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setBusyQuizId('');
+      setBusyTarget('');
+    }
+  };
+
   const handleHideFromCategory = async (quiz) => {
     if (!supabase) return;
     setBusyQuizId(quiz.id);
@@ -618,13 +671,36 @@ export default function IPLPredictionManager() {
             <div className="mt-3 text-lg font-black text-white">{fixtureLabel}</div>
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-4 rounded-[24px] border border-violet-400/20 bg-violet-500/5 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-violet-200">Rank Prizes (coins)</div>
+                <div className="text-xs text-slate-400">P1 = rank #1 coins, P2 = rank #2, etc. Add / remove tiers as needed.</div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setForm((current) => ({
+                    ...current,
+                    prizes: current.prizes.length >= MAX_PRIZE_TIERS ? current.prizes : [...current.prizes, ''],
+                  }))}
+                  disabled={form.prizes.length >= MAX_PRIZE_TIERS}
+                  className="border-violet-400/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Tier
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
               {form.prizes.map((value, index) => (
-                <div key={`prize-${index}`}>
+                <div key={`prize-${index}`} className="relative">
                   <Label className="mb-2 block text-slate-200">P{index + 1}</Label>
                   <Input
                     value={value}
+                    type="number"
+                    min="0"
                     onChange={(event) =>
                       setForm((current) => {
                         const prizes = [...current.prizes];
@@ -634,8 +710,43 @@ export default function IPLPredictionManager() {
                     }
                     className="border-slate-700 bg-slate-950 text-slate-100"
                   />
+                  {form.prizes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((current) => ({
+                        ...current,
+                        prizes: current.prizes.filter((_, i) => i !== index),
+                      }))}
+                      className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/80 text-[10px] font-bold text-white hover:bg-rose-500"
+                      aria-label={`Remove prize tier P${index + 1}`}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <Label htmlFor="ipl-consolation" className="mb-2 block text-slate-200">Participation Coins (non-winners)</Label>
+                <Input
+                  id="ipl-consolation"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={form.consolation_coins}
+                  onChange={(event) => setForm((current) => ({ ...current, consolation_coins: event.target.value }))}
+                  className="border-slate-700 bg-slate-950 text-slate-100"
+                />
+                <div className="mt-1 text-[11px] text-slate-500">Every participant who did not win rank {form.prizes.length > 0 ? `1-${form.prizes.length}` : 'a prize'} gets this many coins. Leave 0 to disable.</div>
+              </div>
+              <div className="flex items-end">
+                <div className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+                  <div className="font-bold text-slate-200">Pool Preview</div>
+                  <div>Rank prizes total: <span className="text-amber-300 font-bold">{form.prizes.reduce((sum, v) => sum + (parseInt(v || '0', 10) || 0), 0)}</span> coins</div>
+                  <div>Per-participant consolation: <span className="text-emerald-300 font-bold">{parseInt(form.consolation_coins || '0', 10) || 0}</span> coins</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -870,6 +981,15 @@ export default function IPLPredictionManager() {
                     >
                       {busyQuizId === quiz.id && busyTarget === 'hide' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Hide'}
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleDeleteQuiz(quiz)}
+                      disabled={busyQuizId === quiz.id}
+                      className="border-red-500/40 bg-red-600/10 text-red-300 hover:bg-red-600/20"
+                    >
+                      {busyQuizId === quiz.id && busyTarget === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
+                    </Button>
                   </div>
                 }
               />
@@ -894,18 +1014,29 @@ export default function IPLPredictionManager() {
                     key={quiz.id}
                     quiz={quiz}
                     action={
-                      !quizStarted ? (
+                      <div className="flex gap-2">
+                        {!quizStarted ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => openEditQuestions(quiz)}
+                            disabled={busyQuizId === quiz.id}
+                            className="flex-1 border-sky-400/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+                          >
+                            {busyQuizId === quiz.id && busyTarget === 'editq' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Edit Questions
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => openEditQuestions(quiz)}
+                          onClick={() => handleDeleteQuiz(quiz)}
                           disabled={busyQuizId === quiz.id}
-                          className="w-full border-sky-400/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+                          className={`${quizStarted ? 'flex-1' : ''} border-red-500/40 bg-red-600/10 text-red-300 hover:bg-red-600/20`}
                         >
-                          {busyQuizId === quiz.id && busyTarget === 'editq' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          Edit Questions
+                          {busyQuizId === quiz.id && busyTarget === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                         </Button>
-                      ) : null
+                      </div>
                     }
                   />
                 );
@@ -936,6 +1067,14 @@ export default function IPLPredictionManager() {
                       className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg transition ${isHidden ? 'text-slate-500 cursor-default' : 'text-rose-300 hover:bg-rose-500/10 border border-rose-400/20'}`}
                     >
                       {isHidden ? 'Hidden' : busyQuizId === quiz.id && busyTarget === 'hide' ? '...' : 'Hide'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteQuiz(quiz)}
+                      disabled={busyQuizId === quiz.id}
+                      className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg transition text-red-300 hover:bg-red-600/10 border border-red-500/30"
+                    >
+                      {busyQuizId === quiz.id && busyTarget === 'delete' ? '...' : 'Delete'}
                     </button>
                   </div>
                 );

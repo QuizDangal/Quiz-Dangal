@@ -4,9 +4,14 @@ import SeoHead from '@/components/SEO';
 import { BUILD_DATE } from '@/constants';
 import { useNavigate, Link } from 'react-router-dom';
 import {
+  Brain,
   ChevronRight,
+  Film,
   Coins,
   Flame,
+  MessageCircle,
+  Newspaper,
+  Trophy,
   User,
 } from 'lucide-react';
 import { getSupabase, supabase } from '@/lib/customSupabaseClient';
@@ -22,7 +27,7 @@ const QUICK_ARENAS = [
     id: 'gk',
     title: 'Brain Dangal',
     subtitle: 'GK & Trivia',
-    emoji: '🧠',
+    Icon: Brain,
     bg: 'from-violet-600 to-fuchsia-700',
     ring: 'ring-fuchsia-500/30',
     shadow: 'shadow-[0_10px_40px_rgba(192,38,211,0.25)]'
@@ -31,7 +36,7 @@ const QUICK_ARENAS = [
     id: 'opinion',
     title: 'Opinion Wars',
     subtitle: 'Share views',
-    emoji: '💬',
+    Icon: MessageCircle,
     bg: 'from-emerald-500 to-teal-700',
     ring: 'ring-teal-500/30',
     shadow: 'shadow-[0_10px_40px_rgba(20,184,166,0.25)]'
@@ -40,7 +45,7 @@ const QUICK_ARENAS = [
     id: 'gk',
     title: 'Daily Clash',
     subtitle: 'Current Affairs',
-    emoji: '📰',
+    Icon: Newspaper,
     bg: 'from-blue-600 to-indigo-800',
     ring: 'ring-indigo-500/30',
     shadow: 'shadow-[0_10px_40px_rgba(79,70,229,0.25)]'
@@ -49,7 +54,7 @@ const QUICK_ARENAS = [
     id: 'gk',
     title: 'Bollywood',
     subtitle: 'Movie Magic',
-    emoji: '🎬',
+    Icon: Film,
     bg: 'from-rose-500 to-pink-700',
     ring: 'ring-pink-500/30',
     shadow: 'shadow-[0_10px_40px_rgba(236,72,153,0.25)]'
@@ -211,8 +216,8 @@ const Home = () => {
       />
 
       {/* ═══════ FLOATING HEADER ═══════ */}
-      <header className="sticky top-0 z-50 mx-0 mt-0 mb-5 px-4 py-3.5 sm:top-3 sm:mx-2 sm:mt-3 sm:mb-6 sm:px-4 sm:py-3 rounded-none sm:rounded-xl bg-[#090412]/85 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-        <div className="flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-50 mx-0 mt-0 mb-2 px-2 py-3 sm:top-3 sm:mx-2 sm:mt-3 sm:mb-4 sm:px-4 sm:py-3 rounded-none sm:rounded-2xl bg-[#090412]/90 backdrop-blur-xl border-b border-white/10 sm:border shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
+        <div className="flex items-center justify-between gap-2 w-full">
           <Link to="/" className="flex items-center gap-2.5 no-underline group shrink-0">
             <img
               src="/logo-48.png"
@@ -228,11 +233,11 @@ const Home = () => {
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="ml-auto flex items-center justify-end gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setModal({ open: true, day: streak, coins: nextStreakReward })}
-                className="home-shine flex items-center gap-1.5 rounded-full px-3.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-orange-500/30 bg-gradient-to-br from-orange-600 to-red-700 shadow-[0_4px_15px_rgba(249,115,22,0.3)] transition-all hover:scale-[1.05] active:scale-95"
+                className="home-shine flex items-center gap-1.5 rounded-full px-2.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-orange-500/30 bg-gradient-to-br from-orange-600 to-red-700 shadow-[0_4px_15px_rgba(249,115,22,0.3)] transition-all hover:scale-[1.05] active:scale-95"
                 aria-label="Open streak rewards"
               >
                 <Flame size={14} className="text-amber-200" />
@@ -240,7 +245,7 @@ const Home = () => {
               </button>
               <Link
                 to="/wallet/"
-                className="home-shine flex items-center gap-1.5 rounded-full px-3.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-violet-400/30 bg-gradient-to-br from-indigo-600 to-purple-700 shadow-[0_4px_15px_rgba(139,92,246,0.3)] transition-all hover:scale-[1.05] active:scale-95"
+                className="home-shine flex items-center gap-1.5 rounded-full px-2.5 py-2 sm:px-3.5 sm:py-2 text-sm sm:text-sm md:text-base font-extrabold border border-violet-400/30 bg-gradient-to-br from-indigo-600 to-purple-700 shadow-[0_4px_15px_rgba(139,92,246,0.3)] transition-all hover:scale-[1.05] active:scale-95"
                 aria-label="Open wallet"
               >
                 <Coins size={14} className="text-yellow-300" />
@@ -259,13 +264,13 @@ const Home = () => {
         </div>
       </header>
 
-      <div className="pt-2 space-y-7 px-0">
+      <div className="pt-0 space-y-5 px-0">
 
-        {/* ═══════ HERO BATTLE ═══════ */}
+        {/* ======= IPL DANGAL HERO BANNER ======= */}
         <section className="animate-fade-up px-0" style={{ '--fade-delay': '0ms' }}>
 
-          <div className="mb-4 px-4 sm:px-0">
-            <h1 className="flex items-center gap-2 text-[1.55rem] sm:text-[1.8rem] font-black tracking-tight">
+          <div className="mb-2 px-4 sm:px-0">
+            <h1 className="flex items-center gap-2 text-[1.4rem] sm:text-[1.6rem] font-black tracking-tight">
               <span className="text-white">Hey!</span>
               <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent">
                 {user ? displayName : 'Player'}
@@ -277,54 +282,90 @@ const Home = () => {
             type="button"
             onClick={() => go('opinion')}
             onPointerEnter={() => warmCategory('opinion')}
-            className="group relative block w-full overflow-hidden rounded-[36px] bg-[#030008] text-center border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(249,115,22,0.5)] hover:border-orange-500/50"
+            className="group relative block w-full overflow-hidden rounded-[28px] sm:rounded-[32px] text-center border border-white/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.85)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_32px_72px_rgba(249,115,22,0.45)] hover:border-orange-500/40 ipl-hero-btn"
+            style={{ background: 'linear-gradient(135deg,#0c0005 0%,#180612 40%,#0f0308 70%,#060010 100%)' }}
+            aria-label="Play IPL Dangal opinion quiz"
           >
-            {/* Deep Explosive Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.3)_0%,transparent_60%)] group-hover:bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.5)_0%,transparent_70%)] transition-colors duration-700" />
-            <div className="absolute inset-0 opacity-[0.08] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#030008] to-transparent" />
+            {/* Top shimmer line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
 
-            {/* Enhanced Background Image with Higher Exposure */}
-            <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1614294148960-9aa740632a87?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center group-hover:opacity-30 transition-opacity duration-500" />
+            {/* Background orbs */}
+            <div className="ipl-orb ipl-orb-1" />
+            <div className="ipl-orb ipl-orb-2" />
+            <div className="ipl-orb ipl-orb-3" />
 
-            {/* Massive Background Emoji with More Intensity */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[16rem] sm:text-[20rem] md:text-[28rem] opacity-15 blur-md transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] group-hover:opacity-25 pointer-events-none">
-              🏏
+            {/* Subtle diagonal grid */}
+            <div
+              className="absolute inset-0 opacity-[0.03]"
+              style={{ backgroundImage: 'repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)', backgroundSize: '28px 28px' }}
+            />
+
+            {/* Bottom fade */}
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#060010] to-transparent" />
+
+            {/* Main content */}
+            <div className="relative z-10 flex min-h-[220px] sm:min-h-[270px] md:min-h-[320px] flex-row items-center justify-between gap-4 md:gap-10 px-5 py-7 sm:px-10 md:px-14">
+
+              {/* Left: Text */}
+              <div className="flex flex-col items-start text-left">
+                {/* LIVE badge */}
+                <div className="mb-3 self-start inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/15 px-4 py-1.5 backdrop-blur-sm">
+                  <span className="ipl-live-dot" />
+                  <span className="text-[0.6rem] sm:text-[0.65rem] font-black uppercase tracking-[0.3em] text-red-300">Live Season</span>
+                  <span className="ipl-live-dot" />
+                </div>
+
+                {/* Season label */}
+                <div className="mb-1 text-[0.7rem] sm:text-[0.75rem] font-black uppercase tracking-[0.35em] text-orange-400/80">
+                  IPL 2026
+                </div>
+
+                {/* Main title */}
+                <div className="ipl-banner-title mb-4">
+                  IPL<br className="hidden sm:block md:hidden" /> DANGAL
+                </div>
+
+                {/* Tagline */}
+                <p className="mb-5 text-[0.72rem] sm:text-[0.8rem] text-white/55 font-medium leading-relaxed max-w-[200px] sm:max-w-[260px] md:max-w-[300px]">
+                  Predict. Compete. Win coins on every match.
+                </p>
+
+                {/* CTA button */}
+                <div className="ipl-cta-wrap">
+                  <div className="ipl-cta-ring" />
+                  <div className="ipl-cta-btn" aria-hidden="true">
+                    <Trophy size={13} className="ipl-cta-trophy" strokeWidth={2.5} />
+                    <span className="ipl-cta-label">PLAY NOW</span>
+                    <span className="ipl-cta-arrow-icon">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Emblem (desktop only) */}
+              <div className="flex ipl-emblem-wrap ipl-emblem-wrap--resp" aria-hidden="true">
+                <div className="ipl-emblem-halo" />
+                <div className="ipl-emblem-ring ipl-emblem-ring-outer" />
+                <div className="ipl-emblem-ring ipl-emblem-ring-mid" />
+                <div className="ipl-emblem-ring ipl-emblem-ring-inner" />
+                <div className="ipl-emblem-core">
+                  <img
+                    src="/logo-48.png"
+                    alt=""
+                    width={72}
+                    height={72}
+                    className="ipl-emblem-logo"
+                    draggable="false"
+                  />
+                </div>
+              </div>
+
+              {/* Spacer on mobile so emblem shows */}
             </div>
 
-            {/* Additional Animated Elements for Chaos */}
-            <div className="absolute left-[-10%] top-[-10%] h-[120%] w-[120%] bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.2)_0%,transparent_50%)] animate-[spin_10s_linear_infinite]" />
-            <div className="absolute right-[-10%] bottom-[-10%] h-[120%] w-[120%] bg-[radial-gradient(circle_at_center,rgba(255,165,0,0.2)_0%,transparent_50%)] animate-[spin_8s_linear_infinite_reverse]" />
-
-            {/* Center Aligned Content */}
-            <div className="relative z-10 flex min-h-[300px] sm:min-h-[360px] md:min-h-[440px] flex-col items-center justify-center px-4 py-10 sm:px-8">
-              
-              {/* Center Live Badge with More Intensity */}
-              <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/20 px-4 py-2 text-[0.65rem] sm:text-[0.7rem] font-black uppercase tracking-[0.25em] text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-[pulse_2s_ease-in-out_infinite] group-hover:shadow-[0_0_20px_rgba(239,68,68,0.8)] transition-all duration-300">
-                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[blink_1.5s_ease-in-out_infinite]" />
-                LIVE ARENA
-                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[blink_1.5s_ease-in-out_infinite]" />
-              </div>
-
-              {/* IPL Dangal Title with Explosive Effects */}
-              <div className="mb-2 sm:mb-3 text-center text-[2.2rem] sm:text-[3rem] md:text-[4.2rem] font-black leading-[1.1] tracking-tight text-orange-500 drop-shadow-[0_8px_16px_rgba(249,115,22,0.7)] animate-[titlePulse_3s_ease-in-out_infinite]">
-                IPL DANGAL
-              </div>
-
-              {/* Emoji Overload with Animation */}
-              <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-3 sm:gap-4 text-[1.5rem] sm:text-[2rem] animate-[bounce_2s_ease-in-out_infinite]">
-                <span className="animate-[spin_5s_linear_infinite]">🔥</span>
-                <span className="animate-[spin_6s_linear_infinite_reverse]">⚡</span>
-                <span className="animate-[spin_4s_linear_infinite]">💥</span>
-                <span className="animate-[spin_7s_linear_infinite_reverse]">🏆</span>
-                <span className="animate-[spin_5.5s_linear_infinite]">🛡️</span>
-              </div>
-
-              {/* CTA Button with Explosive Animation */}
-              <div className="mt-6 sm:mt-8 px-6 py-3 sm:px-8 sm:py-4 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_10px_30px_rgba(249,115,22,0.5)] transition-all duration-300 hover:shadow-[0_15px_40px_rgba(249,115,22,0.8)] hover:scale-105 animate-[buttonPulse_3.5s_ease-in-out_infinite] group-hover:bg-gradient-to-r group-hover:from-red-600 group-hover:to-orange-500">
-                ENTER BATTLE ROYALE
-              </div>
-            </div>
+            {/* Bottom shimmer */}
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
           </button>
         </section>
 
@@ -334,32 +375,34 @@ const Home = () => {
             <h2 className="text-[1rem] sm:text-[0.95rem] font-black text-white/90 tracking-widest uppercase">Quick Arenas</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-4 sm:px-0">
-            {QUICK_ARENAS.map(({ id, emoji, title, subtitle, bg, ring, shadow }) => (
+          {/* Mobile: horizontal scroll | Desktop: 4-col grid */}
+          <div className="qa-scroll-track">
+            {QUICK_ARENAS.map(({ id, Icon, title, subtitle, bg }) => (
               <button
                 key={title}
                 type="button"
                 onClick={() => go(id)}
                 onPointerEnter={() => warmCategory(id)}
-                className={`group relative overflow-hidden rounded-[24px] p-4 sm:p-5 text-left transition-all duration-300 hover:-translate-y-1 active:translate-y-0 bg-gradient-to-br ${bg} ${shadow} ring-1 ring-inset ${ring} min-h-[180px] md:min-h-[200px]`}
+                className={`qa-card group bg-gradient-to-br ${bg}`}
+                aria-label={`Play ${title}: ${subtitle}`}
               >
-                <div className="absolute -right-4 -bottom-4 text-[4.8rem] leading-none opacity-20 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">{emoji}</div>
-                
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_60%)]" />
+                {/* Radial shine */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.13),transparent_65%)]" />
+                <Icon className="absolute -right-3 -bottom-3 h-20 w-20 text-white opacity-[0.18] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none" aria-hidden="true" strokeWidth={1.5} />
 
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className="h-12 w-12 rounded-[16px] bg-white/20 grid place-items-center backdrop-blur-md mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    <span className="text-[1.2rem] drop-shadow-md">{emoji}</span>
+                  {/* Icon pill */}
+                  <div className="qa-icon-pill mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <Icon size={22} aria-hidden="true" strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 className="text-[1.05rem] font-black text-white leading-tight drop-shadow-md">{title}</h3>
-                    <p className="text-[0.65rem] font-bold text-white/75 mt-1 tracking-widest uppercase">{subtitle}</p>
+                    <h3 className="text-[1rem] sm:text-[1.05rem] font-black text-white leading-tight drop-shadow-md">{title}</h3>
+                    <p className="text-[0.6rem] font-bold text-white/70 mt-0.5 tracking-widest uppercase">{subtitle}</p>
                   </div>
-
-                  <div className="mt-auto pt-4 flex items-center justify-between">
-                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-white/85">Play</span>
-                    <div className="h-8 w-8 rounded-full bg-white/20 grid place-items-center border border-white/25 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                      <ChevronRight size={16} className="text-white" strokeWidth={3} />
+                  <div className="mt-auto pt-3 flex items-center justify-between">
+                    <span className="text-[0.6rem] font-black uppercase tracking-widest text-white/80">Play</span>
+                    <div className="qa-arrow-btn transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5">
+                      <ChevronRight size={14} className="text-white" strokeWidth={3} />
                     </div>
                   </div>
                 </div>

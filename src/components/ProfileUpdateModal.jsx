@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
+import { callUserRpc } from '@/lib/userRpc';
 import { Camera, Loader2 } from 'lucide-react';
 
 const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
@@ -113,16 +114,10 @@ const ProfileUpdateModal = ({ isOpen, onClose, isFirstTime = false }) => {
     if (!username || username === userProfile?.username) return true;
 
     try {
-      const { data, error } = await supabase.rpc('is_username_available', {
+      const data = await callUserRpc('isUsernameAvailable', {
         p_username: username,
         p_exclude: user.id,
       });
-
-      if (error) {
-        logger.error('Username check error:', error);
-        setErrors((prev) => ({ ...prev, username: 'Unable to verify username. Please try again.' }));
-        return false; // Block submission if check fails - safer approach
-      }
 
       return Boolean(data);
     } catch (error) {

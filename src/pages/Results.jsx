@@ -1027,7 +1027,7 @@ const Results = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen px-3 pt-16 sm:pt-20 pb-24">
+      <div className="min-h-screen px-3 pt-4 sm:pt-6 pb-24">
         <SeoHead
           title="Results – Loading | Quiz Dangal"
           description="Loading quiz results."
@@ -1229,7 +1229,7 @@ const Results = () => {
 
   return (
     <div
-      className="min-h-screen px-3 pt-16 sm:pt-20 pb-24 relative"
+      className="min-h-screen px-3 pt-4 sm:pt-6 pb-24 relative"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}
     >
       <SeoHead
@@ -1247,38 +1247,87 @@ const Results = () => {
       />
       <style>{`.results-prize-row::-webkit-scrollbar{display:none;}`}</style>
       <div className="max-w-md mx-auto space-y-3">
-        {/* Compact Results Header */}
+        {/* Combined Results + Your Result Card */}
         <div className="p-[1px] rounded-xl bg-gradient-to-r from-amber-500/60 via-fuchsia-500/50 to-indigo-500/60">
-          <div className="rounded-xl bg-slate-900/95 p-3">
+          <div className="rounded-xl bg-slate-900/95 p-3 space-y-2.5">
+            {/* Top row: Trophy title + participants + Q&A button */}
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <Trophy className="w-5 h-5 text-amber-400" />
                   <h1 className="text-lg font-bold text-white">Results</h1>
+                  {userRank && (
+                    <span className="text-[10px] text-slate-400">• {results.length} players</span>
+                  )}
                 </div>
                 {predictionMeta && (
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">
+                  <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">
                     <span>🏏</span>
                     <span>{predictionMeta.fixtureLabel}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
-                  <Users className="w-3 h-3" />
-                  <span>{participantsCount || results?.length || 0} participants</span>
-                </div>
-              </div>
-              {userRank?.rank && (
-                <div className="shrink-0 text-center">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 flex items-center justify-center shadow-lg">
-                    <span className="text-lg font-extrabold text-white">#{userRank.rank}</span>
+                {!userRank && (
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <Users className="w-3 h-3" />
+                    <span>{participantsCount || results?.length || 0} participants</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-1">Your Rank</p>
-                </div>
+                )}
+              </div>
+              {(qaItems?.length || 0) > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowQA((v) => !v)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${showQA ? 'bg-emerald-600/20 border border-emerald-500/40 text-emerald-300' : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'}`}
+                  aria-expanded={showQA}
+                >
+                  <BookOpenCheck className="w-3 h-3" />
+                  Q&A
+                </button>
               )}
             </div>
+
+            {/* User stats row — only when logged in and has result */}
+            {user && userRank && (
+              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/50">
+                <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Your Rank</p>
+                  <m.p
+                    className="text-base font-bold text-amber-400"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 12 }}
+                  >
+                    #{userRank.rank}
+                  </m.p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Score</p>
+                  <CountUp value={userRank.score} className="text-base font-bold text-emerald-400" />
+                </div>
+                <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Prize</p>
+                  <m.p
+                    className="text-base font-bold text-purple-400"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 12 }}
+                  >
+                    {userPrizeDisplay.formatted}
+                  </m.p>
+                </div>
+              </div>
+            )}
+
+            {/* Participated but no rank yet */}
+            {user && isParticipant && !userRank && (
+              <div className="pt-1 border-t border-slate-700/50">
+                <p className="text-[10px] text-slate-400">You participated — results pending or review Q&A above.</p>
+              </div>
+            )}
+
             {/* Prize chips row */}
             {Array.isArray(quiz?.prizes) && quiz.prizes.length > 0 && (
-              <div className="results-prize-row mt-2 flex items-center gap-1.5 flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="results-prize-row flex items-center gap-1.5 flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] pt-1 border-t border-slate-700/50">
                 {quiz.prizes.slice(0, 5).map((amount, idx) => {
                   const prizeDisplay = getPrizeDisplay(prizeType, amount, { fallback: 0 });
                   const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
@@ -1307,65 +1356,6 @@ const Results = () => {
                   <div className="text-[10px] text-cyan-200">Final result coming soon</div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* User Summary Card - show for all participants (including admins who played) */}
-        {user && (userRank || isParticipant) && (
-          <div className="p-[1px] rounded-xl bg-gradient-to-r from-emerald-500/50 via-cyan-500/40 to-indigo-500/50">
-            <div className="rounded-xl bg-slate-900/95 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="text-xs font-semibold text-white">{userRank ? 'Your Result' : 'You Participated'}</div>
-                  {userRank && <span className="text-[10px] text-slate-400">of {results.length}</span>}
-                </div>
-                {(qaItems?.length || 0) > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowQA((v) => !v)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${showQA ? 'bg-emerald-600/20 border border-emerald-500/40 text-emerald-300' : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'}`}
-                    aria-expanded={showQA}
-                  >
-                    <BookOpenCheck className="w-3 h-3" />
-                    Q&A
-                  </button>
-                )}
-              </div>
-              {userRank ? (
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                    <p className="text-[10px] text-slate-400 mb-0.5">Rank</p>
-                    <m.p
-                      className="text-base font-bold text-amber-400"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 12 }}
-                    >
-                      #{userRank.rank}
-                    </m.p>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                    <p className="text-[10px] text-slate-400 mb-0.5">Score</p>
-                    <CountUp value={userRank.score} className="text-base font-bold text-emerald-400" />
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                    <p className="text-[10px] text-slate-400 mb-0.5">Prize</p>
-                    <m.p
-                      className="text-base font-bold text-purple-400"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 12 }}
-                    >
-                      {userPrizeDisplay.formatted}
-                    </m.p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2 space-y-1">
-                  <p className="text-[10px] text-slate-400">Review your answers using the Q&A button above.</p>
-                </div>
-              )}
             </div>
           </div>
         )}

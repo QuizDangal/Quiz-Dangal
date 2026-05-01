@@ -8,6 +8,7 @@ import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 import { supabase, hasSupabaseConfig, getSupabase } from '@/lib/customSupabaseClient';
 import { loadReferralCode, clearReferralCode, normalizeReferralCode } from '@/lib/referralStorage';
 import { RATE_LIMIT_DEFAULT_WINDOW_MS, RATE_LIMIT_DEFAULT_MAX_ATTEMPTS } from '@/constants';
+import { callUserRpc } from '@/lib/userRpc';
 
 const AuthContext = createContext();
 
@@ -345,10 +346,7 @@ function AuthProviderInner({ children }) {
         })();
         if (!alreadyProcessed && chosenReferral) {
           try {
-            await supabase.rpc('handle_referral_bonus', {
-              referred_user_uuid: user.id,
-              referrer_code: chosenReferral,
-            });
+            await callUserRpc('handleReferralBonus', { referrer_code: chosenReferral });
             try {
               sessionStorage.setItem(refFlag, '1');
             } catch (e3) {

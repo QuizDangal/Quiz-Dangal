@@ -16,6 +16,7 @@ import { formatDateTime } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import DailyScheduler from '@/components/admin/DailyScheduler';
 import IPLPredictionManager from '@/components/admin/IPLPredictionManager';
+import { callAdminRpc } from '@/lib/adminRpc';
 
 // ---------------- Constants & Helpers ----------------
 const categoryOptions = [
@@ -473,8 +474,7 @@ export default function Admin() {
       // Optimistic UI: remove row immediately
       setPendingRedemptions((prev) => prev.filter((r) => r.id !== id));
       try {
-        const { error } = await supabase.rpc('admin_approve_redemption', { p_redemption_id: id });
-        if (error) throw error;
+        await callAdminRpc('approveRedemption', { p_redemption_id: id });
         toast({ title: 'Approved', description: 'Redemption approved.' });
       } catch (e) {
         toast({ title: 'Approve failed', description: e.message, variant: 'destructive' });

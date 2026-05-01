@@ -3,6 +3,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { callAdminRpc } from '@/lib/adminRpc';
 
 // Categories for scheduler (keep in sync with backend expected values)
 export const CATEGORIES = ['opinion', 'gk'];
@@ -431,8 +432,7 @@ export default function DailyScheduler() {
       };
 
       // Call RPC
-      const { error } = await supabase.rpc('admin_seed_quiz_day_multi', { p_payload: payload });
-      if (error) throw error;
+      await callAdminRpc('seedQuizDayMulti', { p_payload: payload });
 
       toast({ 
         title: '🎉 Deployed!', 

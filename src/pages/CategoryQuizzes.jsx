@@ -803,7 +803,7 @@ const CategoryQuizzes = () => {
   // This ensures Google sees valuable content regardless of when it crawls
 
   return (
-    <div className="min-h-screen px-3 sm:px-4 pt-14 sm:pt-16 pb-6">
+    <div className="min-h-screen px-3 sm:px-4 pt-4 sm:pt-6 pb-6">
       <SeoHead
         title={`${meta.title} – Quiz Dangal`}
         description={`Active and upcoming quizzes in ${meta.title}. Play daily ${meta.title.toLowerCase()} on Quiz Dangal and earn coins.`}
