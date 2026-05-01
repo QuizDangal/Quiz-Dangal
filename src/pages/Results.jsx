@@ -322,7 +322,7 @@ const Results = () => {
             }
           } catch (e) {
             // Q&A processing failed - non-critical, results still show
-            if (import.meta.env?.DEV) console.debug('Q&A processing failed:', e?.message);
+            logger.debug('Q&A processing failed:', e?.message);
           }
 
           // Process profile enrichment
@@ -352,7 +352,7 @@ const Results = () => {
             }
           } catch (e) {
             // Profile enrichment failed - non-critical, basic results still show
-            if (import.meta.env?.DEV) console.debug('Profile enrichment failed:', e?.message);
+            logger.debug('Profile enrichment failed:', e?.message);
           }
         }).catch(() => {});
       }).catch(() => {});
@@ -1149,7 +1149,6 @@ const Results = () => {
             <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3 text-left">
               <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>
               <div className="mt-2 text-sm font-bold text-white">{predictionMeta.fixtureLabel}</div>
-              <div className="mt-1 text-xs text-slate-300">Official result match ke baad admin finalize karega.</div>
             </div>
           )}
           <Button
@@ -1175,7 +1174,6 @@ const Results = () => {
         />
         <div className="qd-glass rounded-2xl p-6 shadow-lg text-center max-w-md w-full text-slate-100">
           <h2 className="text-xl font-bold mb-2 text-white">Official match result pending</h2>
-          <p className="text-slate-300 mb-4">Prediction quiz submit ho chuki hai. Winners tab dikhenge jab official answers match ke baad verify ho jayenge.</p>
           {predictionMeta && (
             <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3 text-left">
               <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>

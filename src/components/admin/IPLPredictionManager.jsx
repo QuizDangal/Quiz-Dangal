@@ -16,7 +16,6 @@ const defaultPrizes = ['121', '71', '51'];
 const MAX_PRIZE_TIERS = 10;
 
 const MAX_DAYS_AHEAD = 3;
-const MAX_QUIZZES_PER_DAY = 2;
 
 function TeamBadge({ team, align = 'left' }) {
   if (!team) return null;
@@ -281,15 +280,6 @@ export default function IPLPredictionManager() {
       return;
     }
 
-    const startDate = new Date(form.start_time).toISOString().slice(0, 10);
-    const sameDayCount = quizzes.filter((q) => {
-      if (!q.start_time) return false;
-      return new Date(q.start_time).toISOString().slice(0, 10) === startDate;
-    }).length;
-    if (sameDayCount >= MAX_QUIZZES_PER_DAY) {
-      toast({ title: 'Daily limit reached', description: `Ek din mai maximum ${MAX_QUIZZES_PER_DAY} IPL prediction quiz schedule kar sakte ho. Us din already ${sameDayCount} hai.`, variant: 'destructive' });
-      return;
-    }
     if (resultPublishAt <= new Date(form.end_time)) {
       toast({ title: 'Invalid final result time', description: 'Final result time must be after quiz end time.', variant: 'destructive' });
       return;

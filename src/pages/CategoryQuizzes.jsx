@@ -404,16 +404,23 @@ const CategoryQuizzes = () => {
       /* ignore */
     }
 
-    // Immediately reflect UI state
+    const rl = rateLimit(`join_${user?.id || 'anon'}`, { max: 4, windowMs: 8000 });
+    if (!rl.allowed) {
+      toast({
+        title: 'Slow down',
+        description: 'Please wait a moment before trying again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setJoiningId(qId);
-    // Try to enable push notifications on first join/pre-join (fire-and-forget; don't block join)
     try {
       if (
         typeof Notification !== 'undefined' &&
         Notification.permission !== 'granted' &&
         !isSubscribed
       ) {
-        // Do not await to avoid stalling join on desktop
         Promise.resolve()
           .then(() => subscribeToPush())
           .catch(() => {});
@@ -421,6 +428,7 @@ const CategoryQuizzes = () => {
     } catch {
       /* ignore push errors */
     }
+
     try {
       const result = await smartJoinQuiz({ supabase: sb, quiz: q, user });
       if (result.status === 'error') throw result.error;
@@ -429,18 +437,9 @@ const CategoryQuizzes = () => {
         toast({ title: 'Already Joined', description: 'You are in this quiz.' });
       } else if (result.status === 'joined') {
         setJoinedMap((prev) => ({ ...prev, [qId]: 'joined' }));
-        const rl = rateLimit(`join_${user?.id || 'anon'}`, { max: 4, windowMs: 8000 });
-        if (!rl.allowed) {
-          toast({
-            title: 'Slow down',
-            description: 'Please wait a moment before trying again.',
-            variant: 'destructive',
-          });
-        } else {
-          toast({ title: 'Joined!', description: 'Taking you to the quiz.' });
-          // Navigate to appropriate route
-          navigate(q.slotId && !q.isLegacy ? `/quiz/slot/${q.slotId}` : `/quiz/${q.id}`);
-        }
+        toast({ title: 'Joined!', description: 'Taking you to the quiz.' });
+        // Navigate to appropriate route
+        navigate(q.slotId && !q.isLegacy ? `/quiz/slot/${q.slotId}` : `/quiz/${q.id}`);
       } else if (result.status === 'pre_joined') {
         setJoinedMap((prev) => ({ ...prev, [qId]: 'pre' }));
         toast({ title: 'Pre-joined!', description: 'We will remind you before start.' });

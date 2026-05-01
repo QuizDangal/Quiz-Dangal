@@ -522,7 +522,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
       
       // Prevent repeated join attempts on effect re-runs (e.g., after 400 errors)
       const joinKey = slotId || quizId;
-      if (joinAttemptedRef.current === joinKey && joined) return;
+      if (joinAttemptedRef.current === joinKey) return;
 
       try {
         if (!joined || participantStatus === 'pre_joined') {
@@ -570,10 +570,15 @@ export function useQuizEngine(quizId, navigate, options = {}) {
               setJoined(true);
               setParticipantStatus('pre_joined');
             } else {
-              // Set joined to true anyway to prevent infinite retry loops
-              // The user can refresh if they want to try again
-              setJoined(true);
-              throw lastErr;
+              joinAttemptedRef.current = null;
+              if (mountedRef.current) {
+                toast({
+                  title: 'Could not join',
+                  description: 'Failed to join quiz. Please try again.',
+                  variant: 'destructive',
+                });
+              }
+              return;
             }
           }
         }
@@ -613,7 +618,8 @@ export function useQuizEngine(quizId, navigate, options = {}) {
     // Safety checks
     if (!quiz) return;
     if (!quiz.end_time) return;
-    if (!(quizState === 'finished' || quizState === 'completed')) return;
+    if (quizState !== 'finished') return;
+    if (Object.keys(answers || {}).length > 0 && participantStatus === 'joined') return;
 
     const navigateToResults = () => {
       (async () => {
@@ -657,7 +663,7 @@ export function useQuizEngine(quizId, navigate, options = {}) {
         redirectTimeoutRef.current = null;
       }
     };
-  }, [quiz, quizId, slotId, quizState, navigate]);
+  }, [quiz, quizId, slotId, quizState, navigate, answers, participantStatus]);
 
   const handleJoinOrPrejoin = useCallback(async () => {
     if (!quiz) return;

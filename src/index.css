@@ -2705,3 +2705,29 @@ div:focus-visible:not([tabindex]) {
     animation: none !important;
   }
 }
+
+/* =============================================================
+   Category SEO Panel - Collapsible Content
+   ============================================================= */
+.cat-seo-panel {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+}
+
+.cat-seo-panel--open {
+  max-height: 2000px; /* Large enough to accommodate content */
+  opacity: 1;
+}
+
+.cat-seo-panel__body {
+  /* Ensure content is visible when expanded */
+  visibility: visible;
+}
+
+/* Smooth transition for chevron rotation */
+.cat-seo-panel button svg {
+  transition: transform 0.3s ease;
+}
