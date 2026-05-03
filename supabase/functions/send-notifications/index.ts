@@ -111,7 +111,6 @@ serve(async (req: Request): Promise<Response> => {
     if (!SUPABASE_URL) missingCoreConfig.push('SUPABASE_URL');
     if (!SUPABASE_SERVICE_ROLE) missingCoreConfig.push('SUPABASE_SERVICE_ROLE_KEY');
     if (!HAS_VAPID) missingCoreConfig.push('VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY');
-    if (!SUPABASE_ANON_KEY) missingCoreConfig.push('SUPABASE_ANON_KEY');
 
     if (missingCoreConfig.length > 0) {
       const detail = `Missing required environment variables: ${missingCoreConfig.join(', ')}`;
@@ -120,14 +119,22 @@ serve(async (req: Request): Promise<Response> => {
       return json({ error: detail }, { status, headers: makeCorsHeaders(req) });
     }
 
-    // Authenticate caller and ensure they are admin
-    const authHeader = req.headers.get('Authorization');
-    const supabaseUserClient: SupabaseClient = createClient(
+    // Authenticate caller and ensure they are admin.
+    // Pass JWT explicitly — supabase-js v2 does NOT reliably read it from a
+    // globally-set Authorization header during auth.getUser().
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const jwt = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!jwt) {
+      return json({ error: 'Unauthorized' }, { status: 401, headers: makeCorsHeaders(req) });
+    }
+
+    const supabaseAdmin: SupabaseClient = createClient(
       SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: authHeader ?? '' } } }
+      SUPABASE_SERVICE_ROLE,
+      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
     );
-    const userResp = await supabaseUserClient.auth.getUser();
+
+    const userResp = await supabaseAdmin.auth.getUser(jwt);
     const userErr = userResp.error; const user = userResp.data?.user ?? null;
     if (userErr || !user) {
       return json({ error: 'Unauthorized' }, { status: 401, headers: makeCorsHeaders(req) });
@@ -136,12 +143,6 @@ serve(async (req: Request): Promise<Response> => {
     if (!message || !title) {
       return json({ error: "Message and title are required." }, { status: 400, headers: makeCorsHeaders(req) });
     }
-
-    const supabaseAdmin: SupabaseClient = createClient(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE,
-      { auth: { persistSession: false } }
-    );
 
     // Verify admin role from profiles table
     const { data: profile, error: profErr } = await supabaseAdmin

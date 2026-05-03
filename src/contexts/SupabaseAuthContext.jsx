@@ -368,7 +368,7 @@ function AuthProviderInner({ children }) {
         refreshUserProfile(user);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading, userProfile]);
+  }, [user, loading]);
 
   // Ensure referral_code exists for sharing
   useEffect(() => {

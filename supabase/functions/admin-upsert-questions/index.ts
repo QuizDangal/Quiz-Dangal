@@ -21,7 +21,6 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   ?? Deno.env.get("SUPABASE_SERVICE_ROLE")
   ?? "";
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("VITE_SUPABASE_ANON_KEY") ?? "";
 
 const DEFAULT_ORIGINS = "https://quizdangal.com,http://localhost:5173,http://localhost:5174";
 const originsEnv = Deno.env.get("ALLOWED_ORIGINS") ?? Deno.env.get("ALLOWED_ORIGIN") ?? "";
@@ -74,7 +73,7 @@ function sanitizeItems(rawItems: QuestionPayload[] | undefined): QuestionPayload
 }
 
 async function ensureAdmin(headers: Headers) {
-  if (!SUPABASE_URL || !ANON_KEY) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return { ok: false as const, status: 500, reason: "Supabase client not configured" };
   }
   const authHeader = headers.get("Authorization") ?? "";
@@ -82,32 +81,35 @@ async function ensureAdmin(headers: Headers) {
     return { ok: false as const, status: 401, reason: "Missing Authorization header" };
   }
 
-  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userResp, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userResp?.user) {
-    return { ok: false as const, status: 401, reason: "Unauthorized" };
-  }
-
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return { ok: false as const, status: 500, reason: "Service role not configured" };
+  // Strip optional "Bearer " prefix and pass the raw JWT explicitly to getUser().
+  // supabase-js v2 does NOT reliably read the JWT from a globally-set
+  // Authorization header during auth.getUser() - it must be passed as an arg.
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) {
+    return { ok: false as const, status: 401, reason: "Missing token" };
   }
 
   const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
+
+  const { data: userResp, error: userErr } = await adminClient.auth.getUser(jwt);
+  const user = userResp?.user;
+  if (userErr || !user?.id) {
+    return { ok: false as const, status: 401, reason: userErr?.message || "Unauthorized" };
+  }
+
   const { data: profile, error: profileErr } = await adminClient
     .from("profiles")
     .select("role")
-    .eq("id", userResp.user.id)
+    .eq("id", user.id)
     .single();
 
   if (profileErr || profile?.role !== "admin") {
     return { ok: false as const, status: 403, reason: "Forbidden" };
   }
 
-  return { ok: true as const, userId: userResp.user.id, adminClient };
+  return { ok: true as const, userId: user.id, adminClient };
 }
 
 async function assertQuizCanEditQuestions(adminClient: ReturnType<typeof createClient>, quizId: string) {

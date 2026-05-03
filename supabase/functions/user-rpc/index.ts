@@ -9,7 +9,6 @@ type UserRpcBody = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY =
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE') ?? '';
-const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('VITE_SUPABASE_ANON_KEY') ?? '';
 const DEFAULT_ORIGINS = 'https://quizdangal.com,http://localhost:5173,http://localhost:5174';
 const ALLOWED_ORIGINS = (
   Deno.env.get('ALLOWED_ORIGINS') ??
@@ -45,25 +44,23 @@ function json(data: unknown, status: number, headers: Record<string, string>) {
 }
 
 async function getUser(authHeader: string) {
-  if (!SUPABASE_URL || !ANON_KEY || !SERVICE_ROLE_KEY)
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY)
     return { ok: false as const, status: 500, error: 'server_not_configured' };
   if (!authHeader) return { ok: false as const, status: 401, error: 'missing_authorization' };
 
   const jwt = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!jwt) return { ok: false as const, status: 401, error: 'missing_token' };
 
+  // Single service role client handles both JWT verification and DB queries.
   // Pass JWT explicitly - supabase-js v2's getUser() does not reliably read it
   // from a globally-set Authorization header.
-  const verifyClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  const serviceClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  const { data, error } = await verifyClient.auth.getUser(jwt);
+  const { data, error } = await serviceClient.auth.getUser(jwt);
   if (error || !data?.user?.id)
     return { ok: false as const, status: 401, error: error?.message || 'unauthorized' };
 
-  const serviceClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
   return { ok: true as const, user: data.user, serviceClient };
 }
 

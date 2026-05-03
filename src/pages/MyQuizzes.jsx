@@ -144,9 +144,13 @@ const MyQuizzes = () => {
         if (!attempted || cancelled) return;
 
         // Best-effort refresh; UI already rendered.
-        const { data: data2 } = await sb.from('my_quizzes_view').select('*');
+        const nowIso2 = new Date().toISOString();
+        const [liveRes2, finRes2] = await Promise.all([
+          sb.from('my_quizzes_view').select('id, slot_id, title, start_time, end_time, prize_type, prizes').gt('end_time', nowIso2).order('start_time', { ascending: true }).limit(20),
+          sb.from('my_quizzes_view').select('id, slot_id, title, end_time, prize_type, prizes, leaderboard').lte('end_time', nowIso2).order('end_time', { ascending: false }).limit(5),
+        ]);
         if (cancelled) return;
-        setQuizzes((data2 || []).map((s) => ({ ...s })));
+        setQuizzes([...(liveRes2.data || []), ...(finRes2.data || [])]);
       } catch {
         /* ignore */
       }

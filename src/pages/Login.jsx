@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import SeoHead from '@/components/SEO';
 import { normalizeReferralCode, saveReferralCode } from '@/lib/referralStorage';
+import { validatePassword } from '@/lib/validation';
 
 // Moved outside Login component to avoid re-creating on each render
 const LoginHead = () => (
@@ -142,14 +143,15 @@ const Login = () => {
       };
     }
 
-    if (cleanPassword.length < 6) {
+    const pwCheck = validatePassword(cleanPassword);
+    if (!pwCheck.valid) {
       return {
         ok: false,
         cleanEmail,
         cleanPassword,
         toast: {
           title: 'Weak password',
-          description: 'Password must be at least 6 characters.',
+          description: pwCheck.message,
           variant: 'destructive',
         },
       };
