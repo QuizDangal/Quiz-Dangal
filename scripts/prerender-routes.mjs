@@ -18,26 +18,21 @@ const HOST = process.env.SITEMAP_BASE_URL || 'https://quizdangal.com';
  * Routes to prerender. Keep these aligned with scripts/generate-sitemap.mjs.
  */
 const ROUTES = [
-  // Important: Root '/' serves the login view for non-auth users. We want bots to avoid indexing it.
-  // Add robots: 'noindex, follow' for the prerendered root shell so non-JS crawlers do not index it.
-  // Update: Home page is public-facing and should be indexable for discovery.
-  // Serve robots: 'index, follow' so crawlers can index the landing page from the static HTML.
-  { path: '/', title: 'Quiz Dangal – Daily Opinion & GK Quiz for IPL Fans', description: 'Quiz Dangal is India’s daily opinion and GK quiz arena. Play IPL season polls, current affairs rounds, and general knowledge quizzes, grow streaks, invite friends, and redeem rewards.', robots: 'index, follow' },
-  { path: '/leaderboards', title: 'Leaderboards – Quiz Dangal | Top Quiz Players', description: 'See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks.' },
-  { path: '/play-win-quiz-app', title: 'Play & Win – Quiz Dangal | How It Works', description: 'Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India – start free on Quiz Dangal.' },
-  { path: '/opinion-quiz-app', title: 'Opinion Quiz – Quiz Dangal | Fun & Fast Rounds', description: 'Try quick, low-pressure opinion quizzes on Quiz Dangal. Share your take, compare with others, and earn coins as you play.' },
-  { path: '/refer-earn-quiz-app', title: 'Refer & Earn – Quiz Dangal | Invite Friends, Get Coins', description: 'Invite friends to Quiz Dangal and earn bonus coins when they join and play opinion-based and GK quizzes.' },
-  { path: '/gk-quiz', title: 'GK Quiz – Quiz Dangal', description: 'Play a GK quiz daily and sharpen your general knowledge. Compete, earn coins, and climb the leaderboards.' },
-  { path: '/cricket-quiz', title: 'Cricket Quiz Online – Quiz Dangal | IPL & World Cup Trivia', description: 'Play the best cricket quiz online. Test your IPL, World Cup, and cricket trivia knowledge daily on Quiz Dangal.' },
-  { path: '/current-affairs-quiz', title: 'Current Affairs Quiz – Quiz Dangal | Daily GK for Exams', description: 'Daily current affairs quiz for UPSC, SSC, and bank exam prep. Stay updated and earn coins on Quiz Dangal.' },
-  { path: '/bollywood-quiz', title: 'Bollywood Quiz – Quiz Dangal | Movie & Celebrity Trivia', description: 'Play Bollywood quiz rounds covering iconic movies, songs, and celebrity trivia. New questions daily on Quiz Dangal.' },
-  { path: '/about-us', title: 'About Us – Quiz Dangal', description: 'Quiz Dangal – India’s most exciting quiz and rewards platform where knowledge meets entertainment.' },
-  { path: '/contact-us', title: 'Contact Us – Quiz Dangal', description: 'Get in touch with the Quiz Dangal team for support, partnership, or feedback.' },
-  { path: '/terms-conditions', title: 'Terms & Conditions – Quiz Dangal', description: 'Read Quiz Dangal’s terms and conditions.' },
-  { path: '/privacy-policy', title: 'Privacy Policy – Quiz Dangal', description: 'Learn how Quiz Dangal collects and protects your data.' },
-  // Category landing pages (indexable)
-  { path: '/category/opinion', title: 'Opinion Quizzes – Quiz Dangal', description: 'Play opinion-based quizzes. Share your take, compare with others, and earn coins as you play.' },
-  { path: '/category/gk', title: 'GK Quizzes – Quiz Dangal', description: 'Sharpen your general knowledge with live and upcoming GK quizzes on Quiz Dangal.' },
+  { path: '/', title: 'Quiz Dangal – Daily Opinion & GK Quiz for IPL Fans', description: 'Quiz Dangal is India's daily opinion and GK quiz arena. Play IPL season polls, current affairs rounds, and general knowledge quizzes, grow streaks, invite friends, and redeem rewards.', robots: 'index, follow' },
+  { path: '/leaderboards/', title: 'Leaderboards – Quiz Dangal | Top Quiz Players', description: 'See the top players on Quiz Dangal leaderboards. Compete in daily opinion and knowledge quizzes, win coins, and climb ranks.' },
+  { path: '/play-win-quiz-app/', title: 'Play & Win – Quiz Dangal | How It Works', description: 'Play daily quizzes, climb leaderboards, and win rewards. Opinion-based and GK quizzes made for India – start free on Quiz Dangal.' },
+  { path: '/opinion-quiz-app/', title: 'Opinion Quiz – Quiz Dangal | Fun & Fast Rounds', description: 'Try quick, low-pressure opinion quizzes on Quiz Dangal. Share your take, compare with others, and earn coins as you play.' },
+  { path: '/refer-earn-quiz-app/', title: 'Refer & Earn – Quiz Dangal | Invite Friends, Get Coins', description: 'Invite friends to Quiz Dangal and earn bonus coins when they join and play opinion-based and GK quizzes.' },
+  { path: '/gk-quiz/', title: 'GK Quiz – Quiz Dangal', description: 'Play a GK quiz daily and sharpen your general knowledge. Compete, earn coins, and climb the leaderboards.' },
+  { path: '/cricket-quiz/', title: 'Cricket Quiz Online – Quiz Dangal | IPL & World Cup Trivia', description: 'Play the best cricket quiz online. Test your IPL, World Cup, and cricket trivia knowledge daily on Quiz Dangal.' },
+  { path: '/current-affairs-quiz/', title: 'Current Affairs Quiz – Quiz Dangal | Daily GK for Exams', description: 'Daily current affairs quiz for UPSC, SSC, and bank exam prep. Stay updated and earn coins on Quiz Dangal.' },
+  { path: '/bollywood-quiz/', title: 'Bollywood Quiz – Quiz Dangal | Movie & Celebrity Trivia', description: 'Play Bollywood quiz rounds covering iconic movies, songs, and celebrity trivia. New questions daily on Quiz Dangal.' },
+  { path: '/about-us/', title: 'About Us – Quiz Dangal', description: 'Quiz Dangal – India's most exciting quiz and rewards platform where knowledge meets entertainment.' },
+  { path: '/contact-us/', title: 'Contact Us – Quiz Dangal', description: 'Get in touch with the Quiz Dangal team for support, partnership, or feedback.' },
+  { path: '/terms-conditions/', title: 'Terms & Conditions – Quiz Dangal', description: 'Read Quiz Dangal's terms and conditions.' },
+  { path: '/privacy-policy/', title: 'Privacy Policy – Quiz Dangal', description: 'Learn how Quiz Dangal collects and protects your data.' },
+  { path: '/category/opinion/', title: 'Opinion Quizzes – Quiz Dangal', description: 'Play opinion-based quizzes. Share your take, compare with others, and earn coins as you play.' },
+  { path: '/category/gk/', title: 'GK Quizzes – Quiz Dangal', description: 'Sharpen your general knowledge with live and upcoming GK quizzes on Quiz Dangal.' },
 ];
 
 const LEGACY_REDIRECTS = [

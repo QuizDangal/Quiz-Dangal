@@ -70,10 +70,12 @@ export default function GKQuiz() {
       seoArticle={HUB_SEO_ARTICLES.gk}
       relatedLinks={[
         { to: '/category/gk/', label: 'Play GK Quizzes' },
+        { to: '/current-affairs-quiz/', label: 'Current Affairs Quiz' },
+        { to: '/cricket-quiz/', label: 'Cricket Quiz' },
         { to: '/opinion-quiz-app/', label: 'Opinion Quiz Guide' },
         { to: '/play-win-quiz-app/', label: 'Play & Win Guide' },
-        { to: '/leaderboards/', label: 'Leaderboard' },
         { to: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
+        { to: '/leaderboards/', label: 'Leaderboard' },
       ]}
       faqs={[
         {

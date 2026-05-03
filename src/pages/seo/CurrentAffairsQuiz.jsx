@@ -28,6 +28,7 @@ export default function CurrentAffairsQuiz() {
         { to: '/category/gk/', label: 'Play GK Quizzes' },
         { to: '/gk-quiz/', label: 'GK Quiz Guide' },
         { to: '/cricket-quiz/', label: 'Cricket Quiz' },
+        { to: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
         { to: '/leaderboards/', label: 'Leaderboard' },
         { to: '/play-win-quiz-app/', label: 'Play & Win Guide' },
       ]}

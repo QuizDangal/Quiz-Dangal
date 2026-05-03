@@ -27,7 +27,9 @@ export default function BollywoodQuiz() {
       relatedLinks={[
         { to: '/category/opinion/', label: 'Play Opinion Quizzes' },
         { to: '/category/gk/', label: 'Play GK Quizzes' },
+        { to: '/current-affairs-quiz/', label: 'Current Affairs Quiz' },
         { to: '/opinion-quiz-app/', label: 'Opinion Quiz Guide' },
+        { to: '/refer-earn-quiz-app/', label: 'Refer & Earn' },
         { to: '/leaderboards/', label: 'Leaderboard' },
         { to: '/cricket-quiz/', label: 'Cricket Quiz' },
       ]}
