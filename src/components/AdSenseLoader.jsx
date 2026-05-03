@@ -68,19 +68,18 @@ export default function AdSenseLoader() {
     if (!hasConsent) return;
     if (!isAdEligiblePath(location.pathname)) return;
     if (shouldDeferAdsForDevice()) return;
-    if (document.querySelector('script[data-qd-adsense="true"]')) return;
+    if (document.querySelector(`script[src^="${ADSENSE_SRC}"]`)) return;
 
     let cancelled = false;
     let fallbackTimer = null;
 
     const injectScript = () => {
       if (cancelled) return;
-      if (document.querySelector('script[data-qd-adsense="true"]')) return;
+      if (document.querySelector(`script[src^="${ADSENSE_SRC}"]`)) return;
       const script = document.createElement('script');
       script.async = true;
       script.crossOrigin = 'anonymous';
       script.src = ADSENSE_SRC;
-      script.dataset.qdAdsense = 'true';
       document.body.appendChild(script);
     };
 
