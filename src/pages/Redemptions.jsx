@@ -25,6 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
+import { callUserRpc } from '@/lib/userRpc';
 import SeoHead from '@/components/SEO';
 
 export default function Redemptions() {
@@ -62,11 +63,10 @@ export default function Redemptions() {
   }, [isMobile]);
   const [activeTab, setActiveTab] = useState('rewards'); // rewards | history
 
-
   // Use backend reward_value exactly as provided (no extra suffix/prefix)
   const getRawRewardValue = useCallback((rw) => {
     if (!rw) return '';
-    const v = rw.reward_value ?? rw.value ?? rw.amount ?? '';
+    const v = rw.reward_value ?? '';
     return v === null || v === undefined ? '' : String(v).trim();
   }, []);
 
@@ -135,7 +135,8 @@ export default function Redemptions() {
           .select('*')
           .eq('is_active', true)
           .order('coins_required', { ascending: true })
-          .order('id', { ascending: false });
+          .order('id', { ascending: false })
+          .limit(100);
         if (res2.error) setRewards([]);
         else setRewards(res2.data || []);
       } catch {
@@ -165,9 +166,8 @@ export default function Redemptions() {
       .trim()
       .toLowerCase();
     if (!raw) return 'cash';
-    if (raw.includes('cash')) return 'cash';
     if (raw.includes('voucher')) return 'voucher';
-    return raw === 'voucher' ? 'voucher' : 'cash';
+    return 'cash';
   }, []);
 
   const stats = useMemo(() => {
@@ -175,8 +175,7 @@ export default function Redemptions() {
     const pending = rows.filter((r) => r.status === 'pending').length;
     const approved = rows.filter((r) => r.status === 'approved').length;
     const rejected = rows.filter((r) => r.status === 'rejected').length;
-    const coinsUsed = rows.reduce((acc, r) => acc + Number(r.coins_required || 0), 0);
-    return { total, pending, approved, rejected, coinsUsed };
+    return { total, pending, approved, rejected };
   }, [rows]);
 
   const statusBadge = (status) => {
@@ -262,16 +261,16 @@ export default function Redemptions() {
     if (requiresWhatsApp || (payoutChannel || 'upi') === 'phone') {
       // User requested: accept any number (keep minimal guard to avoid empty/non-number)
       const digits = rawIdentifier.replace(/\D/g, '');
-      if (!digits) {
+      if (digits.length < 8 || digits.length > 15) {
         toast({
-          title: 'Enter a phone number',
-          description: 'Please enter digits only (any length).',
+          title: 'Invalid phone number',
+          description: 'Please enter a valid phone number (8-15 digits).',
           variant: 'destructive',
         });
         return;
       }
-      // Send as provided (trimmed). Backend stores as text.
-      identifierToSend = rawIdentifier;
+      // Send digits only to match backend validation (8-15 digits)
+      identifierToSend = digits;
     } else {
       // User requested: accept any UPI as long as it contains '@'
       const upi = rawIdentifier;
@@ -286,6 +285,16 @@ export default function Redemptions() {
     }
     try {
       setRedeemSubmitting(true);
+      // Ensure session is fresh before RPC call (prevents 403 from expired JWT)
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        toast({
+          title: 'Session expired',
+          description: 'Please refresh the page and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
       const channel = requiresWhatsApp ? 'phone' : payoutChannel || 'upi';
       if (requiresWhatsApp && payoutChannel !== 'phone') setPayoutChannel('phone');
       const rpcPayload = {
@@ -293,8 +302,7 @@ export default function Redemptions() {
         p_payout_identifier: identifierToSend,
         p_payout_channel: channel,
       };
-      let { error } = await supabase.rpc('redeem_from_catalog_with_details', rpcPayload);
-      if (error) throw error;
+      await callUserRpc('redeemFromCatalogWithDetails', rpcPayload);
       setRedeemStep('success');
       toast({
         title: 'Redemption pending',
@@ -346,7 +354,9 @@ export default function Redemptions() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 shadow-lg shadow-fuchsia-500/25">
               <Gift className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300 bg-clip-text text-transparent">Redeem Rewards</h1>
+            <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300 bg-clip-text text-transparent">
+              Redeem Rewards
+            </h1>
           </div>
 
           {/* Tabs */}
@@ -377,7 +387,10 @@ export default function Redemptions() {
               {rewardsLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="rounded-2xl bg-slate-800/50 border border-white/5 p-4 animate-pulse">
+                    <div
+                      key={i}
+                      className="rounded-2xl bg-slate-800/50 border border-white/5 p-4 animate-pulse"
+                    >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-12 h-12 rounded-xl bg-slate-700/50" />
                         <div className="flex-1">
@@ -400,42 +413,75 @@ export default function Redemptions() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredRewards.map((rw, idx) => {
-                    const price = Number(rw.coins_required ?? rw.coin_cost ?? rw.coins ?? 0);
+                    const price = Number(rw.coins_required ?? 0);
                     const rewardValue = getRawRewardValue(rw);
                     const displayValue = formatRewardValue(rewardValue);
                     const affordable = walletCoins >= price;
-                    const pct = price > 0 ? Math.min(100, Math.round((walletCoins / price) * 100)) : 100;
+                    const pct =
+                      price > 0 ? Math.min(100, Math.round((walletCoins / price) * 100)) : 100;
                     const rewardType = String(rw.reward_type || '').toLowerCase();
                     const isVoucher = rewardType.includes('voucher');
                     const cardColors = [
-                      { border: 'from-violet-500 via-fuchsia-500 to-pink-500', btnBg: 'from-violet-500 to-fuchsia-500' },
-                      { border: 'from-cyan-400 via-blue-500 to-indigo-500', btnBg: 'from-cyan-500 to-blue-500' },
-                      { border: 'from-emerald-400 via-teal-500 to-cyan-500', btnBg: 'from-emerald-500 to-teal-500' },
-                      { border: 'from-amber-400 via-orange-500 to-rose-500', btnBg: 'from-amber-500 to-orange-500' },
+                      {
+                        border: 'from-violet-500 via-fuchsia-500 to-pink-500',
+                        btnBg: 'from-violet-500 to-fuchsia-500',
+                      },
+                      {
+                        border: 'from-cyan-400 via-blue-500 to-indigo-500',
+                        btnBg: 'from-cyan-500 to-blue-500',
+                      },
+                      {
+                        border: 'from-emerald-400 via-teal-500 to-cyan-500',
+                        btnBg: 'from-emerald-500 to-teal-500',
+                      },
+                      {
+                        border: 'from-amber-400 via-orange-500 to-rose-500',
+                        btnBg: 'from-amber-500 to-orange-500',
+                      },
                     ];
                     const cc = cardColors[idx % cardColors.length];
-                    
+
                     return (
                       <m.div
                         key={rw.id}
                         className="group"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.05, type: 'spring', stiffness: 150, damping: 18 }}
+                        transition={{
+                          delay: idx * 0.05,
+                          type: 'spring',
+                          stiffness: 150,
+                          damping: 18,
+                        }}
                       >
-                        <div className={`relative h-full rounded-2xl p-[1.5px] transition-all duration-200 ${
-                          affordable 
-                            ? `bg-gradient-to-br ${cc.border} shadow-lg` 
-                            : 'bg-gradient-to-br from-slate-600/30 to-slate-700/30'
-                        }`}>
+                        <div
+                          className={`relative h-full rounded-2xl p-[1.5px] transition-all duration-200 ${
+                            affordable
+                              ? `bg-gradient-to-br ${cc.border} shadow-lg`
+                              : 'bg-gradient-to-br from-slate-600/30 to-slate-700/30'
+                          }`}
+                        >
                           <div className="h-full rounded-[14.5px] bg-[#0a0a14]/95 p-4">
                             {/* Icon + Value row */}
                             <div className="flex items-center gap-3 mb-3">
-                              <div className={`w-12 h-12 rounded-xl grid place-items-center flex-shrink-0 ${
-                                affordable ? `bg-gradient-to-br ${cc.btnBg}` : 'bg-slate-700/50'
-                              }`}>
+                              <div
+                                className={`w-12 h-12 rounded-xl grid place-items-center flex-shrink-0 ${
+                                  affordable ? `bg-gradient-to-br ${cc.btnBg}` : 'bg-slate-700/50'
+                                }`}
+                              >
                                 {rw.image_url ? (
-                                  <img src={rw.image_url} alt={rw.name || rw.type || 'Reward'} className="w-full h-full rounded-xl object-cover" width={48} height={48} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                  <img
+                                    src={rw.image_url}
+                                    alt={rw.name || rw.type || 'Reward'}
+                                    className="w-full h-full rounded-xl object-cover"
+                                    width={48}
+                                    height={48}
+                                    loading="lazy"
+                                    decoding="async"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
                                 ) : isVoucher ? (
                                   <Gift className="w-5 h-5 text-white" />
                                 ) : (
@@ -443,12 +489,16 @@ export default function Redemptions() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className={`text-lg font-extrabold leading-tight ${affordable ? 'text-white' : 'text-slate-400'}`}>
+                                <div
+                                  className={`text-lg font-extrabold leading-tight ${affordable ? 'text-white' : 'text-slate-400'}`}
+                                >
                                   {displayValue || rw.title || 'Reward'}
                                 </div>
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                                  isVoucher ? 'text-fuchsia-400' : 'text-emerald-400'
-                                }`}>
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wider ${
+                                    isVoucher ? 'text-fuchsia-400' : 'text-emerald-400'
+                                  }`}
+                                >
                                   {isVoucher ? 'Voucher' : 'Cash'}
                                 </span>
                               </div>
@@ -457,7 +507,9 @@ export default function Redemptions() {
                             {/* Coins + progress */}
                             <div className="flex items-center gap-2 mb-3">
                               <Coins className="w-4 h-4 text-amber-400" />
-                              <span className="text-sm font-extrabold text-white">{price.toLocaleString()}</span>
+                              <span className="text-sm font-extrabold text-white">
+                                {price.toLocaleString()}
+                              </span>
                               <span className="text-[10px] text-slate-500">coins</span>
                               <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden ml-1">
                                 <m.div
@@ -467,7 +519,9 @@ export default function Redemptions() {
                                   transition={{ duration: 0.6, ease: 'easeOut' }}
                                 />
                               </div>
-                              <span className={`text-[10px] font-bold ${pct >= 100 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                              <span
+                                className={`text-[10px] font-bold ${pct >= 100 ? 'text-emerald-400' : 'text-slate-500'}`}
+                              >
                                 {pct >= 100 ? '✓ Ready' : `${pct}%`}
                               </span>
                             </div>
@@ -484,9 +538,14 @@ export default function Redemptions() {
                               }`}
                             >
                               {affordable ? (
-                                <><Sparkles className="w-4 h-4" /> Redeem Now</>
+                                <>
+                                  <Sparkles className="w-4 h-4" /> Redeem Now
+                                </>
                               ) : (
-                                <><Clock className="w-3 h-3" /> {(price - walletCoins).toLocaleString()} more</>
+                                <>
+                                  <Clock className="w-3 h-3" />{' '}
+                                  {(price - walletCoins).toLocaleString()} more
+                                </>
                               )}
                             </button>
                           </div>
@@ -504,25 +563,34 @@ export default function Redemptions() {
                 transition={{ duration: 0.4, delay: 0.08 }}
                 className="mt-5"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-400/15">
-                    <div className="w-7 h-7 rounded-lg grid place-items-center bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-sm">
-                      <Receipt className="w-3.5 h-3.5 text-white" />
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-400/15">
+                    <div className="w-6 h-6 rounded-lg grid place-items-center bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-sm flex-shrink-0">
+                      <Receipt className="w-3 h-3 text-white" />
                     </div>
                     <div>
-                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Requests</div>
-                      <div className="text-sm font-extrabold text-violet-300 leading-tight">{stats.total}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">
+                        Total
+                      </div>
+                      <div className="text-sm font-extrabold text-violet-300 leading-tight">
+                        {stats.total}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-400/15">
-                    <div className="w-7 h-7 rounded-lg grid place-items-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-sm">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-400/15">
+                    <div className="w-6 h-6 rounded-lg grid place-items-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-sm flex-shrink-0">
+                      <CheckCircle2 className="w-3 h-3 text-white" />
                     </div>
                     <div>
-                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Approved</div>
-                      <div className="text-sm font-extrabold text-emerald-300 leading-tight">{stats.approved}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">
+                        Approved
+                      </div>
+                      <div className="text-sm font-extrabold text-emerald-300 leading-tight">
+                        {stats.approved}
+                      </div>
                     </div>
                   </div>
+
                 </div>
               </m.div>
             </>
@@ -539,7 +607,10 @@ export default function Redemptions() {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="rounded-2xl p-[1.5px] bg-gradient-to-r from-slate-600/30 to-slate-700/30">
+                  <div
+                    key={i}
+                    className="rounded-2xl p-[1.5px] bg-gradient-to-r from-slate-600/30 to-slate-700/30"
+                  >
                     <div className="rounded-[14.5px] bg-[#0a0a14]/95 p-4 animate-pulse">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-slate-800/60" />
@@ -559,7 +630,9 @@ export default function Redemptions() {
                   <Gift className="w-7 h-7 text-fuchsia-400" />
                 </div>
                 <p className="text-white font-bold text-base">No redemptions yet</p>
-                <p className="text-slate-500 text-sm mt-1">Your redemption history will appear here</p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Your redemption history will appear here
+                </p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -567,11 +640,27 @@ export default function Redemptions() {
                   const badge = statusBadge(r.status);
                   const BadgeIcon = badge.icon;
                   const statusColors = {
-                    approved: { border: 'from-emerald-400 via-teal-500 to-cyan-500', iconBg: 'from-emerald-500/20 to-teal-500/20', ring: 'ring-emerald-400/20' },
-                    pending: { border: 'from-amber-400 via-orange-500 to-yellow-500', iconBg: 'from-amber-500/20 to-orange-500/20', ring: 'ring-amber-400/20' },
-                    rejected: { border: 'from-rose-400 via-red-500 to-pink-500', iconBg: 'from-rose-500/20 to-red-500/20', ring: 'ring-rose-400/20' },
+                    approved: {
+                      border: 'from-emerald-400 via-teal-500 to-cyan-500',
+                      iconBg: 'from-emerald-500/20 to-teal-500/20',
+                      ring: 'ring-emerald-400/20',
+                    },
+                    pending: {
+                      border: 'from-amber-400 via-orange-500 to-yellow-500',
+                      iconBg: 'from-amber-500/20 to-orange-500/20',
+                      ring: 'ring-amber-400/20',
+                    },
+                    rejected: {
+                      border: 'from-rose-400 via-red-500 to-pink-500',
+                      iconBg: 'from-rose-500/20 to-red-500/20',
+                      ring: 'ring-rose-400/20',
+                    },
                   };
-                  const sc = statusColors[String(r.status).toLowerCase()] || { border: 'from-slate-500 to-slate-600', iconBg: 'from-slate-700/40 to-slate-800/40', ring: 'ring-slate-600/20' };
+                  const sc = statusColors[String(r.status).toLowerCase()] || {
+                    border: 'from-slate-500 to-slate-600',
+                    iconBg: 'from-slate-700/40 to-slate-800/40',
+                    ring: 'ring-slate-600/20',
+                  };
                   return (
                     <m.div
                       key={r.id}
@@ -582,7 +671,9 @@ export default function Redemptions() {
                     >
                       <div className="rounded-[14.5px] bg-[#0a0a14]/95 px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br ${sc.iconBg} ring-1 ${sc.ring}`}>
+                          <div
+                            className={`w-10 h-10 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br ${sc.iconBg} ring-1 ${sc.ring}`}
+                          >
                             <Gift className="w-5 h-5 text-white/80" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -591,7 +682,14 @@ export default function Redemptions() {
                             </span>
                             <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <Clock className="w-2.5 h-2.5" />
-                              {r.requested_at ? new Date(r.requested_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : ''}
+                              {r.requested_at
+                                ? new Date(r.requested_at).toLocaleString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    day: '2-digit',
+                                    month: 'short',
+                                  })
+                                : ''}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">

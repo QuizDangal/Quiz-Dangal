@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
 import { BUILD_DATE } from '@/constants';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/customSupabaseClient';
+import { supabase, getSupabase } from '@/lib/customSupabaseClient';
 import { Trophy, Crown, ChevronDown, Medal } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-lite';
 import { logger } from '@/lib/logger';
@@ -13,29 +13,6 @@ const periods = [
   { key: 'monthly', label: 'Monthly' },
   { key: 'weekly', label: 'Weekly' },
 ];
-
-// Cache TTL: 5 minutes for leaderboard data (reduces RPC calls on free tier)
-const LEADERBOARD_CACHE_TTL_MS = 5 * 60 * 1000;
-
-function getLeaderboardCache(period) {
-  try {
-    const raw = sessionStorage.getItem(`qd_lb_${period}`);
-    if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
-    if (Date.now() - ts > LEADERBOARD_CACHE_TTL_MS) return null;
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-function setLeaderboardCache(period, data) {
-  try {
-    sessionStorage.setItem(`qd_lb_${period}`, JSON.stringify({ data, ts: Date.now() }));
-  } catch {
-    // Quota exceeded or unavailable
-  }
-}
 
 function useQuery() {
   const { search } = useLocation();
@@ -53,17 +30,14 @@ export default function Leaderboards() {
   const [showAbout, setShowAbout] = useState(false);
 
   const loadLeaderboard = useCallback(async (p) => {
-    // Check cache first (5 min TTL) - reduces RPC calls on free tier
-    const cached = getLeaderboardCache(p);
-    if (cached) {
-      setRows(cached);
-      setLoading(false);
-      return;
-    }
+    // Cache disabled - always fetch fresh data for accurate leaderboard
+    // (sessionStorage cache was causing stale data issues after DB changes)
 
     setLoading(true);
     setError('');
     try {
+      // Ensure client is initialized (handles home→leaderboard lazy-load race)
+      if (!supabase) await getSupabase();
       if (!supabase) throw new Error('Supabase not configured');
 
       let data = [];
@@ -106,7 +80,6 @@ export default function Leaderboards() {
         }
       }
 
-      setLeaderboardCache(p, data); // Cache for 5 min
       setRows(data);
     } catch (err) {
       const errorMessage = err.message || 'Failed to load leaderboard.';
@@ -133,7 +106,7 @@ export default function Leaderboards() {
   const myRow = myIndex >= 0 ? rows[myIndex] : null;
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
 
-  const getName = (r) => r.username ? `@${r.username}` : r.full_name || 'Anonymous';
+  const getName = (r) => (r.username ? `@${r.username}` : r.full_name || 'Anonymous');
   const getScore = (r) => Number(r.leaderboard_score ?? 0).toFixed(0);
 
   // Podium config for top 3: [2nd, 1st, 3rd] order for visual layout
@@ -195,18 +168,24 @@ export default function Leaderboards() {
         author="Quiz Dangal"
         datePublished="2025-01-15"
         dateModified={BUILD_DATE}
-        jsonLd={[{
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
-            { '@type': 'ListItem', position: 2, name: 'Leaderboards', item: 'https://quizdangal.com/leaderboards/' },
-          ],
-        }]}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://quizdangal.com/' },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Leaderboards',
+                item: 'https://quizdangal.com/leaderboards/',
+              },
+            ],
+          },
+        ]}
       />
 
       <div className="max-w-3xl mx-auto px-4 space-y-5">
-
         {/* ═══════════ Header + Tabs ═══════════ */}
         <m.div
           initial={{ opacity: 0, y: -10 }}
@@ -267,7 +246,12 @@ export default function Leaderboards() {
                       key={r.user_id || cfg.rank}
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + i * 0.1, type: 'spring', stiffness: 120, damping: 14 }}
+                      transition={{
+                        delay: 0.15 + i * 0.1,
+                        type: 'spring',
+                        stiffness: 120,
+                        damping: 14,
+                      }}
                       className={`flex flex-col items-center ${cfg.champion ? 'w-28 sm:w-32 -mt-6' : 'w-24 sm:w-28'}`}
                     >
                       {cfg.champion && (
@@ -287,13 +271,19 @@ export default function Leaderboards() {
                         >
                           <div className="relative w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
                             <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),transparent_60%)]" />
-                            <div className={`absolute inset-0 opacity-30 bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.2),transparent)]`} />
-                            <span className={`${cfg.fontSize} font-black bg-gradient-to-b ${cfg.color} bg-clip-text text-transparent`}>
+                            <div
+                              className={`absolute inset-0 opacity-30 bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.2),transparent)]`}
+                            />
+                            <span
+                              className={`${cfg.fontSize} font-black bg-gradient-to-b ${cfg.color} bg-clip-text text-transparent`}
+                            >
                               {cfg.rank}
                             </span>
                           </div>
                         </div>
-                        <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br ${cfg.badgeBg} flex items-center justify-center text-[10px] font-black ${cfg.badgeText} border-2 border-slate-900`}>
+                        <div
+                          className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br ${cfg.badgeBg} flex items-center justify-center text-[10px] font-black ${cfg.badgeText} border-2 border-slate-900`}
+                        >
                           {cfg.rank}
                         </div>
                       </div>
@@ -302,8 +292,12 @@ export default function Leaderboards() {
                         {getName(r)}
                       </span>
 
-                      <div className={`mt-2 w-full ${cfg.height} rounded-t-lg bg-gradient-to-b ${cfg.podiumBg} border-t border-white/10 flex items-center justify-center`}>
-                        <span className={`text-2xl sm:text-3xl font-black ${cfg.textColor} opacity-25`}>
+                      <div
+                        className={`mt-2 w-full ${cfg.height} rounded-t-lg bg-gradient-to-b ${cfg.podiumBg} border-t border-white/10 flex items-center justify-center`}
+                      >
+                        <span
+                          className={`text-2xl sm:text-3xl font-black ${cfg.textColor} opacity-25`}
+                        >
                           {cfg.rank}
                         </span>
                       </div>
@@ -329,8 +323,12 @@ export default function Leaderboards() {
                 #{myRank}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm sm:text-base font-semibold text-white truncate">{getName(myRow)}</div>
-                <div className="text-[11px] text-violet-300/80 font-medium uppercase tracking-[0.18em]">Your Rank</div>
+                <div className="text-sm sm:text-base font-semibold text-white truncate">
+                  {getName(myRow)}
+                </div>
+                <div className="text-[11px] text-violet-300/80 font-medium uppercase tracking-[0.18em]">
+                  Your Rank
+                </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-xl font-black bg-gradient-to-r from-violet-200 to-pink-200 bg-clip-text text-transparent">
@@ -352,9 +350,15 @@ export default function Leaderboards() {
         >
           {/* List header */}
           <div className="flex items-center px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/30 sm:px-5">
-            <span className="w-10 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">#</span>
-            <span className="flex-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Player</span>
-            <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Score</span>
+            <span className="w-10 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+              #
+            </span>
+            <span className="flex-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+              Player
+            </span>
+            <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+              Score
+            </span>
           </div>
 
           {loading ? (
@@ -369,7 +373,9 @@ export default function Leaderboards() {
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-3">
                 <Trophy className="w-5 h-5 text-red-400" />
               </div>
-              <div className="text-red-400 text-sm font-medium mb-1">Oops! Something went wrong</div>
+              <div className="text-red-400 text-sm font-medium mb-1">
+                Oops! Something went wrong
+              </div>
               <div className="text-xs text-slate-500 mb-4">{error}</div>
               <button
                 type="button"
@@ -385,7 +391,9 @@ export default function Leaderboards() {
                 <Medal className="w-5 h-5 text-slate-500" />
               </div>
               <div className="text-sm font-medium text-slate-300 mb-1">No rankings yet</div>
-              <div className="text-xs text-slate-500 mb-4">Play quizzes to appear on the leaderboard!</div>
+              <div className="text-xs text-slate-500 mb-4">
+                Play quizzes to appear on the leaderboard!
+              </div>
               <button
                 type="button"
                 onClick={() => loadLeaderboard(period)}
@@ -402,13 +410,14 @@ export default function Leaderboards() {
                 const isTop3 = rank <= 3;
                 const name = getName(r);
 
-                const rankColors = rank === 1
-                  ? 'from-yellow-300 to-amber-500 text-amber-950'
-                  : rank === 2
-                    ? 'from-slate-200 to-gray-400 text-slate-800'
-                    : rank === 3
-                      ? 'from-amber-500 to-orange-600 text-orange-950'
-                      : '';
+                const rankColors =
+                  rank === 1
+                    ? 'from-yellow-300 to-amber-500 text-amber-950'
+                    : rank === 2
+                      ? 'from-slate-200 to-gray-400 text-slate-800'
+                      : rank === 3
+                        ? 'from-amber-500 to-orange-600 text-orange-950'
+                        : '';
 
                 return (
                   <m.div
@@ -422,33 +431,49 @@ export default function Leaderboards() {
                         : 'hover:bg-slate-700/20'
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
-                      isTop3
-                        ? `bg-gradient-to-br ${rankColors} shadow-sm`
-                        : 'bg-slate-700/60 text-slate-300'
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isTop3
+                          ? `bg-gradient-to-br ${rankColors} shadow-sm`
+                          : 'bg-slate-700/60 text-slate-300'
+                      }`}
+                    >
                       {rank}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-semibold truncate ${highlight ? 'text-white' : 'text-slate-200'}`}>
+                      <div
+                        className={`text-sm font-semibold truncate ${highlight ? 'text-white' : 'text-slate-200'}`}
+                      >
                         {name}
                       </div>
                       {isTop3 && (
-                        <div className={`mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${
-                          rank === 1 ? 'text-amber-400/80' : rank === 2 ? 'text-slate-400/80' : 'text-orange-400/80'
-                        }`}>
+                        <div
+                          className={`mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${
+                            rank === 1
+                              ? 'text-amber-400/80'
+                              : rank === 2
+                                ? 'text-slate-400/80'
+                                : 'text-orange-400/80'
+                          }`}
+                        >
                           {rank === 1 ? 'Champion' : rank === 2 ? 'Runner-up' : 'Bronze'}
                         </div>
                       )}
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className={`text-base font-bold tabular-nums ${
-                        isTop3
-                          ? rank === 1 ? 'text-amber-300' : rank === 2 ? 'text-slate-300' : 'text-orange-300'
-                          : 'bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent'
-                      }`}>
+                      <div
+                        className={`text-base font-bold tabular-nums ${
+                          isTop3
+                            ? rank === 1
+                              ? 'text-amber-300'
+                              : rank === 2
+                                ? 'text-slate-300'
+                                : 'text-orange-300'
+                            : 'bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent'
+                        }`}
+                      >
                         {Number(r.leaderboard_score ?? 0).toFixed(1)}
                       </div>
                       <div className="text-[9px] text-slate-500 font-medium uppercase">pts</div>
@@ -468,7 +493,9 @@ export default function Leaderboards() {
             className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-700/20 transition-colors"
           >
             <h2 className="text-sm font-bold text-white">About Quiz Dangal Leaderboards</h2>
-            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showAbout ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showAbout ? 'rotate-180' : ''}`}
+            />
           </button>
 
           <AnimatePresence>
@@ -482,19 +509,35 @@ export default function Leaderboards() {
               >
                 <div className="px-4 pb-5 space-y-3 text-slate-400 text-xs leading-relaxed">
                   <p>
-                    The Quiz Dangal Leaderboard showcases the top quiz players from across India. Our ranking system is designed to reward knowledge, speed, and consistency. Every correct answer you give in our daily quizzes contributes to your leaderboard score. Whether you are a casual player or a competitive quiz enthusiast, the leaderboard gives you a platform to showcase your skills.
+                    The Quiz Dangal Leaderboard showcases the top quiz players from across India.
+                    Our ranking system is designed to reward knowledge, speed, and consistency.
+                    Every correct answer you give in our daily quizzes contributes to your
+                    leaderboard score. Whether you are a casual player or a competitive quiz
+                    enthusiast, the leaderboard gives you a platform to showcase your skills.
                   </p>
                   <p>
-                    <strong className="text-slate-200">How Rankings Work:</strong> Your leaderboard score is calculated based on the accuracy of your answers, the speed at which you respond, and your participation streak. The faster and more accurately you answer, the higher you climb. Players are ranked across three time periods — All-time, Monthly, and Weekly — so everyone has a chance to shine.
+                    <strong className="text-slate-200">How Rankings Work:</strong> Your leaderboard
+                    score is calculated based on the accuracy of your answers, the speed at which
+                    you respond, and your participation streak. The faster and more accurately you
+                    answer, the higher you climb. Players are ranked across three time periods —
+                    All-time, Monthly, and Weekly — so everyone has a chance to shine.
                   </p>
                   <p>
-                    <strong className="text-slate-200">Compete & Win:</strong> Top players earn recognition in the Quiz Dangal community and may receive bonus coins during special events. Whether you excel in Opinion polls or General Knowledge, every real quiz round counts toward your ranking.
+                    <strong className="text-slate-200">Compete & Win:</strong> Top players earn
+                    recognition in the Quiz Dangal community and may receive bonus coins during
+                    special events. Whether you excel in Opinion polls or General Knowledge, every
+                    real quiz round counts toward your ranking.
                   </p>
                   <p>
-                    <strong className="text-slate-200">Fair Play Guaranteed:</strong> We monitor all quiz activity to ensure fair competition. Bot accounts, multiple accounts, and cheating are strictly prohibited. Our automated systems detect suspicious patterns to maintain a level playing field for genuine players.
+                    <strong className="text-slate-200">Fair Play Guaranteed:</strong> We monitor all
+                    quiz activity to ensure fair competition. Bot accounts, multiple accounts, and
+                    cheating are strictly prohibited. Our automated systems detect suspicious
+                    patterns to maintain a level playing field for genuine players.
                   </p>
                   <p>
-                    Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing now, answer correctly, beat the clock, and see your name rise on the leaderboard!
+                    Join thousands of quiz enthusiasts competing daily on Quiz Dangal. Start playing
+                    now, answer correctly, beat the clock, and see your name rise on the
+                    leaderboard!
                   </p>
                 </div>
               </m.div>
@@ -505,4 +548,3 @@ export default function Leaderboards() {
     </div>
   );
 }
-

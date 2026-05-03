@@ -248,9 +248,15 @@ export default function Admin() {
 
       const prizesArr = form.prizes.filter((p) => p).map((p) => parseInt(p, 10));
       const prizePool = prizesArr.reduce((s, v) => s + v, 0);
-      // Normalize prize_type: if numeric prizes are provided, prefer 'coins' to enable auto-award
+      // 'money' type is auto-converted to 'coins' so backend can auto-award prizes
       const normalizedPrizeType =
         form.prize_type === 'money' && prizePool > 0 ? 'coins' : form.prize_type;
+      if (form.prize_type === 'money' && normalizedPrizeType === 'coins') {
+        toast({
+          title: 'Note',
+          description: 'Prize type "money" saved as "coins" for auto-awarding.',
+        });
+      }
       const payload = {
         title: form.title.trim(),
         category: form.category,
@@ -344,7 +350,10 @@ export default function Admin() {
     }
 
     // Manual fallback (anon key must have insert rights via RLS)
-    if (mode === 'replace') await supabase.from('questions').delete().eq('quiz_id', quizId);
+    if (mode === 'replace') {
+      const { error: delErr } = await supabase.from('questions').delete().eq('quiz_id', quizId);
+      if (delErr) return { ok: false, message: `Failed to clear old questions: ${delErr.message}` };
+    }
     for (const it of items) {
       const { data: qrow, error: qerr } = await supabase
         .from('questions')
@@ -373,13 +382,17 @@ export default function Admin() {
       });
       return;
     }
-    if (!supabase) return;
-    const { error } = await supabase.from('quizzes').delete().eq('id', id);
-    if (error)
-      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
-    else {
+    try {
+      await callAdminRpc('deleteQuiz', { p_quiz_id: id });
       toast({ title: 'Deleted' });
+      if (selectedQuiz?.id === id) {
+        setSelectedQuiz(null);
+        setShowQuestions(false);
+        setQuestions([]);
+      }
       fetchQuizzes();
+    } catch (e) {
+      toast({ title: 'Delete failed', description: e.message, variant: 'destructive' });
     }
   };
   const recompute = async (id) => {
@@ -437,6 +450,9 @@ export default function Admin() {
   // Pending redemptions state
   const [pendingRedemptions, setPendingRedemptions] = useState([]);
   const [loadingRedemptions, setLoadingRedemptions] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState(null); // { id, username }
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingId, setRejectingId] = useState(null);
 
   const fetchPendingRedemptions = useCallback(async () => {
     if (!isAdmin) {
@@ -461,11 +477,16 @@ export default function Admin() {
       setPendingRedemptions(data || []);
     } catch (e) {
       setPendingRedemptions([]);
-      if (import.meta.env.DEV) logger.debug('Fetch pending redemptions failed', e);
+      logger.error('Fetch pending redemptions failed', e);
+      toast({
+        title: 'Failed to load redemptions',
+        description: e?.message || 'Please refresh.',
+        variant: 'destructive',
+      });
     } finally {
       setLoadingRedemptions(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, toast]);
 
   const approveRedemption = useCallback(
     async (id) => {
@@ -480,6 +501,29 @@ export default function Admin() {
         toast({ title: 'Approve failed', description: e.message, variant: 'destructive' });
         // Re-fetch to restore list if failed
         fetchPendingRedemptions();
+      }
+    },
+    [isAdmin, fetchPendingRedemptions, toast],
+  );
+
+  const rejectRedemption = useCallback(
+    async (id, reason) => {
+      if (!isAdmin) return;
+      setRejectingId(id);
+      try {
+        await callAdminRpc('rejectRedemption', {
+          p_redemption_id: id,
+          p_reason: reason || 'Rejected by admin',
+        });
+        setPendingRedemptions((prev) => prev.filter((r) => r.id !== id));
+        toast({ title: 'Rejected', description: 'Redemption rejected and coins refunded.' });
+        setRejectTarget(null);
+        setRejectReason('');
+      } catch (e) {
+        toast({ title: 'Reject failed', description: e.message, variant: 'destructive' });
+        fetchPendingRedemptions();
+      } finally {
+        setRejectingId(null);
       }
     },
     [isAdmin, fetchPendingRedemptions, toast],
@@ -1124,11 +1168,64 @@ export default function Admin() {
                     >
                       Approve
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const username = r.profiles?.username || r.profiles?.full_name || 'user';
+                        setRejectTarget({ id: r.id, username });
+                        setRejectReason('');
+                      }}
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      Reject
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+      {/* Reject Redemption Dialog */}
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="font-semibold text-gray-900">Reject Redemption</h3>
+            <p className="text-sm text-gray-600">
+              Reject <strong>@{rejectTarget.username}</strong>&apos;s redemption request? Coins will
+              be refunded.
+            </p>
+            <div>
+              <label
+                htmlFor="reject-reason"
+                className="text-xs font-medium text-gray-700 block mb-1"
+              >
+                Reason (optional)
+              </label>
+              <input
+                id="reject-reason"
+                type="text"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="e.g. Invalid payout details"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button size="sm" variant="outline" onClick={() => setRejectTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={rejectingId === rejectTarget.id}
+                onClick={() => rejectRedemption(rejectTarget.id, rejectReason)}
+              >
+                {rejectingId === rejectTarget.id ? 'Rejecting...' : 'Confirm Reject'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
       {tab === 'notifications' && <NotificationsPanel />}
@@ -1245,7 +1342,8 @@ function RewardsPanel() {
   return (
     <div className="space-y-6">
       <p className="text-xs text-gray-500">
-        Redemptions auto-approved hain. Neeche sirf Rewards Catalog manage karna hai.
+        Yahan sirf Rewards Catalog manage karein. Redemption approvals ke liye{' '}
+        <strong>Approvals</strong> tab use karein.
       </p>
 
       {/* Rewards Catalog Management */}
