@@ -63,7 +63,7 @@ function generateDaySchedule(intervalMinutes = 5) {
   return times;
 }
 
-const PRIZES = [121, 71, 51];
+const PRIZES = [25, 15, 10];
 const CATEGORIES = ['gk', 'opinion'];
 
 // -------------------- Main --------------------

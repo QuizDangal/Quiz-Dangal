@@ -8,7 +8,7 @@ import { callAdminRpc } from '@/lib/adminRpc';
 // Categories for scheduler (keep in sync with backend expected values)
 export const CATEGORIES = ['opinion', 'gk'];
 // Fixed prizes (always enforced everywhere) - in coins
-export const PRIZES = [121, 71, 51];
+export const PRIZES = [25, 15, 10];
 // Quiz duration in minutes (each quiz runs for 5 minutes)
 export const QUIZ_DURATION_MINUTES = 5;
 // Supported quiz counts: 144 (10-min interval) or 288 (5-min interval, back-to-back)

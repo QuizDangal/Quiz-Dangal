@@ -165,7 +165,7 @@ async function main() {
     // Auto-detect interval: 144 quizzes = 10 min, 288 = 5 min
     const interval = quizzes.length <= 144 ? 10 : 5;
     const autoTimes = generateDaySchedule(interval);
-    const PRIZES = [121, 71, 51];
+    const PRIZES = [25, 15, 10];
     console.log(`  ⏱️  Interval: ${interval} min (${autoTimes.length} slots)`);
 
     // Build payload
