@@ -13,7 +13,7 @@ import {
   formatSupabaseError,
 } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, MessageSquare, Brain, Clock, Trophy, Play, ChevronRight, ChevronDown } from 'lucide-react';
+import { Users, MessageSquare, Brain, Clock, Trophy, Play, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SeoHead from '@/components/SEO';
@@ -123,44 +123,53 @@ const SlotCountdown = memo(function SlotCountdown({ startMs, endMs, isActive, fo
       : null;
   if (secs === null) return null;
 
-  const mins = Math.floor(secs / 60);
+  const hrs = Math.floor(secs / 3600);
+  const mins = Math.floor((secs % 3600) / 60);
   const secsR = secs % 60;
+  const showHours = secs >= 3600;
   const totalWindow = startMs && endMs ? Math.max(1, endMs - startMs) : null;
   const progressed = isActive && totalWindow ? Math.min(100, Math.max(0, Math.round(((now - startMs) / totalWindow) * 100))) : null;
 
   return (
-    <div className={`relative mb-4 rounded-2xl overflow-hidden ${
+    <div className={`relative mb-3 rounded-xl overflow-hidden ${
       isActive
-        ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
-        : 'bg-gradient-to-r from-violet-950/80 via-fuchsia-950/60 to-pink-950/80 border border-violet-500/15'
+        ? 'bg-gradient-to-r from-red-950/70 to-amber-950/70 border border-red-500/20'
+        : 'bg-gradient-to-r from-violet-950/70 to-fuchsia-950/70 border border-violet-500/15'
     }`}>
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
+      <div className="px-3 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-orange-400' : 'text-fuchsia-400'}`} />
           <div>
-            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+            <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">
               {isActive ? 'Ends in' : 'Starts in'}
             </div>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
-                {String(mins).padStart(2, '0')}
-              </span>
-              <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
-              <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>
-                {String(secsR).padStart(2, '0')}
-              </span>
+            <div className="flex items-baseline gap-0.5 mt-0.5">
+              {showHours ? (
+                <>
+                  <span className={`text-lg font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{hrs}</span>
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'}`}>h</span>
+                  <span className={`text-lg font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(mins).padStart(2, '0')}</span>
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'}`}>m</span>
+                </>
+              ) : (
+                <>
+                  <span className={`text-lg font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(mins).padStart(2, '0')}</span>
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-orange-500' : 'text-fuchsia-500'} animate-pulse`}>:</span>
+                  <span className={`text-lg font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-fuchsia-300'}`}>{String(secsR).padStart(2, '0')}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
-        <div className="text-right space-y-1">
-          <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
-          <div className="text-[11px] text-slate-300 font-semibold">
-            {startTimeRaw ? fmtTime(startTimeRaw) : '—'} → {endTimeRaw ? fmtTime(endTimeRaw) : '—'}
+        <div className="text-right shrink-0">
+          <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Schedule</div>
+          <div className="text-[10px] text-slate-300 font-semibold tabular-nums">
+            {startTimeRaw ? fmtTime(startTimeRaw) : '—'} – {endTimeRaw ? fmtTime(endTimeRaw) : '—'}
           </div>
         </div>
       </div>
       {progressed !== null && (
-        <div className="h-1 bg-black/30">
+        <div className="h-0.5 bg-black/30">
           <div
             className={`h-full rounded-full transition-[width] duration-700 ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-violet-400 via-fuchsia-500 to-pink-400'}`}
             style={{ width: `${progressed}%` }}
@@ -186,6 +195,7 @@ const CategoryQuizzes = () => {
   const [slots, setSlots] = useState([]);
   const [slotMode, setSlotMode] = useState('legacy'); // slots | legacy
   const [categoryAutoEnabled, setCategoryAutoEnabled] = useState(true);
+  const [showUsersCount, setShowUsersCount] = useState(true);
   const [slotLoadError, setSlotLoadError] = useState(null);
   const [seoExpanded, setSeoExpanded] = useState(false);
   const slotRequestRef = useRef(0);
@@ -365,6 +375,18 @@ const CategoryQuizzes = () => {
     };
     run();
   }, [user, slots]);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const sb = await getSupabase();
+        if (!sb) return;
+        const { data } = await sb.from('category_runtime_overrides').select('is_auto').eq('category', 'show_users_count').maybeSingle();
+        if (data) setShowUsersCount(data.is_auto);
+      } catch (e) { /* ignore */ }
+    }
+    fetchSettings();
+  }, []);
 
   const handleJoin = async (q) => {
     if (!user) {
@@ -594,178 +616,150 @@ const CategoryQuizzes = () => {
         key={slot.slotId}
         role="button"
         tabIndex={0}
-        className="group cursor-pointer animate-fade-up"
+        className="group cursor-pointer"
         onClick={handleClick}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
       >
-        {/* Animated conic gradient border */}
-        <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
+        <div className={`relative rounded-2xl p-[1.5px] overflow-hidden transition-transform duration-200 group-hover:-translate-y-0.5 ${
           iplMeta
             ? isFinished
-              ? 'bg-[conic-gradient(from_0deg,#10b981,#22c55e,#06b6d4,#10b981)] shadow-[0_0_24px_-5px_rgba(34,197,94,0.28)]'
+              ? 'bg-gradient-to-br from-emerald-500/60 via-teal-500/40 to-cyan-500/60 shadow-[0_0_18px_-4px_rgba(16,185,129,0.25)]'
               : isActive
-                ? 'bg-[conic-gradient(from_0deg,#f97316,#facc15,#fb7185,#38bdf8,#f97316)] shadow-[0_0_34px_-6px_rgba(249,115,22,0.34)]'
-                : 'bg-[conic-gradient(from_0deg,#f97316,#facc15,#8b5cf6,#ec4899,#f97316)] shadow-[0_0_34px_-6px_rgba(249,115,22,0.28)]'
-            : isActive 
-            ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
+                ? 'bg-gradient-to-br from-orange-500/70 via-amber-400/50 to-pink-500/60 shadow-[0_0_22px_-4px_rgba(249,115,22,0.3)]'
+                : 'bg-gradient-to-br from-orange-500/60 via-amber-400/40 to-violet-500/50 shadow-[0_0_18px_-4px_rgba(249,115,22,0.22)]'
+          : isActive
+            ? 'bg-gradient-to-br from-red-500/60 via-orange-400/50 to-amber-400/60 shadow-[0_0_22px_-4px_rgba(239,68,68,0.28)]'
             : isPaused
-              ? 'bg-[conic-gradient(from_0deg,#f59e0b,#d97706,#b45309,#f59e0b)] shadow-[0_0_20px_-5px_rgba(245,158,11,0.25)]'
+              ? 'bg-gradient-to-br from-amber-500/50 via-yellow-500/40 to-orange-400/50 shadow-[0_0_14px_-4px_rgba(245,158,11,0.2)]'
               : isFinished
-                ? 'bg-[conic-gradient(from_0deg,#10b981,#06b6d4,#3b82f6,#10b981)] shadow-[0_0_20px_-5px_rgba(16,185,129,0.25)]'
-                : 'bg-[conic-gradient(from_0deg,#a855f7,#ec4899,#f43f5e,#a855f7)] shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
+                ? 'bg-gradient-to-br from-emerald-500/50 via-teal-500/35 to-cyan-500/50 shadow-[0_0_14px_-4px_rgba(16,185,129,0.2)]'
+                : 'bg-gradient-to-br from-violet-500/60 via-fuchsia-500/45 to-pink-500/55 shadow-[0_0_22px_-4px_rgba(168,85,247,0.28)]'
         }`}>
-          <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 lg:p-6 overflow-hidden">
-            {/* Top shimmer glow */}
-            <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
-              iplMeta
-                ? isFinished
-                  ? 'bg-gradient-to-b from-emerald-500/20 via-teal-500/10 to-transparent'
-                  : 'bg-gradient-to-b from-orange-500/25 via-amber-500/15 to-transparent'
-                : isActive 
-                ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
-                : isPaused
-                  ? 'bg-gradient-to-b from-amber-500/20 via-yellow-500/10 to-transparent'
-                  : isFinished
-                    ? 'bg-gradient-to-b from-emerald-500/20 via-teal-500/10 to-transparent'
-                    : 'bg-gradient-to-b from-violet-500/25 via-fuchsia-500/10 to-transparent'
+          <div className="relative rounded-[14px] bg-[#090910] overflow-hidden">
+            {/* Subtle top glow strip */}
+            <div className={`absolute top-0 left-0 right-0 h-16 opacity-20 pointer-events-none ${
+              isActive ? 'bg-gradient-to-b from-red-500/40 to-transparent'
+              : isPaused ? 'bg-gradient-to-b from-amber-500/30 to-transparent'
+              : isFinished ? 'bg-gradient-to-b from-emerald-500/30 to-transparent'
+              : iplMeta ? 'bg-gradient-to-b from-orange-500/35 to-transparent'
+              : 'bg-gradient-to-b from-violet-500/35 to-transparent'
             }`} />
 
-            {/* Badge Row */}
-            <div className="relative flex items-center justify-between mb-3">
-              <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
-                iplMeta
-                  ? isFinished
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.5)]'
-                    : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_15px_-3px_rgba(249,115,22,0.5)]'
-                  : isActive
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
-                  : isPaused
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-[0_4px_15px_-3px_rgba(245,158,11,0.5)]'
-                    : isFinished
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.5)]'
-                      : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_15px_-3px_rgba(168,85,247,0.5)]'
-              }`}>
-                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                {badge === 'LIVE' ? '🔴 LIVE NOW' : badge === 'UPCOMING' ? '⏰ UPCOMING' : badge === 'PAUSED' ? '⏸️ PAUSED' : badge === 'FINISHED' ? '✅ FINISHED' : badge}
-              </span>
-              <div className="flex items-center gap-1 text-slate-500">
-                <Users className="w-3 h-3" />
-                <span className="text-[10px] font-bold">{participantsJoined}</span>
+            <div className="relative p-3.5 sm:p-4 md:p-5">
+              {/* ── Row 1: Badge + Participants ── */}
+              <div className="flex items-center justify-between mb-2.5">
+                <span className={`inline-flex items-center gap-1 text-[8.5px] font-black uppercase tracking-[0.12em] px-2.5 py-1 rounded-full ${
+                  iplMeta
+                    ? isFinished ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
+                      : 'bg-orange-500/15 text-orange-300 border border-orange-500/25'
+                    : isActive ? 'bg-red-500/15 text-red-300 border border-red-500/25'
+                    : isPaused ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
+                    : isFinished ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
+                    : 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
+                }`}>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+                  {badge === 'LIVE' ? '● LIVE' : badge === 'UPCOMING' ? '⏰ UPCOMING' : badge === 'PAUSED' ? '⏸ PAUSED' : badge === 'FINISHED' ? '✓ FINISHED' : badge}
+                </span>
+                {showUsersCount && (
+                  <div className="flex items-center gap-1 text-slate-500">
+                    <Users className="w-3 h-3" />
+                    <span className="text-[9px] font-semibold">{participantsJoined}</span>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Title */}
-            {iplMeta ? (
-              <div className="relative mb-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">IPL Prediction</div>
-                <h3 className="mt-2 text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
-                  {iplMeta.fixtureLabel}
-                </h3>
-              </div>
-            ) : (
-              <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">
-                {slot.quiz_title || slot.title || 'Quiz'}
-              </h3>
-            )}
-
-            {iplMeta && (
-              <div className="relative mb-4 rounded-[20px] overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-amber-500/10 to-cyan-500/15" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.15),transparent_60%)]" />
-                <div className="relative border border-white/10 rounded-[20px] p-4">
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="text-center">
-                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-lg font-black shadow-lg ${teamA?.chipClass || 'border-orange-400/40 bg-gradient-to-br from-orange-500/25 to-amber-500/15 text-orange-100'}`}>
-                        {teamA?.short || iplMeta.team_a_short || 'A'}
-                      </div>
-                      <div className="mt-1.5 text-[10px] font-bold text-slate-300 truncate max-w-[70px]">{teamA?.name || iplMeta.team_a || 'Team A'}</div>
+              {/* ── Row 2: Title / IPL Matchup ── */}
+              {iplMeta ? (
+                <div className="mb-2.5">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-orange-400/70 mb-1">IPL Prediction</div>
+                  {/* Compact team vs team row */}
+                  <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
+                    <div className={`flex items-center justify-center w-9 h-9 rounded-lg border text-[11px] font-black shrink-0 ${
+                      teamA?.chipClass || 'border-orange-400/35 bg-orange-500/10 text-orange-200'
+                    }`}>
+                      {teamA?.short || iplMeta.team_a_short || 'A'}
                     </div>
-                    <div className="flex flex-col items-center">
-                      <div className="relative">
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-cyan-500 blur-md opacity-40" />
-                        <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-white/20">
-                          <span className="text-xs font-black text-white">VS</span>
-                        </div>
-                      </div>
+                    <div className="flex-1 text-center">
+                      <div className="text-[9px] font-black text-slate-500">VS</div>
+                      <div className="text-[8px] text-slate-600 mt-0.5 leading-tight truncate">{iplMeta.fixtureLabel || ''}</div>
                     </div>
-                    <div className="text-center">
-                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-lg font-black shadow-lg ${teamB?.chipClass || 'border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 to-sky-500/15 text-cyan-100'}`}>
-                        {teamB?.short || iplMeta.team_b_short || 'B'}
-                      </div>
-                      <div className="mt-1.5 text-[10px] font-bold text-slate-300 truncate max-w-[70px]">{teamB?.name || iplMeta.team_b || 'Team B'}</div>
+                    <div className={`flex items-center justify-center w-9 h-9 rounded-lg border text-[11px] font-black shrink-0 ${
+                      teamB?.chipClass || 'border-cyan-400/35 bg-cyan-500/10 text-cyan-200'
+                    }`}>
+                      {teamB?.short || iplMeta.team_b_short || 'B'}
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Timer — Self-contained countdown (only this component re-renders every 1s) */}
-            {needsCountdown && (
-              <SlotCountdown
-                startMs={st}
-                endMs={et}
-                isActive={isActive}
-                formatTimeOnly={formatTimeOnly}
-                startTimeRaw={slot.start_time}
-                endTimeRaw={slot.end_time}
-              />
-            )}
-
-            {/* Prizes — Medal cards */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {[
-                { label: '1st', emoji: '🥇', value: formatPrize(p1), bg: 'from-rose-500/20 to-pink-600/10', border: 'border-rose-500/25', text: 'text-rose-300', glow: 'shadow-rose-500/10' },
-                { label: '2nd', emoji: '🥈', value: formatPrize(p2), bg: 'from-violet-400/15 to-purple-500/10', border: 'border-violet-400/20', text: 'text-violet-300', glow: 'shadow-violet-400/5' },
-                { label: '3rd', emoji: '🥉', value: formatPrize(p3), bg: 'from-cyan-500/15 to-teal-600/10', border: 'border-cyan-500/20', text: 'text-cyan-300', glow: 'shadow-cyan-500/10' },
-              ].map((prize) => (
-                <div key={prize.label} className={`relative text-center py-3 rounded-2xl bg-gradient-to-b ${prize.bg} border ${prize.border} shadow-lg ${prize.glow}`}>
-                  <div className="text-lg leading-none">{prize.emoji}</div>
-                  <div className={`text-sm font-black ${prize.text} mt-1`}>{prize.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Stats Row */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-400 font-medium">
-                📝 {qCount} Qs
-              </span>
-              {isLiveResult && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 font-medium">
-                  📡 Live Result
-                </span>
-              )}
-            </div>
-
-            {/* CTA Button (full width) */}
-            <button
-              type="button"
-              disabled={isJoining}
-              onClick={(e) => { e.stopPropagation(); handleClick(); }}
-              onMouseEnter={() => prefetchRoute(isFinished ? resultsRoute : playRoute)}
-              className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
-                isJoining ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
-                isActive 
-                  ? 'bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white shadow-[0_8px_25px_-5px_rgba(244,63,94,0.5)]'
-                  : isPaused
-                    ? 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-[0_6px_20px_-4px_rgba(100,116,139,0.4)]'
-                    : isFinished
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_6px_20px_-4px_rgba(16,185,129,0.3)]'
-                      : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_8px_25px_-5px_rgba(168,85,247,0.5)]'
-              }`}
-            >
-              {isJoining ? (
-                'Joining...'
-              ) : isFinished ? (
-                <><Trophy className="w-4 h-4" /> {isLiveResult ? 'LIVE RESULT' : 'RESULTS'} <ChevronRight className="w-4 h-4 opacity-60" /></>
-              ) : isActive ? (
-                <><Play className="w-4 h-4" fill="currentColor" /> PLAY NOW <ChevronRight className="w-4 h-4 opacity-60" /></>
-              ) : hasJoined ? (
-                <><Play className="w-4 h-4" fill="currentColor" /> PLAY <ChevronRight className="w-4 h-4 opacity-60" /></>
               ) : (
-                <><Play className="w-4 h-4" fill="currentColor" /> {upcoming ? 'PRE-JOIN' : 'JOIN NOW'} <ChevronRight className="w-4 h-4 opacity-60" /></>
+                <h3 className="text-[13px] sm:text-[15px] font-bold text-white mb-2.5 sm:mb-3 leading-snug line-clamp-2">
+                  {slot.quiz_title || slot.title || 'Quiz'}
+                </h3>
               )}
-            </button>
+
+              {/* ── Row 3: Timer (compact) ── */}
+              {needsCountdown && (
+                <SlotCountdown
+                  startMs={st}
+                  endMs={et}
+                  isActive={isActive}
+                  formatTimeOnly={formatTimeOnly}
+                  startTimeRaw={slot.start_time}
+                  endTimeRaw={slot.end_time}
+                />
+              )}
+
+              {/* ── Row 4: Prizes — horizontal compact ── */}
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
+                {[
+                  { emoji: '🥇', value: formatPrize(p1), col: 'bg-amber-500/8 border-amber-500/20 text-amber-300' },
+                  { emoji: '🥈', value: formatPrize(p2), col: 'bg-slate-500/8 border-slate-500/20 text-slate-300' },
+                  { emoji: '🥉', value: formatPrize(p3), col: 'bg-orange-500/8 border-orange-500/20 text-orange-300' },
+                ].map((prize, i) => (
+                  <div key={i} className={`text-center py-2 sm:py-2.5 rounded-xl border ${prize.col} bg-white/[0.02]`}>
+                    <div className="text-sm sm:text-base leading-none">{prize.emoji}</div>
+                    <div className={`text-[10px] sm:text-[11px] font-black mt-1 ${prize.col.split(' ').find(c => c.startsWith('text-'))}`}>{prize.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Row 5: Meta chip + CTA ── */}
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 inline-flex items-center gap-1 text-[9px] px-2 py-1 rounded-lg bg-slate-800/70 border border-slate-700/40 text-slate-400 font-medium">
+                  📝 {qCount} Qs
+                </span>
+                {isLiveResult && (
+                  <span className="shrink-0 inline-flex items-center gap-1 text-[9px] px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-medium">
+                    📡 Live
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={isJoining}
+                  onClick={(e) => { e.stopPropagation(); handleClick(); }}
+                  onMouseEnter={() => prefetchRoute(isFinished ? resultsRoute : playRoute)}
+                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                    isJoining ? 'opacity-50 cursor-wait bg-slate-700 text-slate-300' :
+                    isActive
+                      ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-[0_4px_14px_-3px_rgba(244,63,94,0.45)]'
+                      : isPaused
+                        ? 'bg-slate-700/80 text-slate-300'
+                        : isFinished
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_4px_14px_-3px_rgba(16,185,129,0.3)]'
+                          : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_14px_-3px_rgba(168,85,247,0.45)]'
+                  }`}
+                >
+                  {isJoining ? 'Joining…' : isFinished ? (
+                    <><Trophy className="w-3 h-3" /> {isLiveResult ? 'Live Result' : 'Results'}</>
+                  ) : isActive ? (
+                    <><Play className="w-3 h-3" fill="currentColor" /> Play Now</>
+                  ) : hasJoined ? (
+                    <><Play className="w-3 h-3" fill="currentColor" /> Play</>
+                  ) : (
+                    <><Play className="w-3 h-3" fill="currentColor" /> {upcoming ? 'Pre-Join' : 'Join Now'}</>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

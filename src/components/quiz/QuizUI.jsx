@@ -137,6 +137,7 @@ export const PreLobbyView = ({
   prizeType,
   formatTime,
   predictionMeta,
+  showUsersCount = true,
   onJoin,
   onClose,
 }) => (
@@ -177,10 +178,12 @@ export const PreLobbyView = ({
           <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{isActive ? 'Live' : 'Starts In'}</div>
           <div className="mt-1 text-3xl font-black tracking-wide text-cyan-300">{formatTime(timeLeft)}</div>
         </m.div>
-        <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-slate-400">
-          <Users className="h-3 w-3" />
-          {displayJoined}
-        </div>
+        {showUsersCount && (
+          <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <Users className="h-3 w-3" />
+            {displayJoined}
+          </div>
+        )}
         <PrizeChips prizes={prizes} prizeType={prizeType} />
         <InfoChips startTime={quiz?.start_time} endTime={quiz?.end_time} />
         <div className="mt-4">
@@ -209,6 +212,7 @@ export const WaitingView = ({
   prizeType,
   formatTime,
   predictionMeta,
+  showUsersCount = true,
   onClose,
 }) => (
   <div className="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-20">
@@ -248,10 +252,12 @@ export const WaitingView = ({
           <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Starts In</div>
           <div className="mt-1 text-3xl font-black tracking-wide text-violet-300">{formatTime(timeLeft)}</div>
         </m.div>
-        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-slate-400">
-          <Users className="h-3 w-3" />
-          {totalJoined}
-        </div>
+        {showUsersCount && (
+          <div className="mt-2 flex items-center justify-center gap-1 text-xs text-slate-400">
+            <Users className="h-3 w-3" />
+            {totalJoined}
+          </div>
+        )}
         <PrizeChips prizes={prizes} prizeType={prizeType} />
         <InfoChips startTime={quiz?.start_time} endTime={quiz?.end_time} />
       </div>
@@ -535,6 +541,7 @@ PreLobbyView.propTypes = {
   prizeType: PropTypes.string,
   formatTime: PropTypes.func.isRequired,
   predictionMeta: PropTypes.object,
+  showUsersCount: PropTypes.bool,
   onJoin: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
 };
@@ -548,6 +555,7 @@ WaitingView.propTypes = {
   prizeType: PropTypes.string,
   formatTime: PropTypes.func.isRequired,
   predictionMeta: PropTypes.object,
+  showUsersCount: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
 };
 

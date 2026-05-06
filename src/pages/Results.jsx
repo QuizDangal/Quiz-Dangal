@@ -128,6 +128,19 @@ const Results = () => {
   // Prevent stale async updates when navigating quickly (e.g., slot resolve -> quiz resolve)
   const fetchSeqRef = useRef(0);
 
+  const [showUsersCount, setShowUsersCount] = useState(true);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        if (!supabase) return;
+        const { data } = await supabase.from('category_runtime_overrides').select('is_auto').eq('category', 'show_users_count').maybeSingle();
+        if (data) setShowUsersCount(data.is_auto);
+      } catch (e) { /* ignore */ }
+    }
+    fetchSettings();
+  }, []);
+
   const fetchResults = useCallback(async () => {
     const seq = (fetchSeqRef.current += 1);
     const isStale = () => fetchSeqRef.current !== seq;
@@ -1254,7 +1267,7 @@ const Results = () => {
                 <div className="flex items-center gap-2 mb-1">
                   <Trophy className="w-5 h-5 text-amber-400" />
                   <h1 className="text-lg font-bold text-white">Results</h1>
-                  {userRank && (
+                  {userRank && showUsersCount && (
                     <span className="text-[10px] text-slate-400">• {results.length} players</span>
                   )}
                 </div>
@@ -1264,7 +1277,7 @@ const Results = () => {
                     <span>{predictionMeta.fixtureLabel}</span>
                   </div>
                 )}
-                {!userRank && (
+                {!userRank && showUsersCount && (
                   <div className="flex items-center gap-1 text-[10px] text-slate-500">
                     <Users className="w-3 h-3" />
                     <span>{participantsCount || results?.length || 0} participants</span>

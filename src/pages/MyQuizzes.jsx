@@ -22,6 +22,7 @@ const MyQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({});
   const [_nowTick, setNowTick] = useState(0);
+  const [showUsersCount, setShowUsersCount] = useState(true);
 
   const computeAttemptedRef = useRef(new Set());
   const notifiedResultsRef = useRef(new Set());
@@ -160,6 +161,18 @@ const MyQuizzes = () => {
       cancelled = true;
     };
   }, [user, userProfile?.role, quizzes]);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const sb = await getSupabase();
+        if (!sb) return;
+        const { data } = await sb.from('category_runtime_overrides').select('is_auto').eq('category', 'show_users_count').maybeSingle();
+        if (data) setShowUsersCount(data.is_auto);
+      } catch (e) { /* ignore */ }
+    }
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     // Auto-ask once on My Quizzes page (in addition to join-based prompt)
@@ -779,133 +792,134 @@ const MyQuizzes = () => {
                   const formatPrize = (value) => getPrizeDisplay(prizeType, value, { fallback: 0 }).formatted;
                   const joined = counts[quiz.slot_id || quiz.id] || 0;
                   const quizPath = quiz.slot_id ? `/quiz/slot/${quiz.slot_id}` : `/quiz/${quiz.id}`;
-                  const mins = Math.floor(secs / 60);
+                  const hrs = Math.floor(secs / 3600);
+                  const mins = Math.floor((secs % 3600) / 60);
                   const secsR = secs % 60;
+                  const showHours = secs >= 3600;
 
                   return (
                     <m.div
                       key={`lu-${quiz.slot_id || quiz.id}`}
-                      initial={{ opacity: 0, y: 24 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.08, type: 'spring', stiffness: 100, damping: 14 }}
+                      transition={{ delay: index * 0.07, type: 'spring', stiffness: 110, damping: 16 }}
                       className="group cursor-pointer"
                       onClick={() => navigate(quizPath)}
                     >
-                      {/* Animated conic gradient border */}
-                      <div className={`relative rounded-[20px] p-[2px] overflow-hidden transition-all group-hover:-translate-y-1 ${
-                        isActive 
-                          ? 'bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#ef4444)] shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]'
-                          : 'bg-[conic-gradient(from_0deg,#06b6d4,#3b82f6,#8b5cf6,#06b6d4)] shadow-[0_0_30px_-5px_rgba(6,182,212,0.25)]'
+                      <div className={`relative rounded-2xl p-[1.5px] overflow-hidden transition-transform duration-200 group-hover:-translate-y-0.5 ${
+                        isActive
+                          ? 'bg-gradient-to-br from-red-500/60 via-orange-400/50 to-amber-400/60 shadow-[0_0_20px_-4px_rgba(239,68,68,0.28)]'
+                          : 'bg-gradient-to-br from-cyan-500/55 via-blue-500/40 to-indigo-500/55 shadow-[0_0_20px_-4px_rgba(6,182,212,0.22)]'
                       }`}>
-                        <div className="relative rounded-[18px] bg-[#08080f] p-4 sm:p-5 overflow-hidden">
-                          {/* Top shimmer glow */}
-                          <div className={`absolute top-0 left-0 right-0 h-24 opacity-30 pointer-events-none ${
-                            isActive 
-                              ? 'bg-gradient-to-b from-red-500/25 via-orange-500/10 to-transparent'
-                              : 'bg-gradient-to-b from-cyan-500/20 via-blue-500/10 to-transparent'
+                        <div className="relative rounded-[14px] bg-[#090910] overflow-hidden">
+                          <div className={`absolute top-0 left-0 right-0 h-14 opacity-20 pointer-events-none ${
+                            isActive
+                              ? 'bg-gradient-to-b from-red-500/40 to-transparent'
+                              : 'bg-gradient-to-b from-cyan-500/35 to-transparent'
                           }`} />
-
-                          {/* Badge Row */}
-                          <div className="relative flex items-center justify-between mb-3">
-                            <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${
-                              isActive 
-                                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_4px_15px_-3px_rgba(239,68,68,0.5)]'
-                                : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-[0_4px_15px_-3px_rgba(6,182,212,0.5)]'
+                          <div className="relative p-3 sm:p-3.5">
+                            {/* Badge + Participants */}
+                            <div className="flex items-center justify-between mb-2.5">
+                              <span className={`inline-flex items-center gap-1 text-[8.5px] font-black uppercase tracking-[0.12em] px-2.5 py-1 rounded-full ${
+                                isActive
+                                  ? 'bg-red-500/15 text-red-300 border border-red-500/25'
+                                  : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
+                              }`}>
+                                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+                                {isActive ? '● Live' : '⏰ Upcoming'}
+                              </span>
+                              {showUsersCount && (
+                                <div className="flex items-center gap-1 text-slate-500">
+                                  <Users className="w-3 h-3" />
+                                  <span className="text-[9px] font-semibold">{joined}</span>
+                                </div>
+                              )}
+                            </div>
+                            {/* Title */}
+                            <h3 className="text-[13px] sm:text-[15px] font-bold text-white mb-2.5 sm:mb-3 leading-snug line-clamp-2">{quiz.title}</h3>
+                            {/* Compact timer */}
+                            <div className={`relative mb-2.5 sm:mb-3 rounded-xl overflow-hidden ${
+                              isActive ? 'bg-red-950/50 border border-red-500/15' : 'bg-cyan-950/50 border border-cyan-500/15'
                             }`}>
-                              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                              {isActive ? '🔴 LIVE NOW' : '⏰ UPCOMING'}
-                            </span>
-                            <div className="flex items-center gap-1 text-slate-500">
-                              <Users className="w-3 h-3" />
-                              <span className="text-[10px] font-bold">{joined}</span>
-                            </div>
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="relative text-base sm:text-lg font-bold text-white mb-4 leading-snug line-clamp-2">
-                            {quiz.title}
-                          </h3>
-
-                          {/* Timer — Big and prominent */}
-                          <div className={`relative mb-4 rounded-2xl overflow-hidden ${
-                            isActive 
-                              ? 'bg-gradient-to-r from-red-950/80 via-orange-950/60 to-amber-950/80 border border-red-500/20'
-                              : 'bg-gradient-to-r from-cyan-950/80 via-blue-950/60 to-indigo-950/80 border border-cyan-500/15'
-                          }`}>
-                            <div className="px-4 py-3 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <Clock className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-cyan-400'}`} />
-                                <div>
-                                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                                    {isActive ? 'Ends in' : 'Starts in'}
+                              <div className="px-3 py-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Clock className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-orange-400' : 'text-cyan-400'}`} />
+                                  <div>
+                                    <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">{isActive ? 'Ends in' : 'Starts in'}</div>
+                                    <div className="flex items-baseline gap-0.5 mt-0.5">
+                                      {showHours ? (
+                                        <>
+                                          <span className={`text-base font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>{hrs}</span>
+                                          <span className={`text-[9px] font-bold ${isActive ? 'text-orange-500' : 'text-cyan-500'}`}>h</span>
+                                          <span className={`text-base font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>{String(mins).padStart(2, '0')}</span>
+                                          <span className={`text-[9px] font-bold ${isActive ? 'text-orange-500' : 'text-cyan-500'}`}>m</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className={`text-base font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>{String(mins).padStart(2, '0')}</span>
+                                          <span className={`text-[9px] font-bold ${isActive ? 'text-orange-500' : 'text-cyan-500'} animate-pulse`}>:</span>
+                                          <span className={`text-base font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>{String(secsR).padStart(2, '0')}</span>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="flex items-baseline gap-1 mt-0.5">
-                                    <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>
-                                      {String(mins).padStart(2, '0')}
-                                    </span>
-                                    <span className={`text-xs font-bold ${isActive ? 'text-orange-500' : 'text-cyan-500'} animate-pulse`}>:</span>
-                                    <span className={`text-2xl font-black tabular-nums ${isActive ? 'text-orange-300' : 'text-cyan-300'}`}>
-                                      {String(secsR).padStart(2, '0')}
-                                    </span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Schedule</div>
+                                  <div className="text-[9px] text-slate-300 font-semibold tabular-nums">
+                                    {quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'} – {quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}
                                   </div>
                                 </div>
                               </div>
-                              <div className="text-right space-y-1">
-                                <div className="text-[8px] text-slate-500 font-bold uppercase">Schedule</div>
-                                <div className="text-[11px] text-slate-300 font-semibold">
-                                  {quiz.start_time ? formatTimeOnly(quiz.start_time) : '—'} → {quiz.end_time ? formatTimeOnly(quiz.end_time) : '—'}
+                              {progressed !== null && (
+                                <div className="h-0.5 bg-black/30">
+                                  <m.div
+                                    className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-cyan-400 to-blue-500'}`}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progressed}%` }}
+                                    transition={{ duration: 0.8 }}
+                                  />
                                 </div>
-                              </div>
+                              )}
                             </div>
-                            {progressed !== null && (
-                              <div className="h-1 bg-black/30">
-                                <m.div 
-                                  className={`h-full rounded-full ${isActive ? 'bg-gradient-to-r from-red-500 via-orange-400 to-amber-400' : 'bg-gradient-to-r from-cyan-400 to-blue-500'}`}
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${progressed}%` }}
-                                  transition={{ duration: 0.8 }}
-                                />
-                              </div>
-                            )}
+                            {/* Prizes compact */}
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
+                              {[
+                                { emoji: '🥇', value: formatPrize(p1), cls: 'border-amber-500/20 text-amber-300' },
+                                { emoji: '🥈', value: formatPrize(p2), cls: 'border-slate-500/20 text-slate-300' },
+                                { emoji: '🥉', value: formatPrize(p3), cls: 'border-orange-500/20 text-orange-300' },
+                              ].map((prize, i) => (
+                                <div key={i} className={`text-center py-1.5 sm:py-2 rounded-xl border ${prize.cls} bg-white/[0.02]`}>
+                                  <div className="text-sm sm:text-base leading-none">{prize.emoji}</div>
+                                  <div className={`text-[10px] sm:text-[11px] font-black mt-0.5 sm:mt-1 ${prize.cls.split(' ').find(c => c.startsWith('text-'))}`}>{prize.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Joined chip + CTA */}
+                            <div className="flex items-center gap-2">
+                              <span className="shrink-0 text-[8.5px] text-emerald-400/80 bg-emerald-500/10 px-2 py-1 sm:py-1.5 rounded-lg font-bold border border-emerald-500/15 inline-flex items-center gap-1">
+                                ✓ Joined
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); navigate(quizPath); }}
+                                onMouseEnter={() => prefetchRoute('/quiz')}
+                                className={`flex-1 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                                  isActive
+                                    ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-[0_4px_14px_-3px_rgba(244,63,94,0.45)]'
+                                    : 'bg-gradient-to-r from-cyan-400 to-indigo-500 text-white shadow-[0_4px_14px_-3px_rgba(59,130,246,0.4)]'
+                                }`}
+                              >
+                                <Play className="w-3 h-3" fill="currentColor" />
+                                {isActive ? 'Play Now' : 'Play'}
+                                <ChevronRight className="w-3 h-3 opacity-60" />
+                              </button>
+                            </div>
                           </div>
-
-                          {/* Prizes — Medal cards */}
-                          <div className="grid grid-cols-3 gap-2 mb-4">
-                            {[
-                              { label: '1st', emoji: '🥇', value: formatPrize(p1), bg: 'from-amber-500/20 to-yellow-600/10', border: 'border-amber-500/25', text: 'text-amber-300', glow: 'shadow-amber-500/10' },
-                              { label: '2nd', emoji: '🥈', value: formatPrize(p2), bg: 'from-slate-400/15 to-slate-500/10', border: 'border-slate-400/20', text: 'text-slate-300', glow: 'shadow-slate-400/5' },
-                              { label: '3rd', emoji: '🥉', value: formatPrize(p3), bg: 'from-orange-500/15 to-orange-600/10', border: 'border-orange-500/20', text: 'text-orange-300', glow: 'shadow-orange-500/10' },
-                            ].map((prize) => (
-                              <div key={prize.label} className={`relative text-center py-3 rounded-2xl bg-gradient-to-b ${prize.bg} border ${prize.border} shadow-lg ${prize.glow}`}>
-                                <div className="text-lg leading-none">{prize.emoji}</div>
-                                <div className={`text-sm font-black ${prize.text} mt-1`}>{prize.value}</div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Joined badge (above button, left-aligned) + Full Play button */}
-                          <div className="mb-2">
-                            <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-2.5 py-1 rounded-full font-bold border border-emerald-500/15 inline-flex items-center gap-1">
-                              ✅ Joined
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); navigate(quizPath); }}
-                            onMouseEnter={() => prefetchRoute('/quiz')}
-                            className={`w-full py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
-                              isActive 
-                                ? 'bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white shadow-[0_8px_25px_-5px_rgba(244,63,94,0.5)]'
-                                : 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 text-white shadow-[0_8px_25px_-5px_rgba(59,130,246,0.5)]'
-                            }`}
-                          >
-                            <Play className="w-4 h-4" fill="currentColor" />
-                            {isActive ? 'PLAY NOW' : 'PLAY'}
-                            <ChevronRight className="w-4 h-4 opacity-60" />
-                          </button>
                         </div>
                       </div>
                     </m.div>
+
                   );
                 })}
               </div>
@@ -957,79 +971,87 @@ const MyQuizzes = () => {
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05, type: 'spring', stiffness: 120, damping: 16 }}
-                      className={`group relative rounded-2xl p-[1.5px] cursor-pointer transition-all hover:-translate-y-0.5 ${
+                      className={`group relative rounded-2xl p-[1.5px] cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 ${
                         isWinner 
                           ? 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 shadow-[0_0_16px_-5px_rgba(59,130,246,0.3)]'
                           : 'bg-gradient-to-r from-slate-600/40 via-slate-500/30 to-slate-600/40'
                       }`}
                       onClick={() => navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`)}
                     >
-                      <div className="rounded-[14.5px] bg-[#08080f]/95 px-3 py-2.5 h-full">
-                        {/* Title Row */}
-                        <div className="flex items-center gap-2.5 mb-2">
-                          {isResultOut && (
-                            <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
-                              isWinner 
-                                ? 'bg-gradient-to-br from-blue-500/20 to-indigo-600/15 border border-blue-500/25' 
-                                : 'bg-gradient-to-br from-slate-700/40 to-slate-800/40 border border-slate-600/20'
-                            }`}>
-                              {rankEmoji || <span className="text-[10px] font-black text-slate-400">#{userRank?.rank ?? '?'}</span>}
+                      <div className="rounded-[14px] bg-[#090910] overflow-hidden">
+                        <div className={`absolute top-0 left-0 right-0 h-12 opacity-20 pointer-events-none ${
+                          isWinner ? 'bg-gradient-to-b from-blue-500/30 to-transparent' : 'bg-gradient-to-b from-slate-500/20 to-transparent'
+                        }`} />
+                        <div className="relative p-3">
+                          {/* Title Row */}
+                          <div className="flex items-start gap-2.5 mb-2.5">
+                            {isResultOut && (
+                              <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-inner ${
+                                isWinner 
+                                  ? 'bg-gradient-to-br from-blue-500/20 to-indigo-600/15 border border-blue-500/25' 
+                                  : 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/40'
+                              }`}>
+                                {rankEmoji || <span className="text-[10px] font-black text-slate-400">#{userRank?.rank ?? '?'}</span>}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0 pt-0.5">
+                              <h3 className="text-[13px] sm:text-[15px] font-bold text-white line-clamp-1 leading-snug">{quiz.title}</h3>
+                              <span className="text-[9px] text-slate-500 flex items-center gap-1 mt-0.5 sm:mt-1">
+                                <Clock className="w-2.5 h-2.5" /> {endedAtLabel}
+                              </span>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-[13px] font-bold text-white line-clamp-1 leading-snug">{quiz.title}</h3>
-                            <span className="text-[9px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <Clock className="w-2.5 h-2.5" /> {endedAtLabel}
-                            </span>
+                          </div>
+
+                          {/* Results & CTA Row */}
+                          <div className="flex items-stretch gap-2">
+                            {isResultOut ? (
+                              <div className="flex-1 flex gap-1.5">
+                                <div className={`flex-1 text-center py-1 rounded-lg border ${
+                                  isWinner ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white/[0.02] border-white/[0.06]'
+                                }`}>
+                                  <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Rank</div>
+                                  <div className={`text-xs sm:text-sm font-black mt-0.5 sm:mt-1 ${isWinner ? 'text-blue-400' : 'text-slate-200'}`}>
+                                    #{userRank?.rank ?? '-'}
+                                  </div>
+                                </div>
+                                <div className="flex-1 text-center py-1 sm:py-1.5 rounded-lg bg-violet-500/[0.06] border border-violet-500/15">
+                                  <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Score</div>
+                                  <div className="text-xs sm:text-sm font-black text-violet-300 mt-0.5 sm:mt-1">{userRank?.score ?? '-'}</div>
+                                </div>
+                                <div className="flex-1 text-center py-1 sm:py-1.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15">
+                                  <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Won</div>
+                                  <div className={`text-[10px] sm:text-[11px] font-black mt-0.5 sm:mt-1 ${prizeDisplay !== '—' ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                    {prizeDisplay}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                <span className="text-[10px] text-slate-500 inline-flex items-center gap-1.5">
+                                  <m.span animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>⏳</m.span>
+                                  Calculating...
+                                </span>
+                              </div>
+                            )}
+
+                            {/* View Result CTA (compact inline) */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`);
+                              }}
+                              className={`shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold flex flex-col items-center justify-center transition-all active:scale-[0.97] ${
+                                isWinner
+                                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_12px_-4px_rgba(168,85,247,0.4)]'
+                                  : 'bg-slate-800 text-slate-300 border border-slate-700/50 hover:bg-slate-700'
+                              }`}
+                            >
+                              <Trophy className="w-3.5 h-3.5 mb-0.5" />
+                              <span>View</span>
+                            </button>
                           </div>
                         </div>
-
-                        {/* Results Row */}
-                        {isResultOut ? (
-                          <div className="flex items-stretch gap-1.5 mb-2">
-                            <div className={`flex-1 text-center py-1.5 px-1 rounded-lg border ${
-                              isWinner ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white/[0.02] border-white/[0.06]'
-                            }`}>
-                              <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Rank</div>
-                              <div className={`text-sm font-black ${isWinner ? 'text-blue-400' : 'text-slate-200'}`}>
-                                #{userRank?.rank ?? '-'}
-                              </div>
-                            </div>
-                            <div className="flex-1 text-center py-1.5 px-1 rounded-lg bg-violet-500/[0.06] border border-violet-500/15">
-                              <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Score</div>
-                              <div className="text-sm font-black text-violet-300">{userRank?.score ?? '-'}</div>
-                            </div>
-                            <div className="flex-1 text-center py-1.5 px-1 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15">
-                              <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Won</div>
-                              <div className={`text-sm font-black ${prizeDisplay !== '—' ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                {prizeDisplay}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mb-2 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-center">
-                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-1.5">
-                              <m.span animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>⏳</m.span>
-                              Calculating Results...
-                            </span>
-                          </div>
-                        )}
-
-                        {/* View Result */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(quiz.slot_id ? `/results/slot/${quiz.slot_id}` : `/results/${quiz.id}`);
-                          }}
-                          className={`w-full py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
-                            isWinner
-                              ? 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_4px_16px_-4px_rgba(168,85,247,0.4)]'
-                              : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_4px_16px_-4px_rgba(168,85,247,0.3)]'
-                          }`}
-                        >
-                          <Trophy className="w-3 h-3" /> VIEW RESULT <ChevronRight className="w-3 h-3 opacity-60" />
-                        </button>
                       </div>
                     </m.div>
                   );

@@ -60,6 +60,19 @@ const Quiz = () => {
     }
   }, [isSlotQuiz, slotId]);
 
+  const [showUsersCount, setShowUsersCount] = useState(true);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        if (!supabase) return;
+        const { data } = await supabase.from('category_runtime_overrides').select('is_auto').eq('category', 'show_users_count').maybeSingle();
+        if (data) setShowUsersCount(data.is_auto);
+      } catch (e) { /* ignore */ }
+    }
+    fetchSettings();
+  }, []);
+
   useEffect(() => {
     if (isSlotQuiz) {
       loadSlot();
@@ -162,6 +175,7 @@ const Quiz = () => {
         prizeType={prizeType}
         formatTime={formatTime}
         predictionMeta={predictionMeta}
+        showUsersCount={showUsersCount}
         onJoin={handleJoinOrPrejoin}
         onClose={handleClose}
       />
@@ -180,6 +194,7 @@ const Quiz = () => {
         prizeType={prizeType}
         formatTime={formatTime}
         predictionMeta={predictionMeta}
+        showUsersCount={showUsersCount}
         onClose={handleClose}
       />
     );

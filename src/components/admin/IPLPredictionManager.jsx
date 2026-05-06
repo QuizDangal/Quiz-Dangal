@@ -118,6 +118,7 @@ export default function IPLPredictionManager() {
   const [questionDrafts, setQuestionDrafts] = useState([]);
   const [savingQuestions, setSavingQuestions] = useState(false);
   const [bulkText, setBulkText] = useState('');
+  const [bulkAnswerText, setBulkAnswerText] = useState('');
   const [form, setForm] = useState({
     teamA: IPL_TEAMS[0]?.name || '',
     teamB: IPL_TEAMS[1]?.name || '',
@@ -209,7 +210,15 @@ export default function IPLPredictionManager() {
       const qMatch = ln.match(/^Q\d+\.\s*(.+)$/i);
       if (qMatch) {
         if (currentQ && currentQ.text) questions.push(currentQ);
-        currentQ = { text: qMatch[1].trim(), points: 1, options: [] };
+        let qText = qMatch[1].trim();
+        // Extract points from patterns like [5pts], (5pts), [5 points], (5 points), [pts:5], [5p]
+        let pts = 1;
+        const ptsMatch = qText.match(/\[\s*(?:pts?[:\s*]?)?\s*(\d+)\s*(?:pts?|points?)?\s*\]|\(\s*(?:pts?[:\s*]?)?\s*(\d+)\s*(?:pts?|points?)?\s*\)/i);
+        if (ptsMatch) {
+          pts = Math.max(1, parseInt(ptsMatch[1] || ptsMatch[2], 10) || 1);
+          qText = qText.replace(ptsMatch[0], '').trim();
+        }
+        currentQ = { text: qText, points: pts, options: [] };
         continue;
       }
       const optMatch = ln.match(/^(?:[-*•]|[A-F]\)|[A-F][.:])\s*(.+)$/i);
@@ -234,6 +243,45 @@ export default function IPLPredictionManager() {
     }));
     setForm((current) => ({ ...current, questions: newQuestions }));
     toast({ title: `${newQuestions.length} questions loaded`, description: 'Questions populated from paste. Review and adjust as needed.' });
+  };
+
+  const handleParseBulkAnswers = () => {
+    const input = String(bulkAnswerText || '').trim();
+    if (!input) {
+      toast({ title: 'No input', description: 'Pehle answers paste karo.', variant: 'destructive' });
+      return;
+    }
+
+    const lines = input.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    setAnswerDrafts((currentDrafts) => {
+      const newDrafts = [...currentDrafts];
+      let lineIndex = 0;
+
+      for (let i = 0; i < newDrafts.length; i++) {
+        if (lineIndex >= lines.length) break;
+
+        const line = lines[lineIndex].replace(/^(?:Q?\d+[.:)]|\*|-|•|[A-F]\)|[A-F][.:])\s*/i, '').trim().toLowerCase();
+        
+        const matchingOption = newDrafts[i].options.find(
+          opt => {
+            const optText = opt.option_text.trim().toLowerCase();
+            return optText === line || optText.startsWith(line) || line.startsWith(optText);
+          }
+        );
+
+        if (matchingOption) {
+          newDrafts[i].correct_option_id = matchingOption.id;
+        }
+        
+        lineIndex++;
+      }
+      return newDrafts;
+    });
+
+    toast({ title: 'Answers mapped', description: 'Pasted answers mapped to options. Please review before saving.' });
+    setBulkAnswerText('');
   };
 
   const handleCreate = async () => {
@@ -780,7 +828,7 @@ export default function IPLPredictionManager() {
             <textarea
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              placeholder={`JSON format:\n[{"questions":[{"text":"Question?","options":["A","B","C"]}]}]\n\nYa text format:\nQ1. Aaj sabse zyada runs kaun banayega?\n- Virat Kohli\n- Rohit Sharma\n- KL Rahul`}
+              placeholder={`JSON format:\n[{"questions":[{"text":"Question?","points":3,"options":["A","B","C"]}]}]\n\nText format (points optional):\nQ1. [3pts] Aaj sabse zyada runs kaun banayega?\n- Virat Kohli\n- Rohit Sharma\nQ2. (5 points) Kaun sa bowler wicket lega?\n- Jasprit Bumrah\n- Mohammed Siraj`}
               className="mt-2 h-32 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
             />
             <Button
@@ -1101,6 +1149,24 @@ export default function IPLPredictionManager() {
               </div>
               <Button type="button" variant="outline" onClick={() => { setEditingQuiz(null); setAnswerDrafts([]); }} className="border-slate-600 bg-slate-900 text-slate-200 hover:bg-slate-800">
                 Close
+              </Button>
+            </div>
+
+            <div className="mt-5 rounded-[24px] border border-sky-400/20 bg-sky-500/5 p-4">
+              <div className="text-sm font-bold text-sky-200">Quick Paste Answers</div>
+              <div className="mt-1 text-xs text-slate-400">Sabhi questions ke answers ek saath paste karo (line by line).</div>
+              <textarea
+                value={bulkAnswerText}
+                onChange={(e) => setBulkAnswerText(e.target.value)}
+                placeholder={`1. Virat Kohli\n2. Jasprit Bumrah\n3. Mumbai Indians`}
+                className="mt-2 h-24 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+              />
+              <Button
+                type="button"
+                onClick={handleParseBulkAnswers}
+                className="mt-2 bg-gradient-to-r from-sky-500 to-cyan-500 text-white hover:opacity-90"
+              >
+                Parse & Map Answers
               </Button>
             </div>
 

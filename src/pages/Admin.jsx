@@ -132,6 +132,7 @@ export default function Admin() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showUsersCount, setShowUsersCount] = useState(true);
   // Default prize_type to 'coins' so winners get auto-credited by backend award logic
   const [form, setForm] = useState({
     title: '',
@@ -173,6 +174,16 @@ export default function Admin() {
       .order('start_time', { ascending: false });
     if (error) toast({ title: 'Fetch failed', description: error.message, variant: 'destructive' });
     else setQuizzes(data || []);
+
+    // Fetch users count toggle setting
+    const { data: setRow } = await supabase
+      .from('category_runtime_overrides')
+      .select('is_auto')
+      .eq('category', 'show_users_count')
+      .maybeSingle();
+    if (setRow) {
+      setShowUsersCount(setRow.is_auto);
+    }
     setLoading(false);
   }, [toast, isAdmin]);
 
@@ -429,6 +440,20 @@ export default function Admin() {
     }
   };
 
+  const toggleUsersCount = async () => {
+    if (!isAdmin) return;
+    const newVal = !showUsersCount;
+    setShowUsersCount(newVal); // Optimistic
+    try {
+      const { error } = await supabase.rpc('toggle_category_auto', { p_category: 'show_users_count', p_enabled: newVal });
+      if (error) throw error;
+      toast({ title: newVal ? 'Users count visible' : 'Users count hidden' });
+    } catch (e) {
+      toast({ title: 'Failed to update toggle', variant: 'destructive' });
+      setShowUsersCount(!newVal); // Revert
+    }
+  };
+
   const quizBlocks = useMemo(() => {
     const now = Date.now();
     const active = [];
@@ -622,7 +647,7 @@ export default function Admin() {
       )}
       {tab === 'overview' && (
         <div className="space-y-8">
-          <div>
+          <div className="flex flex-wrap items-center gap-4 justify-between bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <Button
               onClick={() => setShowCreate(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
@@ -630,6 +655,17 @@ export default function Admin() {
               <Plus className="w-4 h-4 mr-1" />
               New Quiz
             </Button>
+            
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-sm font-semibold text-gray-700">Display Users Count:</span>
+              <button
+                type="button"
+                onClick={toggleUsersCount}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showUsersCount ? 'bg-indigo-600' : 'bg-gray-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showUsersCount ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
           </div>
 
           <IPLPredictionManager />

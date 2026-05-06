@@ -359,7 +359,39 @@ function AuthProviderInner({ children }) {
             // ignore referral errors so profile init continues
           }
         }
+
+        // ── Daily Login Streak ──
+        // Called HERE (after profile upsert) so the profile row is guaranteed to exist.
+        // This also fixes new-user streak (profile created just above).
+        const streakKey = `qd_s_${user.id}`;
+        const today = (() => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; })();
+        const alreadyClaimed = (() => { try { return sessionStorage.getItem(streakKey) === today; } catch { return false; } })();
+        if (!alreadyClaimed) {
+          try {
+            const { data: sessionSnap } = await supabase.auth.getSession();
+            const sess = sessionSnap?.session;
+            const nowSecs = Math.floor(Date.now() / 1000);
+            if (sess?.access_token && sess?.expires_at && sess.expires_at > nowSecs + 5) {
+              const { data: streakData, error: streakErr } = await supabase.rpc('handle_daily_login');
+              if (!streakErr && streakData?.is_new_login) {
+                try { sessionStorage.setItem(streakKey, today); } catch { /* ignore */ }
+                // Notify Home.jsx to show the streak modal
+                try {
+                  window.dispatchEvent(new CustomEvent('qd:streak', {
+                    detail: { streak_day: streakData.streak_day, coins_earned: streakData.coins_earned }
+                  }));
+                } catch { /* ignore */ }
+              } else if (streakData && !streakData.is_new_login) {
+                // Already claimed today or not authenticated — mark as done to avoid retries
+                try { sessionStorage.setItem(streakKey, today); } catch { /* ignore */ }
+              }
+            }
+          } catch {
+            // ignore streak errors — profile init should not be blocked
+          }
+        }
       })
+
       .catch(() => {
         // Ignore upsert errors here; UI can still function and retries will happen on next auth state change
       })

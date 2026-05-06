@@ -1,5 +1,5 @@
 // Quiz Dangal – Home (premium redesign)
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SeoHead from '@/components/SEO';
 import { BUILD_DATE } from '@/constants';
 import { useNavigate, Link } from 'react-router-dom';
@@ -14,9 +14,8 @@ import {
   Trophy,
   User,
 } from 'lucide-react';
-import { getSupabase, supabase } from '@/lib/customSupabaseClient';
+import { getSupabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { STREAK_CLAIM_DELAY_MS } from '@/constants';
 import StreakModal from '@/components/StreakModal';
 import { prefetchRoute } from '@/lib/utils';
 import { prefetchSlotData } from '@/lib/slots';
@@ -84,7 +83,6 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, userProfile, refreshUserProfile } = useAuth();
   const [modal, setModal] = useState({ open: false, day: 0, coins: 0 });
-  const claiming = useRef(false);
 
   const coins = useMemo(() => Number(userProfile?.wallet_balance || 0), [userProfile?.wallet_balance]);
   const streak = useMemo(() => Number(userProfile?.current_streak || 0), [userProfile?.current_streak]);
@@ -98,37 +96,18 @@ const Home = () => {
     return first.length > 14 ? `${first.slice(0, 14)}…` : first;
   }, [userProfile?.full_name, userProfile?.name, user?.email]);
 
-
-  // Auto claim streak
+  // Show streak modal — AuthContext claims the streak after profile upsert.
+  // We listen for the qd:streak CustomEvent dispatched from AuthContext.
   useEffect(() => {
-    if (!user || claiming.current || !supabase) return;
-    const run = async () => {
-      claiming.current = true;
-      try {
-        const k = `qd_s_${user.id}`, d = new Date(), s = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-        try {
-          if (sessionStorage.getItem(k) === s) return;
-        } catch (e) {
-          void e;
-        }
-        const { data, error } = await supabase.rpc('handle_daily_login', { user_uuid: user.id });
-        if (!error && data?.is_new_login) {
-          await refreshUserProfile(user);
-          setModal({ open: true, day: data.streak_day, coins: data.coins_earned });
-        }
-        try {
-          sessionStorage.setItem(k, s);
-        } catch (e) {
-          void e;
-        }
-      } catch (e) {
-        void e;
-      } finally {
-        claiming.current = false;
+    const onStreak = (e) => {
+      const { streak_day, coins_earned } = e.detail || {};
+      if (streak_day && coins_earned) {
+        refreshUserProfile(user);
+        setModal({ open: true, day: streak_day, coins: coins_earned });
       }
     };
-    const t = setTimeout(run, STREAK_CLAIM_DELAY_MS);
-    return () => clearTimeout(t);
+    window.addEventListener('qd:streak', onStreak);
+    return () => window.removeEventListener('qd:streak', onStreak);
   }, [user, refreshUserProfile]);
 
   // Warm Supabase in background on Home mount so it's ready when user taps a category
@@ -224,7 +203,8 @@ const Home = () => {
               alt="Quiz Dangal"
               width={44}
               height={44}
-              fetchPriority="high"
+              // eslint-disable-next-line react/no-unknown-property
+              fetchpriority="high"
               className="h-11 w-11 sm:h-10 sm:w-10 rounded-[12px] transition-transform duration-300 group-hover:scale-[1.05]"
             />
             <div className="text-[1.35rem] sm:text-[1.35rem] md:text-[1.55rem] font-black tracking-tight bg-gradient-to-r from-violet-200 via-fuchsia-200 to-amber-200 bg-clip-text text-transparent">

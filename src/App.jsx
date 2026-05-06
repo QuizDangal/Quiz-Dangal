@@ -208,6 +208,18 @@ function App() {
     }
   }, [loading]);
 
+  // Safety fallback: forcefully remove loader after 8 seconds if it's still there
+  useEffect(() => {
+    const fallbackId = setTimeout(() => {
+      const staticLoader = document.getElementById('static-loader');
+      if (staticLoader) {
+        staticLoader.style.opacity = '0';
+        setTimeout(() => staticLoader.remove(), 150);
+      }
+    }, 8000);
+    return () => clearTimeout(fallbackId);
+  }, []);
+
   // While loading, keep static loader visible (don't render anything else)
   if (loading) {
     return null; // Static loader from index.html stays visible
@@ -284,6 +296,9 @@ function App() {
                   </>
                 ) : (
                   <>
+                    {/* Redirect authenticated users away from login to home */}
+                    <Route path="/login/" element={<Navigate to="/" replace />} />
+                    <Route path="/login" element={<Navigate to="/" replace />} />
                     <Route path="/quiz/:id" element={<Quiz />} />
                     <Route path="/quiz/slot/:slotId" element={<Quiz />} />
                     {legacyRedirectRoutes}
@@ -460,7 +475,7 @@ function CategoryTrailingSlashRedirect() {
 function LoginRedirect({ message }) {
   const location = useLocation();
   const from = location.pathname + location.search + location.hash;
-  return <Navigate to="/login" replace state={{ from, message: message || 'Please sign in to continue.' }} />;
+  return <Navigate to="/login/" replace state={{ from, message: message || 'Please sign in to continue.' }} />;
 }
 
 const MainLayout = () => {

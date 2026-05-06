@@ -282,7 +282,7 @@ function deriveLegacyStatus(q, nowMs) {
 export async function toggleCategoryAuto(supabase, category, enabled) {
   if (!supabase) return { ok: false, error: new Error('No supabase client') };
   try {
-    const { error } = await supabase.rpc('toggle_category_auto', { category, enabled });
+    const { error } = await supabase.rpc('toggle_category_auto', { p_category: category, p_enabled: enabled });
     if (!error) return { ok: true };
     // If RPC exists but failed with other reason, fallback only for missing function keywords
     const msg = String(error.message || '').toLowerCase();

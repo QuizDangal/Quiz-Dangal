@@ -33,7 +33,7 @@ export const RATE_LIMIT_DEFAULT_WINDOW_MS = 8000; // Default rate limit window
 export const RATE_LIMIT_DEFAULT_MAX_ATTEMPTS = 5; // Default max attempts in window
 
 // Password security
-export const PASSWORD_MIN_LENGTH = 8; // Minimum password length
+export const PASSWORD_MIN_LENGTH = 1; // Minimum password length (Supabase enforces its own rules)
 
 // Queue limits
 export const MAX_RETRY_QUEUE_SIZE = 50; // Max size of answer retry queue

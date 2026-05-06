@@ -31,17 +31,6 @@ export function validatePassword(password) {
     return { valid: false, message: 'Password is too long (max 128 characters).' };
   }
   
-  // Check for basic complexity (at least one letter and one number recommended)
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  
-  if (!hasLetter || !hasNumber) {
-    return { 
-      valid: false, 
-      message: 'Password should contain at least one letter and one number.' 
-    };
-  }
-  
   return { valid: true, message: '' };
 }
 
