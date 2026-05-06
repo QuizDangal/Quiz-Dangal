@@ -30,6 +30,11 @@ export function validatePassword(password) {
   if (password.length > 128) {
     return { valid: false, message: 'Password is too long (max 128 characters).' };
   }
+
+  // Must contain at least one letter and one number
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one letter and one number.' };
+  }
   
   return { valid: true, message: '' };
 }
