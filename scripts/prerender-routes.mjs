@@ -37,6 +37,17 @@ const ROUTES = [
   { path: '/privacy-policy/', title: 'Privacy Policy \u2013 Quiz Dangal', description: 'Learn how Quiz Dangal collects and protects your data.' },
   { path: '/category/opinion/', title: 'Opinion Quizzes \u2013 Quiz Dangal', description: 'Play opinion-based quizzes. Share your take, compare with others, and earn coins as you play.' },
   { path: '/category/gk/', title: 'GK Quizzes \u2013 Quiz Dangal', description: 'Sharpen your general knowledge with live and upcoming GK quizzes on Quiz Dangal.' },
+  
+  // ===== PRIVATE/USER ROUTES (Must be noindex) =====
+  { path: '/login/', title: 'Login \u2013 Quiz Dangal', description: 'Log in to Quiz Dangal to track your streak and redeem rewards.', robots: 'noindex, nofollow' },
+  { path: '/profile/', title: 'Profile \u2013 Quiz Dangal', description: 'Your Quiz Dangal profile.', robots: 'noindex, nofollow' },
+  { path: '/wallet/', title: 'Wallet \u2013 Quiz Dangal', description: 'Your Quiz Dangal wallet balance and history.', robots: 'noindex, nofollow' },
+  { path: '/my-quizzes/', title: 'My Quizzes \u2013 Quiz Dangal', description: 'View your completed and upcoming quizzes.', robots: 'noindex, nofollow' },
+  { path: '/redemptions/', title: 'Redemptions \u2013 Quiz Dangal', description: 'Redeem your Quiz Dangal coins for rewards.', robots: 'noindex, nofollow' },
+  { path: '/reset-password/', title: 'Reset Password \u2013 Quiz Dangal', description: 'Reset your Quiz Dangal password.', robots: 'noindex, nofollow' },
+  { path: '/refer/', title: 'Referrals \u2013 Quiz Dangal', description: 'Your referrals on Quiz Dangal.', robots: 'noindex, nofollow' },
+  { path: '/rewards/', title: 'Rewards \u2013 Quiz Dangal', description: 'Quiz Dangal rewards.', robots: 'noindex, nofollow' },
+  { path: '/admin/', title: 'Admin \u2013 Quiz Dangal', description: 'Quiz Dangal administration.', robots: 'noindex, nofollow' },
 ];
 
 const LEGACY_REDIRECTS = [
@@ -75,39 +86,39 @@ function toUrl(loc) {
 function replaceHead(html, { title, description, url, robots }) {
   let out = html;
   // <title>
-  out = out.replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`);
+  out = out.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title data-rh="true">${title}</title>`);
   // meta description
-  if (out.match(/<meta\s+name="description"[^>]*>/i)) {
-    out = out.replace(/<meta\s+name="description"[^>]*>/i, `<meta name="description" content="${escapeHtml(description)}" />`);
+  if (out.match(/<meta[^>]*name="description"[^>]*>/i)) {
+    out = out.replace(/<meta[^>]*name="description"[^>]*>/i, `<meta data-rh="true" name="description" content="${escapeHtml(description)}" />`);
   } else {
-    out = out.replace('</head>', `  <meta name="description" content="${escapeHtml(description)}" />\n</head>`);
+    out = out.replace('</head>', `  <meta data-rh="true" name="description" content="${escapeHtml(description)}" />\n</head>`);
   }
   // robots
   if (robots) {
-    if (out.match(/<meta\s+name="robots"[^>]*>/i)) {
-      out = out.replace(/<meta\s+name="robots"[^>]*>/i, `<meta name="robots" content="${escapeHtml(robots)}" />`);
+    if (out.match(/<meta[^>]*name="robots"[^>]*>/i)) {
+      out = out.replace(/<meta[^>]*name="robots"[^>]*>/i, `<meta data-rh="true" name="robots" content="${escapeHtml(robots)}" />`);
     } else {
-      out = out.replace('</head>', `  <meta name="robots" content="${escapeHtml(robots)}" />\n</head>`);
+      out = out.replace('</head>', `  <meta data-rh="true" name="robots" content="${escapeHtml(robots)}" />\n</head>`);
     }
   }
   // canonical
-  if (out.match(/<link\s+rel="canonical"[^>]*>/i)) {
-    out = out.replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${url}" />`);
+  if (out.match(/<link[^>]*rel="canonical"[^>]*>/i)) {
+    out = out.replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link data-rh="true" rel="canonical" href="${url}" />`);
   } else {
-    out = out.replace('</head>', `  <link rel="canonical" href="${url}" />\n</head>`);
+    out = out.replace('</head>', `  <link data-rh="true" rel="canonical" href="${url}" />\n</head>`);
   }
-  out = out.replace(/<link\s+rel="alternate"\s+hreflang="en-IN"[^>]*>/i, `<link rel="alternate" hreflang="en-IN" href="${url}" />`);
-  out = out.replace(/<link\s+rel="alternate"\s+hreflang="en"[^>]*>/i, `<link rel="alternate" hreflang="en" href="${url}" />`);
-  out = out.replace(/<link\s+rel="alternate"\s+hreflang="x-default"[^>]*>/i, `<link rel="alternate" hreflang="x-default" href="${url}" />`);
+  out = out.replace(/<link[^>]*rel="alternate"\s+hreflang="en-IN"[^>]*>/i, `<link data-rh="true" rel="alternate" hreflang="en-IN" href="${url}" />`);
+  out = out.replace(/<link[^>]*rel="alternate"\s+hreflang="en"[^>]*>/i, `<link data-rh="true" rel="alternate" hreflang="en" href="${url}" />`);
+  out = out.replace(/<link[^>]*rel="alternate"\s+hreflang="x-default"[^>]*>/i, `<link data-rh="true" rel="alternate" hreflang="x-default" href="${url}" />`);
   // og tags
-  out = out.replace(/<meta\s+property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeHtml(title)}" />`);
-  out = out.replace(/<meta\s+property="og:description"[^>]*>/i, `<meta property="og:description" content="${escapeHtml(description)}" />`);
-  out = out.replace(/<meta\s+property="og:url"[^>]*>/i, `<meta property="og:url" content="${url}" />`);
+  out = out.replace(/<meta[^>]*property="og:title"[^>]*>/i, `<meta data-rh="true" property="og:title" content="${escapeHtml(title)}" />`);
+  out = out.replace(/<meta[^>]*property="og:description"[^>]*>/i, `<meta data-rh="true" property="og:description" content="${escapeHtml(description)}" />`);
+  out = out.replace(/<meta[^>]*property="og:url"[^>]*>/i, `<meta data-rh="true" property="og:url" content="${url}" />`);
   // twitter tags
-  out = out.replace(/<meta\s+name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${escapeHtml(title)}" />`);
-  out = out.replace(/<meta\s+name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${escapeHtml(description)}" />`);
+  out = out.replace(/<meta[^>]*name="twitter:title"[^>]*>/i, `<meta data-rh="true" name="twitter:title" content="${escapeHtml(title)}" />`);
+  out = out.replace(/<meta[^>]*name="twitter:description"[^>]*>/i, `<meta data-rh="true" name="twitter:description" content="${escapeHtml(description)}" />`);
   out = out.replace(
-    /<script type="application\/ld\+json">\s*\{[\s\S]*?"@type": "WebPage"[\s\S]*?<\/script>/i,
+    /<script type="application\/ld\+json">(?:(?!<\/script>)[\s\S])*?"@type":\s*"WebPage"(?:(?!<\/script>)[\s\S])*?<\/script>/i,
     `<script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "WebPage",\n    "name": "${escapeHtml(title)}",\n    "url": "${url}",\n    "description": "${escapeHtml(description)}",\n    "speakable": {\n      "@type": "SpeakableSpecification",\n      "cssSelector": ["[data-speakable]", "h1", ".qdh-title", ".qdh-faq-section"]\n    }\n  }\n</script>`
   );
   return out;
@@ -129,12 +140,12 @@ function injectCategorySeoContent(html, routePath) {
   const content = getCategorySeoContent(slug);
   if (!content || !content.paragraphs) return html;
   const seoHtml = [
-    '<article data-prerender="seo" style="max-width:672px;margin:80px auto 0;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
+    '<article data-prerender="seo" style="display:none; max-width:672px;margin:80px auto 0;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
     `<h2 style="font-size:1rem;font-weight:700;color:#fff;margin:0 0 12px;">${escapeHtml(content.heading)}</h2>`,
     ...content.paragraphs.map(p => `<p style="font-size:0.875rem;margin:0 0 10px;color:rgba(203,213,225,0.8);">${escapeHtml(p)}</p>`),
     '</article>',
   ].join('');
-  return html.replace('<div id="root"></div>', `<div id="root">${seoHtml}</div>`);
+  return html.replace('<div id="root"></div>', `<div id="root"></div>\n${seoHtml}`);
 }
 
 /**
@@ -156,18 +167,18 @@ function injectHubSeoArticle(html, routePath) {
   if (!key || !HUB_SEO_ARTICLES[key]) return html;
   const article = HUB_SEO_ARTICLES[key];
   const articleHtml = [
-    '<article data-prerender="hub-seo" style="max-width:672px;margin:40px auto;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
+    '<article data-prerender="hub-seo" style="display:none; max-width:672px;margin:40px auto;padding:16px 20px;color:rgba(226,232,240,0.85);font-family:Poppins,system-ui,sans-serif;line-height:1.7;">',
     `<h2 style="font-size:1.125rem;font-weight:700;color:#fff;margin:0 0 16px;">${escapeHtml(article.title)}</h2>`,
     ...article.sections.map(s =>
       `<h3 style="font-size:0.875rem;font-weight:600;color:#e2e8f0;margin:14px 0 6px;">${escapeHtml(s.heading)}</h3><p style="font-size:0.875rem;margin:0 0 10px;color:rgba(148,163,184,0.9);">${escapeHtml(s.text)}</p>`
     ),
     '</article>',
   ].join('');
-  // Append after any existing content inside #root, or inject into empty #root
+  
   if (html.includes('</div><!-- root-end -->')) {
-    return html.replace('</div><!-- root-end -->', `${articleHtml}</div><!-- root-end -->`);
+    return html.replace('</div><!-- root-end -->', `</div><!-- root-end -->\n${articleHtml}`);
   }
-  return html.replace('<div id="root"></div>', `<div id="root">${articleHtml}</div>`);
+  return html.replace('<div id="root"></div>', `<div id="root"></div>\n${articleHtml}`);
 }
 
 function buildRedirectHtml(baseHtml, { from, to }) {

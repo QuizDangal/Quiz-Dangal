@@ -7,53 +7,92 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import Home from '@/pages/Home';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-const MyQuizzes = lazy(() => import('@/pages/MyQuizzes'));
-const Wallet = lazy(() => import('@/pages/Wallet'));
-const Profile = lazy(() => import('@/pages/Profile'));
-const Login = lazy(() => import('@/pages/Login'));
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
-const AboutUs = lazy(() => import('@/pages/AboutUs'));
-const ContactUs = lazy(() => import('@/pages/ContactUs'));
-const TermsConditions = lazy(() => import('@/pages/TermsConditions'));
-const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
-const Quiz = lazy(() => import('@/pages/Quiz'));
-const CategoryQuizzes = lazy(() => import('@/pages/CategoryQuizzes'));
+
+/**
+ * lazyRetry — wraps a dynamic import so that when a chunk 404s
+ * (common after a deployment with new hashes) the page auto-reloads
+ * once instead of showing "Something went wrong".
+ */
+const lazyRetry = (importFn) =>
+  lazy(() =>
+    importFn().catch(() => {
+      // Prevent infinite reload loops — allow one retry per session
+      const key = 'qd_lazy_retry';
+      try {
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          globalThis.location.reload();
+          // Return a never-resolving promise so React doesn't render stale tree
+          return new Promise(() => {});
+        }
+      } catch {
+        /* sessionStorage unavailable */
+      }
+      // If we already retried, let it throw naturally → ErrorBoundary catches it
+      return importFn();
+    }),
+  );
+
+const MyQuizzes = lazyRetry(() => import('@/pages/MyQuizzes'));
+const Wallet = lazyRetry(() => import('@/pages/Wallet'));
+const Profile = lazyRetry(() => import('@/pages/Profile'));
+const Login = lazyRetry(() => import('@/pages/Login'));
+const ResetPassword = lazyRetry(() => import('@/pages/ResetPassword'));
+const AboutUs = lazyRetry(() => import('@/pages/AboutUs'));
+const ContactUs = lazyRetry(() => import('@/pages/ContactUs'));
+const TermsConditions = lazyRetry(() => import('@/pages/TermsConditions'));
+const PrivacyPolicy = lazyRetry(() => import('@/pages/PrivacyPolicy'));
+const Quiz = lazyRetry(() => import('@/pages/Quiz'));
+const CategoryQuizzes = lazyRetry(() => import('@/pages/CategoryQuizzes'));
 // Unified Admin panel now lives in Admin.jsx
-const Admin = lazy(() => import('@/pages/Admin'));
-const Results = lazy(() => import('@/pages/Results'));
-const Leaderboards = lazy(() => import('@/pages/Leaderboards'));
-const Redemptions = lazy(() => import('@/pages/Redemptions'));
-const ReferEarn = lazy(() => import('@/pages/ReferEarn'));
-const PlayWinQuiz = lazy(() => import('@/pages/PlayWinQuiz'));
-const OpinionQuiz = lazy(() => import('@/pages/OpinionQuiz'));
-const ReferEarnInfo = lazy(() => import('@/pages/ReferEarnInfo'));
-const NotificationsDebug = lazy(() => import('@/pages/NotificationsDebug'));
-const GKQuiz = lazy(() => import('@/pages/seo/GKQuiz'));
-const CricketQuiz = lazy(() => import('@/pages/seo/CricketQuiz'));
-const CurrentAffairsQuiz = lazy(() => import('@/pages/seo/CurrentAffairsQuiz'));
-const BollywoodQuiz = lazy(() => import('@/pages/seo/BollywoodQuiz'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
-const Footer = lazy(() => import('@/components/Footer'));
-const ProfileUpdateModal = lazy(() => import('@/components/ProfileUpdateModal'));
-const CookieConsent = lazy(() => import('@/components/CookieConsent'));
-const PWAInstallButton = lazy(() => import('@/components/PWAInstallButton'));
-const AdSenseLoader = lazy(() => import('@/components/AdSenseLoader'));
+const Admin = lazyRetry(() => import('@/pages/Admin'));
+const Results = lazyRetry(() => import('@/pages/Results'));
+const Leaderboards = lazyRetry(() => import('@/pages/Leaderboards'));
+const Redemptions = lazyRetry(() => import('@/pages/Redemptions'));
+const ReferEarn = lazyRetry(() => import('@/pages/ReferEarn'));
+const PlayWinQuiz = lazyRetry(() => import('@/pages/PlayWinQuiz'));
+const OpinionQuiz = lazyRetry(() => import('@/pages/OpinionQuiz'));
+const ReferEarnInfo = lazyRetry(() => import('@/pages/ReferEarnInfo'));
+const NotificationsDebug = lazyRetry(() => import('@/pages/NotificationsDebug'));
+const GKQuiz = lazyRetry(() => import('@/pages/seo/GKQuiz'));
+const CricketQuiz = lazyRetry(() => import('@/pages/seo/CricketQuiz'));
+const CurrentAffairsQuiz = lazyRetry(() => import('@/pages/seo/CurrentAffairsQuiz'));
+const BollywoodQuiz = lazyRetry(() => import('@/pages/seo/BollywoodQuiz'));
+const NotFound = lazyRetry(() => import('@/pages/NotFound'));
+const Footer = lazyRetry(() => import('@/components/Footer'));
+const ProfileUpdateModal = lazyRetry(() => import('@/components/ProfileUpdateModal'));
+const CookieConsent = lazyRetry(() => import('@/components/CookieConsent'));
+const PWAInstallButton = lazyRetry(() => import('@/components/PWAInstallButton'));
+const AdSenseLoader = lazyRetry(() => import('@/components/AdSenseLoader'));
 
 // Reusable group of static public informational routes (as a fragment – not a component – so <Routes> accepts it)
 const policyRoutes = (
   <>
+    <Route path="/terms-conditions" element={<Navigate to="/terms-conditions/" replace />} />
     <Route path="/terms-conditions/" element={<TermsConditions />} />
+    <Route path="/privacy-policy" element={<Navigate to="/privacy-policy/" replace />} />
     <Route path="/privacy-policy/" element={<PrivacyPolicy />} />
+    <Route path="/about-us" element={<Navigate to="/about-us/" replace />} />
     <Route path="/about-us/" element={<AboutUs />} />
+    <Route path="/contact-us" element={<Navigate to="/contact-us/" replace />} />
     <Route path="/contact-us/" element={<ContactUs />} />
+    <Route path="/gk-quiz" element={<Navigate to="/gk-quiz/" replace />} />
     <Route path="/gk-quiz/" element={<GKQuiz />} />
+    <Route path="/cricket-quiz" element={<Navigate to="/cricket-quiz/" replace />} />
     <Route path="/cricket-quiz/" element={<CricketQuiz />} />
+    <Route path="/ipl-prediction-quiz" element={<Navigate to="/category/opinion/" replace />} />
     <Route path="/ipl-prediction-quiz/" element={<Navigate to="/category/opinion/" replace />} />
+    <Route path="/current-affairs-quiz" element={<Navigate to="/current-affairs-quiz/" replace />} />
     <Route path="/current-affairs-quiz/" element={<CurrentAffairsQuiz />} />
+    <Route path="/bollywood-quiz" element={<Navigate to="/bollywood-quiz/" replace />} />
     <Route path="/bollywood-quiz/" element={<BollywoodQuiz />} />
+    <Route path="/play-win-quiz-app" element={<Navigate to="/play-win-quiz-app/" replace />} />
     <Route path="/play-win-quiz-app/" element={<PlayWinQuiz />} />
+    <Route path="/opinion-quiz-app" element={<Navigate to="/opinion-quiz-app/" replace />} />
     <Route path="/opinion-quiz-app/" element={<OpinionQuiz />} />
+    <Route path="/refer-earn-quiz-app" element={<Navigate to="/refer-earn-quiz-app/" replace />} />
     <Route path="/refer-earn-quiz-app/" element={<ReferEarnInfo />} />
+    <Route path="/leaderboards" element={<Navigate to="/leaderboards/" replace />} />
     <Route path="/leaderboards/" element={<Leaderboards />} />
   </>
 );
@@ -299,9 +338,14 @@ function App() {
                     {/* Redirect authenticated users away from login to home */}
                     <Route path="/login/" element={<Navigate to="/" replace />} />
                     <Route path="/login" element={<Navigate to="/" replace />} />
+                    <Route path="/quiz/" element={<Navigate to="/" replace />} />
+                    <Route path="/quiz" element={<Navigate to="/" replace />} />
                     <Route path="/quiz/:id" element={<Quiz />} />
                     <Route path="/quiz/slot/:slotId" element={<Quiz />} />
                     {legacyRedirectRoutes}
+                    {/* Redirect bare /category/ to home – no "all categories" page exists */}
+                    <Route path="/category/" element={<Navigate to="/" replace />} />
+                    <Route path="/category" element={<Navigate to="/" replace />} />
                     {/* Canonicalize category routes (avoid duplicate-content URLs) */}
                     <Route
                       path="/category/:slug/"
@@ -315,6 +359,8 @@ function App() {
                       path="/category/:slug"
                       element={<CategoryTrailingSlashRedirect />}
                     />
+                    <Route path="/results/" element={<Navigate to="/" replace />} />
+                    <Route path="/results" element={<Navigate to="/" replace />} />
                     <Route path="/results/:id" element={<Results />} />
                     <Route path="/results/slot/:slotId" element={<Results />} />
                     <Route path="/*" element={<MainLayout />} />
@@ -425,6 +471,8 @@ const PublicLayout = () => {
             {policyRoutes}
             {legacyRedirectRoutes}
             {/* Publicly accessible category pages for SEO */}
+            <Route path="/category/" element={<Navigate to="/" replace />} />
+            <Route path="/category" element={<Navigate to="/" replace />} />
             <Route
               path="/category/:slug/"
               element={
@@ -536,6 +584,7 @@ const MainLayout = () => {
               }
             />
             {legacyRedirectRoutes}
+            <Route path="/my-quizzes" element={<Navigate to="/my-quizzes/" replace />} />
             <Route
               path="/my-quizzes/"
               element={
@@ -544,6 +593,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/wallet" element={<Navigate to="/wallet/" replace />} />
             <Route
               path="/wallet/"
               element={
@@ -552,6 +602,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/profile" element={<Navigate to="/profile/" replace />} />
             <Route
               path="/profile/"
               element={
@@ -560,6 +611,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/leaderboards" element={<Navigate to="/leaderboards/" replace />} />
             <Route
               path="/leaderboards/"
               element={
@@ -568,6 +620,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/refer" element={<Navigate to="/refer/" replace />} />
             <Route
               path="/refer/"
               element={
@@ -577,6 +630,7 @@ const MainLayout = () => {
               }
             />
             <Route path="/rewards" element={<Navigate to="/wallet/" replace />} />
+            <Route path="/redemptions" element={<Navigate to="/redemptions/" replace />} />
             <Route
               path="/redemptions/"
               element={
@@ -586,6 +640,7 @@ const MainLayout = () => {
               }
             />
             {/* Reuse informational routes inside authenticated layout as well */}
+            <Route path="/about-us" element={<Navigate to="/about-us/" replace />} />
             <Route
               path="/about-us/"
               element={
@@ -594,6 +649,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/contact-us" element={<Navigate to="/contact-us/" replace />} />
             <Route
               path="/contact-us/"
               element={
@@ -602,6 +658,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/gk-quiz" element={<Navigate to="/gk-quiz/" replace />} />
             <Route
               path="/gk-quiz/"
               element={
@@ -610,6 +667,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/cricket-quiz" element={<Navigate to="/cricket-quiz/" replace />} />
             <Route
               path="/cricket-quiz/"
               element={
@@ -618,6 +676,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/ipl-prediction-quiz" element={<Navigate to="/category/opinion/" replace />} />
             <Route
               path="/ipl-prediction-quiz/"
               element={
@@ -626,6 +685,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/current-affairs-quiz" element={<Navigate to="/current-affairs-quiz/" replace />} />
             <Route
               path="/current-affairs-quiz/"
               element={
@@ -634,6 +694,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/bollywood-quiz" element={<Navigate to="/bollywood-quiz/" replace />} />
             <Route
               path="/bollywood-quiz/"
               element={
@@ -642,6 +703,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/play-win-quiz-app" element={<Navigate to="/play-win-quiz-app/" replace />} />
             <Route
               path="/play-win-quiz-app/"
               element={
@@ -650,6 +712,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/opinion-quiz-app" element={<Navigate to="/opinion-quiz-app/" replace />} />
             <Route
               path="/opinion-quiz-app/"
               element={
@@ -658,6 +721,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/refer-earn-quiz-app" element={<Navigate to="/refer-earn-quiz-app/" replace />} />
             <Route
               path="/refer-earn-quiz-app/"
               element={
@@ -675,6 +739,7 @@ const MainLayout = () => {
               }
             />
             <Route path="/debug/notifications" element={<Navigate to="/debug/notifications/" replace />} />
+            <Route path="/terms-conditions" element={<Navigate to="/terms-conditions/" replace />} />
             <Route
               path="/terms-conditions/"
               element={
@@ -683,6 +748,7 @@ const MainLayout = () => {
                 </Page>
               }
             />
+            <Route path="/privacy-policy" element={<Navigate to="/privacy-policy/" replace />} />
             <Route
               path="/privacy-policy/"
               element={
